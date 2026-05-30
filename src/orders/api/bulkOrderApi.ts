@@ -4,6 +4,7 @@
  */
 
 const BASE_URL = import.meta.env.VITE_TENEXU_API_URL;
+const PRODUCT_PASSWORD = import.meta.env.VITE_SALEOR_PRODUCT_PASSWORD;
 
 if (!BASE_URL) {
   throw new Error(
@@ -18,6 +19,9 @@ function getAuthHeaders(): HeadersInit {
   return {
     Authorization: `Bearer ${token}`,
     "X-Refresh-Token": refreshToken,
+    // Gate for the bulk-order endpoint; must equal SALEOR_PRODUCT_PASSWORD on
+    // the backend, otherwise the request is rejected with 401.
+    "x-product-password": PRODUCT_PASSWORD || "",
   };
 }
 
