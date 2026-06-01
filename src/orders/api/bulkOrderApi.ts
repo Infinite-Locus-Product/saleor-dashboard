@@ -3,14 +3,8 @@
  * Mirrors src/returns-exchange/api/manualExchangeApi.ts (auth + base url).
  */
 
-const BASE_URL = import.meta.env.VITE_TENEXU_API_URL;
+const BASE_URL = import.meta.env.VITE_TENEXU_API_URL as string | undefined;
 const PRODUCT_PASSWORD = import.meta.env.VITE_SALEOR_PRODUCT_PASSWORD;
-
-if (!BASE_URL) {
-  throw new Error(
-    "VITE_TENEXU_API_URL is not set. The bulk order import module cannot reach the backend without it.",
-  );
-}
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("_saleor_auth_token") || "";
@@ -39,6 +33,12 @@ export async function importBulkOrders(params: {
   defaultChannel: string;
   notifyEmail?: string;
 }): Promise<BulkOrderImportAck> {
+  if (!BASE_URL) {
+    throw new Error(
+      "VITE_TENEXU_API_URL is not set. The bulk order import module cannot reach the backend without it.",
+    );
+  }
+
   const body = new FormData();
 
   body.append("file", params.file);
@@ -46,7 +46,7 @@ export async function importBulkOrders(params: {
 
   if (params.notifyEmail) body.append("notifyEmail", params.notifyEmail);
 
-  const res = await fetch(`${BASE_URL}/bulk-order/import`, {
+  const res = await fetch(`${BASE_URL}/bulk-upload/orders`, {
     method: "POST",
     headers: getAuthHeaders(),
     body,

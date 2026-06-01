@@ -17,6 +17,9 @@ interface BulkOrderImportDialogProps {
   onClose: () => void;
 }
 
+const MAX_CSV_BYTES = 10 * 1024 * 1024;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // State is owned by the inner component, so unmounting it (via the `open` key
 // in the parent below) is the cleanest way to reset between opens.
 const BulkOrderImportDialogContent = ({
@@ -33,8 +36,29 @@ const BulkOrderImportDialogContent = ({
   const [submitting, setSubmitting] = useState(false);
   const [ack, setAck] = useState<BulkOrderImportAck | null>(null);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const f = e.target.files?.[0] ?? null;
+
+    if (f && f.size > MAX_CSV_BYTES) {
+      notify({ status: "error", text: intl.formatMessage(messages.fileTooLarge) });
+      e.target.value = "";
+
+      return;
+    }
+
+    setFile(f);
+  };
+
   const handleSubmit = async (): Promise<void> => {
     if (!file || !channelSlug) return;
+
+    const emailTrimmed = notifyEmail.trim();
+
+    if (emailTrimmed && !EMAIL_RE.test(emailTrimmed)) {
+      notify({ status: "error", text: intl.formatMessage(messages.invalidEmail) });
+
+      return;
+    }
 
     setSubmitting(true);
 
@@ -42,14 +66,14 @@ const BulkOrderImportDialogContent = ({
       const result = await importBulkOrders({
         file,
         defaultChannel: channelSlug,
-        notifyEmail: notifyEmail.trim() || undefined,
+        notifyEmail: emailTrimmed || undefined,
       });
 
       setAck(result);
-    } catch (err: any) {
+    } catch (err: unknown) {
       notify({
         status: "error",
-        text: err?.message || "Bulk order import failed",
+        text: err instanceof Error ? err.message : intl.formatMessage(messages.importFailed),
       });
     } finally {
       setSubmitting(false);
@@ -68,13 +92,14 @@ const BulkOrderImportDialogContent = ({
             <Text>{ack.message}</Text>
             <Box display="grid" gap={2}>
               <Text size={2}>
-                <b>Batch ref:</b> <code>{ack.batchRef}</code>
+                <b>{intl.formatMessage(messages.batchRef)}</b> <code>{ack.batchRef}</code>
               </Text>
               <Text size={2}>
-                <b>Rows:</b> {ack.totalRows} &nbsp; <b>Orders queued:</b> {ack.totalOrders}
+                <b>{intl.formatMessage(messages.rowsLabel)}</b> {ack.totalRows} &nbsp;{" "}
+                <b>{intl.formatMessage(messages.ordersQueued)}</b> {ack.totalOrders}
               </Text>
               <Text size={2} color="default2">
-                Request id: <code>{ack.requestId}</code>
+                {intl.formatMessage(messages.requestId)} <code>{ack.requestId}</code>
               </Text>
             </Box>
           </Box>
@@ -90,15 +115,19 @@ const BulkOrderImportDialogContent = ({
             </Box>
 
             <Box display="grid" gap={2}>
-              <Text size={2} fontWeight="medium">
-                {intl.formatMessage(messages.fileLabel)}
-              </Text>
+              {/* htmlFor associates this label with the hidden input for screen readers */}
+              <label htmlFor="bulk-order-file-input">
+                <Text size={2} fontWeight="medium">
+                  {intl.formatMessage(messages.fileLabel)}
+                </Text>
+              </label>
               <input
                 ref={fileInputRef}
+                id="bulk-order-file-input"
                 type="file"
                 accept=".csv,text/csv"
                 style={{ display: "none" }}
-                onChange={e => setFile(e.target.files?.[0] ?? null)}
+                onChange={handleFileChange}
                 data-test-id="bulk-order-file"
               />
               <Box display="flex" gap={2} alignItems="center">
@@ -108,10 +137,10 @@ const BulkOrderImportDialogContent = ({
                   icon={<UploadCloud size={16} />}
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  Choose CSV
+                  {intl.formatMessage(messages.chooseCsv)}
                 </Button>
                 <Text size={2} color={file ? "default1" : "default2"}>
-                  {file ? file.name : "No file selected"}
+                  {file ? file.name : intl.formatMessage(messages.noFileSelected)}
                 </Text>
               </Box>
             </Box>
@@ -129,7 +158,11 @@ const BulkOrderImportDialogContent = ({
         )}
 
         <DashboardModal.Actions>
-          <BackButton onClick={onClose}>{ack ? "Close" : undefined}</BackButton>
+          {ack ? (
+            <BackButton onClick={onClose}>{intl.formatMessage(messages.close)}</BackButton>
+          ) : (
+            <BackButton onClick={onClose} />
+          )}
           {!ack && (
             <ConfirmButton
               transitionState={submitting ? "loading" : "default"}
