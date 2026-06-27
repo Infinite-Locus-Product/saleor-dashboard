@@ -31,6 +31,7 @@ import { Box, Divider } from "@saleor/macaw-ui-next";
 import { useIntl } from "react-intl";
 
 import { type ChannelProps, type PageListProps } from "../../../types";
+import { ClearCacheCard } from "../ClearCacheCard/ClearCacheCard";
 import CollectionDetails from "../CollectionDetails/CollectionDetails";
 import { CollectionImage } from "../CollectionImage/CollectionImage";
 import CollectionProducts from "../CollectionProducts/CollectionProducts";
@@ -175,6 +176,8 @@ const CollectionDetailsPage = ({
                 openModal={openChannelsModal}
               />
             </div>
+            <CardSpacer />
+            <ClearCacheCard collectionId={collection?.id} />
             {COLLECTION_DETAILS_WIDGETS.length > 0 && collection?.id && (
               <>
                 <CardSpacer />
