@@ -6,7 +6,7 @@ import { type MetadataInput } from "@dashboard/graphql";
 import { type ChangeEvent } from "@dashboard/hooks/useForm";
 import { buttonMessages, commonMessages } from "@dashboard/intl";
 import { Box, Button } from "@saleor/macaw-ui-next";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 
 export interface MetadataDialogProps {
@@ -14,6 +14,8 @@ export interface MetadataDialogProps {
   onClose: () => void;
   onSave: () => void;
   title?: string;
+  /** Rendered on the right side of the dialog title (e.g. an extra action button). */
+  headerAction?: ReactNode;
   data: {
     metadata: MetadataInput[];
     privateMetadata: MetadataInput[];
@@ -33,6 +35,7 @@ export const MetadataDialog = ({
   onClose,
   onSave,
   title,
+  headerAction,
   data,
   onChange,
   loading = false,
@@ -60,7 +63,10 @@ export const MetadataDialog = ({
     <DashboardModal open={open} onChange={handleClose}>
       <DashboardModal.Content size="md" overflowY="hidden">
         <DashboardModal.Header paddingLeft={6}>
-          {title ?? intl.formatMessage(commonMessages.metadata)}
+          <Box as="span" display="inline-flex" alignItems="center" gap={4}>
+            {title ?? intl.formatMessage(commonMessages.metadata)}
+            {headerAction}
+          </Box>
         </DashboardModal.Header>
 
         {/* This is scroll container so that Save and title are always visible */}
