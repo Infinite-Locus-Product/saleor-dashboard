@@ -1,5 +1,11 @@
 // @ts-strict-ignore
 import { type ChannelCollectionData } from "@dashboard/channels/utils";
+import { SORTING_ORDER_METADATA_KEY } from "@dashboard/collections/components/CollectionSortOrder/constants";
+import { type SortOrderConfig } from "@dashboard/collections/components/CollectionSortOrder/types";
+import {
+  serializeSortConfig,
+  upsertMetadata,
+} from "@dashboard/collections/components/CollectionSortOrder/utils";
 import { createChannelsChangeHandler } from "@dashboard/collections/utils";
 import { COLLECTION_DETAILS_FORM_ID } from "@dashboard/collections/views/consts";
 import { useExitFormDialog } from "@dashboard/components/Form/useExitFormDialog";
@@ -34,6 +40,7 @@ export interface CollectionUpdateData extends CollectionUpdateFormData {
 interface CollectionUpdateHandlers {
   changeMetadata: FormChange;
   changeChannels: (id: string, data: Omit<ChannelCollectionData, "name" | "id">) => void;
+  changeSortOrder: (config: SortOrderConfig) => void;
 }
 type UseCollectionUpdateFormResult = CommonUseFormResultWithHandlers<
   CollectionUpdateData,
@@ -98,6 +105,14 @@ function useCollectionUpdateForm(
     makeChangeHandler: makeMetadataChangeHandler,
   } = useMetadataChangeTrigger();
   const changeMetadata = makeMetadataChangeHandler(handleChange);
+  const changeSortOrder = (config: SortOrderConfig) => {
+    const value = serializeSortConfig(config);
+    const metadata = upsertMetadata(formData.metadata, SORTING_ORDER_METADATA_KEY, value);
+
+    // Reuse the metadata change trigger so the collection's public metadata is
+    // persisted by the existing UpdateMetadata mutation on save.
+    changeMetadata({ target: { name: "metadata", value: metadata } });
+  };
   const data: CollectionUpdateData = {
     ...formData,
     description: null,
@@ -127,6 +142,7 @@ function useCollectionUpdateForm(
     handlers: {
       changeChannels: handleChannelChange,
       changeMetadata,
+      changeSortOrder,
     },
     submit,
     richText,
