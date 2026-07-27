@@ -2,6 +2,7 @@ import "@saleor/macaw-ui-next/style";
 import "./index.css";
 
 import { ApolloProvider } from "@apollo/client";
+import { cohortsSection } from "@dashboard/cohorts/urls";
 import { history, Route, Router } from "@dashboard/components/Router";
 import { AppExtensionPopupProvider } from "@dashboard/extensions/components/AppExtensionContext/AppExtensionContextProvider";
 import { ExtensionsPaths, extensionsSection } from "@dashboard/extensions/urls";
@@ -90,6 +91,7 @@ const RefundsSettingsRoute = lazy(() =>
   import("./refundsSettings/route").then(m => ({ default: m.RefundsSettingsRoute })),
 );
 const ReturnsExchangeSection = lazy(() => import("./returns-exchange"));
+const CohortsSection = lazy(() => import("./cohorts"));
 
 if (GTM_ID) {
   TagManager.initialize({ gtmId: GTM_ID });
@@ -329,6 +331,11 @@ const Routes = () => {
                     permissions={[PermissionEnum.MANAGE_ORDERS]}
                     path={returnsExchangeSection}
                     component={ReturnsExchangeSection}
+                  />
+                  <SectionRoute
+                    permissions={[PermissionEnum.MANAGE_DISCOUNTS]}
+                    path={cohortsSection}
+                    component={CohortsSection}
                   />
                   <Route component={NotFound} />
                 </Switch>
