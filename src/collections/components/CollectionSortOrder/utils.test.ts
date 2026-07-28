@@ -379,10 +379,10 @@ describe("CollectionSortOrder utils", () => {
       // Arrange
       const ordered = [makeVariant("v2", "p2"), makeVariant("v1", "p1")];
 
-      // Act / Assert
+      // Act / Assert — each entry carries the colour name the storefront matches on
       expect(buildSortOrder(ordered)).toEqual([
-        { variant: "v2", productid: "p2", sortIndex: 1 },
-        { variant: "v1", productid: "p1", sortIndex: 2 },
+        { variant: "v2", productid: "p2", sortIndex: 1, color: "Color v2" },
+        { variant: "v1", productid: "p1", sortIndex: 2, color: "Color v1" },
       ]);
     });
   });

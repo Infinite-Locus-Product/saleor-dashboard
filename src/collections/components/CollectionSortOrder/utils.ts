@@ -203,6 +203,9 @@ export const buildSortOrder = (orderedVariants: SortableVariant[]): SortOrderEnt
     variant: variant.variantId,
     productid: variant.productId,
     sortIndex: index + 1,
+    // Colour name the storefront matches on (stable if the representative
+    // variant is later unpublished).
+    color: variant.colorName,
   }));
 
 /** Read a metadata value by key from a metadata input array. */
