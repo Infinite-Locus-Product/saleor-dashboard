@@ -1,7 +1,7 @@
 import { type MetadataInput } from "@dashboard/graphql";
 import Wrapper from "@test/wrapper";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { StrictMode, useState } from "react";
+import { StrictMode, useEffect, useState } from "react";
 
 import { CollectionSortOrder } from "./CollectionSortOrder";
 import { SORTING_ORDER_METADATA_KEY } from "./constants";
@@ -111,20 +111,22 @@ const AsyncHost = () => {
 // re-rendered with a new id instead of being remounted — exactly what this host
 // does. `metadata` is swapped in the same click because the real page keeps
 // both in sync via the collection query.
+const collectionsMetadata: Record<string, MetadataInput[]> = {
+  c1: [
+    {
+      key: SORTING_ORDER_METADATA_KEY,
+      value: JSON.stringify({
+        show_only_tagged_variants: true,
+        is_filter_variants: true,
+        order: [{ variant: "v1", productid: "p1", sortIndex: 1, color: "Forged Iron" }],
+      }),
+    },
+  ],
+  c2: [],
+};
+
 const NavigationHost = ({ onChange }: { onChange: (config: SortOrderConfig) => void }) => {
-  const collections: Record<string, MetadataInput[]> = {
-    c1: [
-      {
-        key: SORTING_ORDER_METADATA_KEY,
-        value: JSON.stringify({
-          show_only_tagged_variants: true,
-          is_filter_variants: true,
-          order: [{ variant: "v1", productid: "p1", sortIndex: 1, color: "Forged Iron" }],
-        }),
-      },
-    ],
-    c2: [],
-  };
+  const collections = collectionsMetadata;
   const [collectionId, setCollectionId] = useState("c1");
 
   return (
@@ -135,6 +137,35 @@ const NavigationHost = ({ onChange }: { onChange: (config: SortOrderConfig) => v
       <CollectionSortOrder
         collectionId={collectionId}
         metadata={collections[collectionId]}
+        disabled={false}
+        onChange={onChange}
+      />
+    </>
+  );
+};
+
+// The metadata prop does NOT change in the same render as collectionId: the page
+// derives it through useForm -> useStateFromProps, which syncs in an effect. So
+// there is exactly one render carrying the new collection's id together with the
+// PREVIOUS collection's metadata. Any fix that reads the saved config only once
+// per mount — including a `key={collection?.id}` remount — latches that stale
+// value permanently, which is why the reset lives inside the component.
+const LaggingHost = ({ onChange }: { onChange: (config: SortOrderConfig) => void }) => {
+  const [collectionId, setCollectionId] = useState("c1");
+  const [metadata, setMetadata] = useState<MetadataInput[]>(collectionsMetadata.c1);
+
+  useEffect(() => {
+    setMetadata(collectionsMetadata[collectionId]);
+  }, [collectionId]);
+
+  return (
+    <>
+      <button data-test-id="navigate" onClick={() => setCollectionId("c2")}>
+        go to c2
+      </button>
+      <CollectionSortOrder
+        collectionId={collectionId}
+        metadata={metadata}
         disabled={false}
         onChange={onChange}
       />
@@ -211,6 +242,34 @@ describe("CollectionSortOrder render", () => {
       { variant: "w1", productid: "p2", sortIndex: 1, color: "Midnight" },
     ]);
     // c1's flags must not leak into c2's payload either.
+    expect(config.showOnlyTaggedVariants).toBe(false);
+    expect(config.isFilterVariants).toBe(false);
+  });
+
+  it("recovers when metadata arrives a render after the collection id changes", () => {
+    const onChange = jest.fn();
+
+    render(<LaggingHost onChange={onChange} />, { wrapper: Wrapper });
+
+    expect(screen.getByTestId("show-only-tagged-variants-value")).toHaveTextContent("TRUE");
+
+    // Act — navigate; for one render the card sees c2's id with c1's metadata.
+    fireEvent.click(screen.getByTestId("navigate"));
+
+    // Assert — the stale config is not latched: c2's own (empty) config wins.
+    expect(screen.getByTestId("show-only-tagged-variants-value")).toHaveTextContent("FALSE");
+    expect(screen.getByTestId("is-filter-variants-value")).toHaveTextContent("FALSE");
+    expect(screen.getByText("Midnight")).toBeInTheDocument();
+    expect(screen.queryByText("Forged Iron")).not.toBeInTheDocument();
+
+    // And an edit persists c2's variant with c2's flags, not c1's.
+    fireEvent.click(screen.getAllByTestId("include-variant")[0]);
+
+    const config: SortOrderConfig = onChange.mock.calls[0][0];
+
+    expect(config.order).toEqual([
+      { variant: "w1", productid: "p2", sortIndex: 1, color: "Midnight" },
+    ]);
     expect(config.showOnlyTaggedVariants).toBe(false);
     expect(config.isFilterVariants).toBe(false);
   });
