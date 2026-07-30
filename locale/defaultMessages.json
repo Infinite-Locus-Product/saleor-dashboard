@@ -915,6 +915,10 @@
     "context": "bulk issue gift cards success alert title",
     "string": "Gift Cards Issued"
   },
+  "3ccZPH": {
+    "context": "collection sort order label when stock could not be read",
+    "string": "stock unknown"
+  },
   "3d1RXL": {
     "string": "This customer has no addresses yet"
   },
@@ -1783,6 +1787,10 @@
   "8RnPGF": {
     "context": "order history message",
     "string": "Payment was voided"
+  },
+  "8TV3SO": {
+    "context": "collection sort order missing stock notice",
+    "string": "Stock levels couldn't be read, so quantities are hidden and sorting by inventory is unavailable."
   },
   "8V1ozm": {
     "context": "order discount was updated automatically event title",
@@ -5029,6 +5037,10 @@
   "QOm7+P": {
     "string": "Create new order"
   },
+  "QS7cjf": {
+    "context": "collection sort order truncation notice",
+    "string": "This collection is too large to sort here — showing the first {count} products only."
+  },
   "QSnh4Y": {
     "context": "add button label",
     "string": "Add"
@@ -5194,6 +5206,10 @@
   "RUS52q": {
     "context": "order history message",
     "string": "Restocked {quantity, plural, one {# item} other {# items}}"
+  },
+  "RUWWvd": {
+    "context": "collection sort order idle state",
+    "string": "Products aren't loaded yet. The flags above can be changed without loading them."
   },
   "RUwHjA": {
     "string": "Bug Fix"
@@ -9333,6 +9349,10 @@
   "pRYGUR": {
     "context": "section description",
     "string": "This address will be used to generate invoices and calculate shipping rates. Email address you provide here will be used as a contact address for your customers."
+  },
+  "pRd7W9": {
+    "context": "button, load collection products for sorting",
+    "string": "Load products to reorder"
   },
   "pSFOFy": {
     "context": "relative time in days",

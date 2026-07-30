@@ -35,6 +35,7 @@ const meta: Meta<typeof SortableVariantRow> = {
   args: {
     variant,
     position: 1,
+    showStock: true,
     selected: true,
     disabled: false,
     onToggle: fn(),
@@ -62,5 +63,11 @@ export const OtherColor: Story = {
 export const Disabled: Story = {
   args: {
     disabled: true,
+  },
+};
+
+export const StockUnavailable: Story = {
+  args: {
+    showStock: false,
   },
 };

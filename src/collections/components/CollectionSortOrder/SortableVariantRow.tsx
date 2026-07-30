@@ -11,6 +11,11 @@ interface SortableVariantRowProps {
   variant: SortableVariant;
   /** Position among the selected rows (1-based), or null when not included. */
   position: number | null;
+  /**
+   * False when stock didn't resolve. `availableQty` is then 0 by default rather
+   * than by fact, so the row shows a placeholder instead of a fabricated number.
+   */
+  showStock: boolean;
   selected: boolean;
   disabled: boolean;
   onToggle: (variantId: string) => void;
@@ -19,6 +24,7 @@ interface SortableVariantRowProps {
 export const SortableVariantRow = ({
   variant,
   position,
+  showStock,
   selected,
   disabled,
   onToggle,
@@ -91,14 +97,22 @@ export const SortableVariantRow = ({
       </Box>
       <Box display="flex" flexDirection="column" alignItems="flex-end" __minWidth="72px">
         <Text size={3} style={{ fontVariantNumeric: "tabular-nums" }}>
-          {variant.availableQty.toLocaleString()}
+          {showStock ? variant.availableQty.toLocaleString() : "\u2014"}
         </Text>
         <Text size={1} color="default2">
-          <FormattedMessage
-            defaultMessage="in stock"
-            id="hRDeBH"
-            description="collection sort order variant availability label"
-          />
+          {showStock ? (
+            <FormattedMessage
+              defaultMessage="in stock"
+              id="hRDeBH"
+              description="collection sort order variant availability label"
+            />
+          ) : (
+            <FormattedMessage
+              defaultMessage="stock unknown"
+              id="3ccZPH"
+              description="collection sort order label when stock could not be read"
+            />
+          )}
         </Text>
       </Box>
     </Box>

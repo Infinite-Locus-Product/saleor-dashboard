@@ -19,9 +19,9 @@ import { Box, Button, Skeleton, Text, Toggle } from "@saleor/macaw-ui-next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 
-import { SORTING_ORDER_METADATA_KEY } from "./constants";
+import { SORT_ORDER_MAX_PRODUCTS, SORTING_ORDER_METADATA_KEY } from "./constants";
 import { SortableVariantRow } from "./SortableVariantRow";
-import { type SortableVariant, type SortOrderConfig } from "./types";
+import { type SortableVariant, type SortOrderConfig, type SortOrderEntry } from "./types";
 import { useCollectionSortOrderData } from "./useCollectionSortOrderData";
 import {
   applySavedOrder,
@@ -45,10 +45,18 @@ export const CollectionSortOrder = ({
   onChange,
 }: CollectionSortOrderProps) => {
   const intl = useIntl();
-  const { variants, loading, hasError, retry } = useCollectionSortOrderData(collectionId);
-  // Nothing may be saved from a failed load: the rows we'd build the order from
-  // are missing, so an edit would persist an empty order over the real one.
-  const locked = disabled || loading || hasError;
+  // The product list is loaded on request only: this card is on every Collection
+  // detail page, and paging the whole collection on each visit made every
+  // merchant pay for a feature most of them never open.
+  const [listRequested, setListRequested] = useState(false);
+  const { variants, loading, hasError, retry, truncated, stockDataMissing } =
+    useCollectionSortOrderData(collectionId, { enabled: listRequested });
+  // The rows are on screen and safe to build an order from.
+  const listReady = listRequested && !loading && !hasError;
+  // The flags stay usable without the list — emit() carries the saved order
+  // through untouched. The one moment they must not be touched is before the
+  // collection itself has loaded, when we don't yet know what that order is.
+  const flagsLocked = disabled || metadata === undefined;
 
   // The collection this component's state was derived for. React Router v5
   // reuses a single CollectionDetails instance across /collections/A ->
@@ -56,10 +64,16 @@ export const CollectionSortOrder = ({
   // navigation: the state has to be re-derived when the id changes, or the card
   // would keep showing — and saving — the previous collection's rows.
   const stateCollectionIdRef = useRef<string | undefined>(undefined);
-  // Set on the merchant's first edit of this collection's card. From then on the
-  // `metadata` prop (which our own edits flow back through) must not overwrite
-  // what is on screen. Cleared whenever the collection changes.
-  const editedRef = useRef(false);
+  // Set on the merchant's first edit of the flags / of the list. Tracked apart
+  // so that editing one doesn't freeze the other: the flags are usable before
+  // the list has loaded, and the list must still seed from the saved order once
+  // it arrives. Both cleared whenever the collection changes.
+  const flagsEditedRef = useRef(false);
+  const listEditedRef = useRef(false);
+  // Last order we know is persisted. Used to carry the saved order through
+  // untouched when a flag is changed before the rows have loaded — rebuilding it
+  // from an unloaded list would save an empty order over the real one.
+  const savedOrderRef = useRef<SortOrderEntry[]>([]);
   const [items, setItems] = useState<SortableVariant[]>([]);
   // Which colour rows are included in the storefront order. Only these are
   // written to metadata. Selection persists via the saved order itself.
@@ -73,7 +87,10 @@ export const CollectionSortOrder = ({
       // Switched collections — discard everything belonging to the previous one
       // and start accepting the new collection's saved config again.
       stateCollectionIdRef.current = collectionId;
-      editedRef.current = false;
+      flagsEditedRef.current = false;
+      listEditedRef.current = false;
+      savedOrderRef.current = [];
+      setListRequested(false);
       setItems([]);
       setSelected(new Set());
       setShowOnlyTagged(false);
@@ -85,16 +102,25 @@ export const CollectionSortOrder = ({
     // re-deriving from it until the merchant edits the card: a value belonging
     // to the previous collection is corrected as soon as the real one arrives,
     // instead of being latched for the lifetime of the component.
-    if (metadata === undefined || editedRef.current) {
+    if (metadata === undefined) {
       return;
     }
 
     const config = parseSortConfig(getMetadataValue(metadata, SORTING_ORDER_METADATA_KEY));
 
-    setShowOnlyTagged(config.showOnlyTaggedVariants);
-    setIsFilter(config.isFilterVariants);
-    setItems(applySavedOrder(variants, config.order));
-    setSelected(new Set(config.order.map(entry => entry.variant)));
+    // Always current, even once the merchant is editing: it is what a flag
+    // change has to preserve while the list is unloaded.
+    savedOrderRef.current = config.order;
+
+    if (!flagsEditedRef.current) {
+      setShowOnlyTagged(config.showOnlyTaggedVariants);
+      setIsFilter(config.isFilterVariants);
+    }
+
+    if (!listEditedRef.current) {
+      setItems(applySavedOrder(variants, config.order));
+      setSelected(new Set(config.order.map(entry => entry.variant)));
+    }
   }, [collectionId, metadata, variants]);
 
   const sensors = useSensors(
@@ -108,13 +134,22 @@ export const CollectionSortOrder = ({
     nextSelected: Set<string>,
     flags: { showOnlyTagged: boolean; isFilter: boolean },
   ) => {
-    // From here on the on-screen state is the merchant's, not the saved one.
-    editedRef.current = true;
     onChange({
       showOnlyTaggedVariants: flags.showOnlyTagged,
       isFilterVariants: flags.isFilter,
-      order: buildSortOrder(nextItems.filter(item => nextSelected.has(item.variantId))),
+      // Only rebuild the order from the rows when they are actually loaded.
+      // Otherwise pass the saved order straight through: a flag change must
+      // never blank out an order the merchant hasn't even looked at.
+      order: listReady
+        ? buildSortOrder(nextItems.filter(item => nextSelected.has(item.variantId)))
+        : savedOrderRef.current,
     });
+  };
+
+  // Editing the list: from here the saved order must not overwrite the screen.
+  const emitListChange = (nextItems: SortableVariant[], nextSelected: Set<string>) => {
+    listEditedRef.current = true;
+    emit(nextItems, nextSelected, { showOnlyTagged, isFilter });
   };
 
   const handleToggle = (variantId: string) => {
@@ -127,15 +162,17 @@ export const CollectionSortOrder = ({
     }
 
     setSelected(next);
-    emit(items, next, { showOnlyTagged, isFilter });
+    emitListChange(items, next);
   };
 
   const handleShowOnlyTaggedChange = (pressed: boolean) => {
+    flagsEditedRef.current = true;
     setShowOnlyTagged(pressed);
     emit(items, selected, { showOnlyTagged: pressed, isFilter });
   };
 
   const handleIsFilterChange = (pressed: boolean) => {
+    flagsEditedRef.current = true;
     setIsFilter(pressed);
     emit(items, selected, { showOnlyTagged, isFilter: pressed });
   };
@@ -157,14 +194,14 @@ export const CollectionSortOrder = ({
     const moved = arrayMove(items, oldIndex, newIndex);
 
     setItems(moved);
-    emit(moved, selected, { showOnlyTagged, isFilter });
+    emitListChange(moved, selected);
   };
 
   const handleSortByInventory = () => {
     const sorted = sortByInventory(items);
 
     setItems(sorted);
-    emit(sorted, selected, { showOnlyTagged, isFilter });
+    emitListChange(sorted, selected);
   };
 
   const handleClear = () => {
@@ -173,7 +210,7 @@ export const CollectionSortOrder = ({
     setSelected(new Set());
     setItems(reset);
     // Clear the pinned order but keep the flags — they are separate settings.
-    emit(reset, new Set(), { showOnlyTagged, isFilter });
+    emitListChange(reset, new Set());
   };
 
   const itemIds = useMemo(() => items.map(item => item.id), [items]);
@@ -192,7 +229,7 @@ export const CollectionSortOrder = ({
           <Button
             data-test-id="sort-by-inventory"
             variant="secondary"
-            disabled={disabled || loading || items.length === 0}
+            disabled={disabled || !listReady || stockDataMissing || items.length === 0}
             onClick={handleSortByInventory}
           >
             <FormattedMessage
@@ -204,7 +241,7 @@ export const CollectionSortOrder = ({
           <Button
             data-test-id="clear-sort-order"
             variant="secondary"
-            disabled={disabled || selected.size === 0}
+            disabled={disabled || !listReady || selected.size === 0}
             onClick={handleClear}
           >
             <FormattedMessage
@@ -249,9 +286,9 @@ export const CollectionSortOrder = ({
               <Toggle
                 data-test-id="show-only-tagged-variants"
                 pressed={showOnlyTagged}
-                // Locked while the rows load: emitting now would persist an
-                // order built from an empty (or not-yet-swapped) variant list.
-                disabled={locked}
+                // Usable without loading the list: the order is carried through
+                // from metadata, so changing a flag can't blank it out.
+                disabled={flagsLocked}
                 onPressedChange={handleShowOnlyTaggedChange}
               />
               <Text
@@ -286,7 +323,7 @@ export const CollectionSortOrder = ({
               <Toggle
                 data-test-id="is-filter-variants"
                 pressed={isFilter}
-                disabled={locked}
+                disabled={flagsLocked}
                 onPressedChange={handleIsFilterChange}
               />
               <Text
@@ -310,7 +347,39 @@ export const CollectionSortOrder = ({
           />
         </Text>
 
-        {loading ? (
+        {!listRequested ? (
+          // Nothing is fetched until asked for. Paging a whole collection on
+          // every Collection detail visit made every merchant pay for a card
+          // most of them never open.
+          <Box
+            data-test-id="sort-order-idle"
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            gap={3}
+            paddingY={6}
+          >
+            <Text size={2} color="default2" textAlign="center">
+              <FormattedMessage
+                defaultMessage="Products aren't loaded yet. The flags above can be changed without loading them."
+                id="RUWWvd"
+                description="collection sort order idle state"
+              />
+            </Text>
+            <Button
+              data-test-id="load-sort-order"
+              variant="secondary"
+              disabled={disabled || !collectionId}
+              onClick={() => setListRequested(true)}
+            >
+              <FormattedMessage
+                defaultMessage="Load products to reorder"
+                id="pRd7W9"
+                description="button, load collection products for sorting"
+              />
+            </Button>
+          </Box>
+        ) : loading ? (
           <Box display="flex" flexDirection="column" gap={2}>
             {Array.from({ length: 5 }).map((_, index) => (
               <Skeleton key={index} height={8} />
@@ -359,41 +428,82 @@ export const CollectionSortOrder = ({
             />
           </Text>
         ) : (
-          <Box
-            borderColor="default1"
-            borderWidth={1}
-            borderStyle="solid"
-            borderRadius={3}
-            overflowY="auto"
-            __maxHeight="480px"
-          >
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+          <>
+            {stockDataMissing && (
+              // Every availableQty defaulted to 0 because stock didn't resolve.
+              // Sorting by it would look authoritative and be arbitrary.
+              <Text
+                data-test-id="sort-order-stock-missing"
+                size={2}
+                color="critical1"
+                display="block"
+                marginBottom={3}
+              >
+                <FormattedMessage
+                  defaultMessage="Stock levels couldn't be read, so quantities are hidden and sorting by inventory is unavailable."
+                  id="8TV3SO"
+                  description="collection sort order missing stock notice"
+                />
+              </Text>
+            )}
+            {truncated && (
+              // Say it out loud. A silently partial list would let a merchant
+              // reorder what they can see and believe the rest is ordered too.
+              <Text
+                data-test-id="sort-order-truncated"
+                size={2}
+                color="critical1"
+                display="block"
+                marginBottom={3}
+              >
+                {intl.formatMessage(
+                  {
+                    defaultMessage:
+                      "This collection is too large to sort here — showing the first {count} products only.",
+                    id: "QS7cjf",
+                    description: "collection sort order truncation notice",
+                  },
+                  { count: SORT_ORDER_MAX_PRODUCTS },
+                )}
+              </Text>
+            )}
+            <Box
+              borderColor="default1"
+              borderWidth={1}
+              borderStyle="solid"
+              borderRadius={3}
+              overflowY="auto"
+              __maxHeight="480px"
             >
-              <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-                {(() => {
-                  let pinNo = 0;
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                  {(() => {
+                    let pinNo = 0;
 
-                  return items.map(variant => {
-                    const isSelected = selected.has(variant.variantId);
+                    return items.map(variant => {
+                      const isSelected = selected.has(variant.variantId);
 
-                    return (
-                      <SortableVariantRow
-                        key={variant.id}
-                        variant={variant}
-                        position={isSelected ? (pinNo += 1) : null}
-                        selected={isSelected}
-                        disabled={disabled}
-                        onToggle={handleToggle}
-                      />
-                    );
-                  });
-                })()}
-              </SortableContext>
-            </DndContext>
-          </Box>
+                      return (
+                        <SortableVariantRow
+                          key={variant.id}
+                          variant={variant}
+                          position={isSelected ? (pinNo += 1) : null}
+                          showStock={!stockDataMissing}
+                          selected={isSelected}
+                          disabled={disabled}
+                          onToggle={handleToggle}
+                        />
+                      );
+                    });
+                  })()}
+                </SortableContext>
+              </DndContext>
+            </Box>
+          </>
         )}
 
         <Text size={1} color="default2" display="block" marginTop={3}>
