@@ -5411,6 +5411,10 @@
   "SZyphU": {
     "string": "Product type created"
   },
+  "Sc6m2U": {
+    "context": "error notification",
+    "string": "Couldn't load this collection's products for sorting"
+  },
   "SceSNp": {
     "string": "Remove following permissions:"
   },
@@ -5758,6 +5762,10 @@
   "Uo5MoU": {
     "context": "product field",
     "string": "Variant Images"
+  },
+  "UoACX9": {
+    "context": "button, retry loading collection sort order",
+    "string": "Try again"
   },
   "UpgLo/": {
     "context": "snackbar text",
@@ -7643,6 +7651,10 @@
   "fbH51z": {
     "context": "Amount error message",
     "string": "Amount cannot be bigger than max refund"
+  },
+  "fblzrM": {
+    "context": "collection sort order error state",
+    "string": "Couldn't load this collection's products, so the storefront order can't be edited right now."
   },
   "fg8dzN": {
     "string": "Add condition"

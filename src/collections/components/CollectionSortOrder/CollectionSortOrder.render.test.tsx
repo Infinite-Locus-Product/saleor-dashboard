@@ -5,52 +5,63 @@ import { StrictMode, useEffect, useState } from "react";
 
 import { CollectionSortOrder } from "./CollectionSortOrder";
 import { SORTING_ORDER_METADATA_KEY } from "./constants";
-import { type SortOrderConfig } from "./types";
+import { type SortableVariant, type SortOrderConfig } from "./types";
+import { useCollectionSortOrderData } from "./useCollectionSortOrderData";
 import { serializeSortConfig, upsertMetadata } from "./utils";
 
-jest.mock("./useCollectionSortOrderData", () => {
-  // Stable references across renders — mirrors the real hook's useState. Keyed
-  // by collection so a test can navigate from one collection to another.
-  const variantsByCollection: Record<string, unknown[]> = {
-    c1: [
-      {
-        id: "v1",
-        variantId: "v1",
-        productId: "p1",
-        productName: "Tee",
-        colorName: "Forged Iron",
-        thumbnailUrl: null,
-        availableQty: 1150,
-      },
-      {
-        id: "v2",
-        variantId: "v2",
-        productId: "p1",
-        productName: "Tee",
-        colorName: "Peony Pink",
-        thumbnailUrl: null,
-        availableQty: 2231,
-      },
-    ],
-    c2: [
-      {
-        id: "w1",
-        variantId: "w1",
-        productId: "p2",
-        productName: "Hoodie",
-        colorName: "Midnight",
-        thumbnailUrl: null,
-        availableQty: 42,
-      },
-    ],
-  };
+jest.mock("./useCollectionSortOrderData", () => ({
+  useCollectionSortOrderData: jest.fn(),
+}));
 
-  return {
-    useCollectionSortOrderData: (collectionId: string) => ({
-      loading: false,
-      variants: variantsByCollection[collectionId] ?? [],
-    }),
-  };
+// Module-scope constants: the component's seeding effect depends on `variants`,
+// so the hook must return the SAME array reference across renders (as the real
+// one does, holding it in state) or the effect would re-run forever.
+const NO_VARIANTS: SortableVariant[] = [];
+const variantsByCollection: Record<string, SortableVariant[]> = {
+  c1: [
+    {
+      id: "v1",
+      variantId: "v1",
+      productId: "p1",
+      productName: "Tee",
+      colorName: "Forged Iron",
+      thumbnailUrl: null,
+      availableQty: 1150,
+    },
+    {
+      id: "v2",
+      variantId: "v2",
+      productId: "p1",
+      productName: "Tee",
+      colorName: "Peony Pink",
+      thumbnailUrl: null,
+      availableQty: 2231,
+    },
+  ],
+  c2: [
+    {
+      id: "w1",
+      variantId: "w1",
+      productId: "p2",
+      productName: "Hoodie",
+      colorName: "Midnight",
+      thumbnailUrl: null,
+      availableQty: 42,
+    },
+  ],
+};
+
+const mockedHook = useCollectionSortOrderData as jest.MockedFunction<
+  typeof useCollectionSortOrderData
+>;
+
+beforeEach(() => {
+  mockedHook.mockImplementation((collectionId?: string) => ({
+    loading: false,
+    hasError: false,
+    retry: jest.fn(),
+    variants: (collectionId && variantsByCollection[collectionId]) || NO_VARIANTS,
+  }));
 });
 
 // Mirrors form.tsx: onChange writes the order into the metadata prop, which
@@ -272,6 +283,48 @@ describe("CollectionSortOrder render", () => {
     ]);
     expect(config.showOnlyTaggedVariants).toBe(false);
     expect(config.isFilterVariants).toBe(false);
+  });
+
+  it("shows a failed load as an error, not as an empty collection", () => {
+    const retry = jest.fn();
+
+    mockedHook.mockImplementation(() => ({
+      loading: false,
+      hasError: true,
+      retry,
+      variants: NO_VARIANTS,
+    }));
+
+    render(<StatefulHost initial={[]} />, { wrapper: Wrapper });
+
+    // The merchant is told the load failed — never that the collection is empty.
+    expect(screen.getByTestId("sort-order-error")).toBeInTheDocument();
+    expect(screen.queryByTestId("sort-order-empty")).not.toBeInTheDocument();
+
+    // Nothing can be saved from this state: an edit would persist an empty order.
+    expect(screen.getByTestId("show-only-tagged-variants")).toBeDisabled();
+    expect(screen.getByTestId("is-filter-variants")).toBeDisabled();
+
+    // Act — the retry button re-runs the load.
+    fireEvent.click(screen.getByTestId("retry-sort-order"));
+
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the empty state only when the load succeeded with no products", () => {
+    mockedHook.mockImplementation(() => ({
+      loading: false,
+      hasError: false,
+      retry: jest.fn(),
+      variants: NO_VARIANTS,
+    }));
+
+    render(<StatefulHost initial={[]} />, { wrapper: Wrapper });
+
+    expect(screen.getByTestId("sort-order-empty")).toBeInTheDocument();
+    expect(screen.queryByTestId("sort-order-error")).not.toBeInTheDocument();
+    // A genuinely empty collection can still have its flags set.
+    expect(screen.getByTestId("show-only-tagged-variants")).not.toBeDisabled();
   });
 
   it("renders without crashing (no saved order)", () => {

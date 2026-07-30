@@ -45,7 +45,10 @@ export const CollectionSortOrder = ({
   onChange,
 }: CollectionSortOrderProps) => {
   const intl = useIntl();
-  const { variants, loading } = useCollectionSortOrderData(collectionId);
+  const { variants, loading, hasError, retry } = useCollectionSortOrderData(collectionId);
+  // Nothing may be saved from a failed load: the rows we'd build the order from
+  // are missing, so an edit would persist an empty order over the real one.
+  const locked = disabled || loading || hasError;
 
   // The collection this component's state was derived for. React Router v5
   // reuses a single CollectionDetails instance across /collections/A ->
@@ -248,7 +251,7 @@ export const CollectionSortOrder = ({
                 pressed={showOnlyTagged}
                 // Locked while the rows load: emitting now would persist an
                 // order built from an empty (or not-yet-swapped) variant list.
-                disabled={disabled || loading}
+                disabled={locked}
                 onPressedChange={handleShowOnlyTaggedChange}
               />
               <Text
@@ -283,7 +286,7 @@ export const CollectionSortOrder = ({
               <Toggle
                 data-test-id="is-filter-variants"
                 pressed={isFilter}
-                disabled={disabled || loading}
+                disabled={locked}
                 onPressedChange={handleIsFilterChange}
               />
               <Text
@@ -313,8 +316,42 @@ export const CollectionSortOrder = ({
               <Skeleton key={index} height={8} />
             ))}
           </Box>
+        ) : hasError ? (
+          // Checked before the empty state: a failed load also leaves `items`
+          // empty, and telling a merchant their collection is empty when we
+          // simply could not read it is worse than saying nothing.
+          <Box
+            data-test-id="sort-order-error"
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            gap={3}
+            paddingY={6}
+          >
+            <Text size={2} color="default2" textAlign="center">
+              <FormattedMessage
+                defaultMessage="Couldn't load this collection's products, so the storefront order can't be edited right now."
+                id="fblzrM"
+                description="collection sort order error state"
+              />
+            </Text>
+            <Button data-test-id="retry-sort-order" variant="secondary" onClick={retry}>
+              <FormattedMessage
+                defaultMessage="Try again"
+                id="UoACX9"
+                description="button, retry loading collection sort order"
+              />
+            </Button>
+          </Box>
         ) : items.length === 0 ? (
-          <Text size={2} color="default2" textAlign="center" display="block" paddingY={6}>
+          <Text
+            data-test-id="sort-order-empty"
+            size={2}
+            color="default2"
+            textAlign="center"
+            display="block"
+            paddingY={6}
+          >
             <FormattedMessage
               defaultMessage="No products in this collection yet"
               id="RaZPbP"
