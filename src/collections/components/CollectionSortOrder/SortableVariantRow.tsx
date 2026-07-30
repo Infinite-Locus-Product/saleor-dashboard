@@ -3,7 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Box, Checkbox, Text } from "@saleor/macaw-ui-next";
 import { GripVertical } from "lucide-react";
-import { FormattedMessage } from "react-intl";
+import { FormattedMessage, useIntl } from "react-intl";
 
 import { type SortableVariant } from "./types";
 
@@ -29,8 +29,19 @@ export const SortableVariantRow = ({
   disabled,
   onToggle,
 }: SortableVariantRowProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isSorting } =
-    useSortable({ id: variant.id, disabled: disabled || !selected });
+  const intl = useIntl();
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    // The handle is a child of the sortable node rather than the node itself,
+    // so dnd-kit needs to be told which element activates a drag.
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isSorting,
+  } = useSortable({ id: variant.id, disabled: disabled || !selected });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -61,11 +72,23 @@ export const SortableVariantRow = ({
         />
       </Box>
       <Box
+        ref={setActivatorNodeRef}
         display="flex"
         alignItems="center"
         justifyContent="center"
         color="default2"
         __cursor={disabled || !selected ? "not-allowed" : isSorting ? "grabbing" : "grab"}
+        // dnd-kit puts role="button" on the handle; without a name a screen
+        // reader announces an unlabelled button, even though KeyboardSensor
+        // makes reordering usable from the keyboard.
+        aria-label={intl.formatMessage(
+          {
+            defaultMessage: "Reorder {product}, {color}",
+            id: "NBY3B4",
+            description: "accessible name for the collection sort order drag handle",
+          },
+          { product: variant.productName, color: variant.colorName },
+        )}
         {...attributes}
         {...listeners}
       >

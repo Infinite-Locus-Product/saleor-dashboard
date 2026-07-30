@@ -12,7 +12,14 @@
  */
 export interface SortOrderEntry {
   variant: string;
-  productid: string;
+  /**
+   * Optional on READ only. `buildSortOrder` always writes it, so an entry
+   * without one is legacy data saved before this feature. Such entries are kept
+   * (dropping them would silently lose part of a merchant's saved order) but
+   * they are useless to a consumer matching on product + colour, so anything
+   * reading this must handle absence rather than assume a string.
+   */
+  productid?: string;
   sortIndex: number;
   color?: string;
 }
