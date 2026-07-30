@@ -47,14 +47,16 @@ export const CollectionSortOrder = ({
   const intl = useIntl();
   const { variants, loading } = useCollectionSortOrderData(collectionId);
 
-  // The saved config, captured the first time real metadata arrives. `metadata`
-  // is undefined on the initial render (the collection is still loading), so we
-  // must NOT lock in an empty config at mount — otherwise the saved order and
-  // flags would never be restored once the query resolves.
-  const initialConfigRef = useRef<SortOrderConfig | null>(null);
-  // Once the saved order has been applied, later metadata updates (which our own
-  // edits flow back through) must not reset the on-screen order/selection.
-  const seededRef = useRef(false);
+  // The collection this component's state was derived for. React Router v5
+  // reuses a single CollectionDetails instance across /collections/A ->
+  // /collections/B (one route, no key), so this component is NOT remounted on
+  // navigation: the state has to be re-derived when the id changes, or the card
+  // would keep showing — and saving — the previous collection's rows.
+  const stateCollectionIdRef = useRef<string | undefined>(undefined);
+  // Set on the merchant's first edit of this collection's card. From then on the
+  // `metadata` prop (which our own edits flow back through) must not overwrite
+  // what is on screen. Cleared whenever the collection changes.
+  const editedRef = useRef(false);
   const [items, setItems] = useState<SortableVariant[]>([]);
   // Which colour rows are included in the storefront order. Only these are
   // written to metadata. Selection persists via the saved order itself.
@@ -64,34 +66,33 @@ export const CollectionSortOrder = ({
   const [isFilter, setIsFilter] = useState(false);
 
   useEffect(() => {
-    // Wait for the collection's metadata to load before seeding anything.
-    if (metadata === undefined) {
+    if (stateCollectionIdRef.current !== collectionId) {
+      // Switched collections — discard everything belonging to the previous one
+      // and start accepting the new collection's saved config again.
+      stateCollectionIdRef.current = collectionId;
+      editedRef.current = false;
+      setItems([]);
+      setSelected(new Set());
+      setShowOnlyTagged(false);
+      setIsFilter(false);
+    }
+
+    // `metadata` is undefined until the collection query resolves, and it lags
+    // one render behind `collectionId` (useForm syncs it in an effect). So keep
+    // re-deriving from it until the merchant edits the card: a value belonging
+    // to the previous collection is corrected as soon as the real one arrives,
+    // instead of being latched for the lifetime of the component.
+    if (metadata === undefined || editedRef.current) {
       return;
     }
 
-    if (initialConfigRef.current === null) {
-      const parsed = parseSortConfig(getMetadataValue(metadata, SORTING_ORDER_METADATA_KEY));
+    const config = parseSortConfig(getMetadataValue(metadata, SORTING_ORDER_METADATA_KEY));
 
-      initialConfigRef.current = parsed;
-      // Flags don't depend on the loaded variants — restore them right away.
-      setShowOnlyTagged(parsed.showOnlyTaggedVariants);
-      setIsFilter(parsed.isFilterVariants);
-    }
-
-    const config = initialConfigRef.current;
-
-    if (config === null) {
-      return;
-    }
-
-    // Seed the order once, as soon as the variants are available. Seeding is
-    // guarded so our own later edits (flowing back via `metadata`) don't reset it.
-    if (!seededRef.current && variants.length > 0) {
-      setItems(applySavedOrder(variants, config.order));
-      setSelected(new Set(config.order.map(entry => entry.variant)));
-      seededRef.current = true;
-    }
-  }, [metadata, variants]);
+    setShowOnlyTagged(config.showOnlyTaggedVariants);
+    setIsFilter(config.isFilterVariants);
+    setItems(applySavedOrder(variants, config.order));
+    setSelected(new Set(config.order.map(entry => entry.variant)));
+  }, [collectionId, metadata, variants]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -104,6 +105,8 @@ export const CollectionSortOrder = ({
     nextSelected: Set<string>,
     flags: { showOnlyTagged: boolean; isFilter: boolean },
   ) => {
+    // From here on the on-screen state is the merchant's, not the saved one.
+    editedRef.current = true;
     onChange({
       showOnlyTaggedVariants: flags.showOnlyTagged,
       isFilterVariants: flags.isFilter,
@@ -112,19 +115,16 @@ export const CollectionSortOrder = ({
   };
 
   const handleToggle = (variantId: string) => {
-    setSelected(prev => {
-      const next = new Set(prev);
+    const next = new Set(selected);
 
-      if (next.has(variantId)) {
-        next.delete(variantId);
-      } else {
-        next.add(variantId);
-      }
+    if (next.has(variantId)) {
+      next.delete(variantId);
+    } else {
+      next.add(variantId);
+    }
 
-      emit(items, next, { showOnlyTagged, isFilter });
-
-      return next;
-    });
+    setSelected(next);
+    emit(items, next, { showOnlyTagged, isFilter });
   };
 
   const handleShowOnlyTaggedChange = (pressed: boolean) => {
@@ -144,15 +144,17 @@ export const CollectionSortOrder = ({
       return;
     }
 
-    setItems(current => {
-      const oldIndex = current.findIndex(item => item.id === active.id);
-      const newIndex = current.findIndex(item => item.id === over.id);
-      const moved = arrayMove(current, oldIndex, newIndex);
+    const oldIndex = items.findIndex(item => item.id === active.id);
+    const newIndex = items.findIndex(item => item.id === over.id);
 
-      emit(moved, selected, { showOnlyTagged, isFilter });
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
 
-      return moved;
-    });
+    const moved = arrayMove(items, oldIndex, newIndex);
+
+    setItems(moved);
+    emit(moved, selected, { showOnlyTagged, isFilter });
   };
 
   const handleSortByInventory = () => {
@@ -244,7 +246,9 @@ export const CollectionSortOrder = ({
               <Toggle
                 data-test-id="show-only-tagged-variants"
                 pressed={showOnlyTagged}
-                disabled={disabled}
+                // Locked while the rows load: emitting now would persist an
+                // order built from an empty (or not-yet-swapped) variant list.
+                disabled={disabled || loading}
                 onPressedChange={handleShowOnlyTaggedChange}
               />
               <Text
@@ -279,7 +283,7 @@ export const CollectionSortOrder = ({
               <Toggle
                 data-test-id="is-filter-variants"
                 pressed={isFilter}
-                disabled={disabled}
+                disabled={disabled || loading}
                 onPressedChange={handleIsFilterChange}
               />
               <Text

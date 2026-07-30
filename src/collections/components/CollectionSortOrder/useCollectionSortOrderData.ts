@@ -39,6 +39,10 @@ export const useCollectionSortOrderData = (
 
     const load = async () => {
       setLoading(true);
+      // Drop the previous collection's rows. This hook is not remounted when the
+      // route moves between two collections, so keeping them would let one
+      // collection's variants be displayed — and saved — under another's id.
+      setVariants([]);
 
       const nodes: ProductNode[] = [];
       let after: string | null = null;
