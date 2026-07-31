@@ -9,11 +9,28 @@ type ProductNode = NonNullable<
 type VariantNode = NonNullable<ProductNode["variants"]>[number];
 
 /**
+ * Colour matching key: lowercase, everything non-alphanumeric stripped.
+ *
+ * This MUST stay identical to `norm` in TenexuBackend
+ * (`src/utils/variantUtils.ts`), which the storefront uses to match a persisted
+ * `color` back to a Saleor colour (see `stockHelpers` / `lockerRoomService`).
+ * The two can't share code across repos, so they are kept in step by hand.
+ *
+ * Diverging is not a harmless mismatch: with a looser key here, "Sand-Drift" and
+ * "Sand Drift" are two rows that persist two entries with different sortIndex,
+ * and the consumer collapses both onto one key — one silently wins and the
+ * merchant gets an order they didn't choose.
+ */
+export const normalizeColorName = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/**
  * Resolve the colour of a variant from its attributes. Returns the colour value
- * name and a grouping key derived from that name, so colours that share a
- * display name (e.g. duplicate "Citrus Pop" attribute values with different
- * slugs) collapse into a single row per product. Falls back to the variant SKU
- * when the product has no colour attribute, so every variant still groups.
+ * name and a grouping key derived from that name, so colours the storefront
+ * treats as one (duplicate values with different slugs, or the same name spelled
+ * with different punctuation) collapse into a single row per product. Falls back
+ * to the variant SKU when the product has no usable colour attribute, so every
+ * variant still groups.
  */
 export const getVariantColor = (variant: VariantNode): { name: string; key: string } => {
   const colorAttribute = variant.attributes.find(({ attribute }) => {
@@ -26,8 +43,14 @@ export const getVariantColor = (variant: VariantNode): { name: string; key: stri
 
   if (value) {
     const label = value.name ?? value.slug ?? "";
+    const key = normalizeColorName(label);
 
-    return { name: label, key: label.trim().toLowerCase() };
+    // A label that normalizes to nothing (empty, or punctuation only) would
+    // merge every such variant into one row, so fall through to the per-variant
+    // key instead.
+    if (key) {
+      return { name: label, key };
+    }
   }
 
   // No colour attribute — treat each variant as its own group. Prefer the SKU
@@ -89,12 +112,22 @@ export const flattenVariants = (products: ProductNode[]): SortableVariant[] => {
 export const sortByInventory = (rows: SortableVariant[]): SortableVariant[] =>
   [...rows].sort((a, b) => b.availableQty - a.availableQty);
 
-/** Keep only well-formed entries from an arbitrary parsed array. */
+/**
+ * Keep only well-formed entries from an arbitrary parsed array. Every field the
+ * predicate claims is checked: `productid` and `color` are optional on read (see
+ * SortOrderEntry), but present values of the wrong type make the entry
+ * malformed — narrowing to SortOrderEntry without checking them would hand the
+ * rest of the code values TypeScript believes are strings and aren't.
+ */
 const filterEntries = (value: unknown): SortOrderEntry[] =>
   Array.isArray(value)
     ? value.filter(
         (entry): entry is SortOrderEntry =>
-          !!entry && typeof entry.variant === "string" && typeof entry.sortIndex === "number",
+          !!entry &&
+          typeof entry.variant === "string" &&
+          typeof entry.sortIndex === "number" &&
+          (entry.productid === undefined || typeof entry.productid === "string") &&
+          (entry.color === undefined || typeof entry.color === "string"),
       )
     : [];
 
@@ -203,6 +236,9 @@ export const buildSortOrder = (orderedVariants: SortableVariant[]): SortOrderEnt
     variant: variant.variantId,
     productid: variant.productId,
     sortIndex: index + 1,
+    // Colour name the storefront matches on (stable if the representative
+    // variant is later unpublished).
+    color: variant.colorName,
   }));
 
 /** Read a metadata value by key from a metadata input array. */
@@ -214,17 +250,34 @@ export const getMetadataValue = (
 /**
  * Upsert a metadata key. A falsy value removes the key entirely so an empty /
  * cleared order does not leave a dangling metadata entry.
+ *
+ * An existing key keeps its position: the Metadata card renders on the same page
+ * as this one, so moving the entry to the end would visibly reshuffle that list
+ * on every sort-order edit. A new key is appended.
  */
 export const upsertMetadata = (
   metadata: MetadataInput[] | undefined,
   key: string,
   value: string,
 ): MetadataInput[] => {
-  const rest = (metadata ?? []).filter(item => item.key !== key);
+  const current = metadata ?? [];
 
   if (!value) {
-    return rest;
+    return current.filter(item => item.key !== key);
   }
 
-  return [...rest, { key, value }];
+  let replaced = false;
+  const next = current.reduce<MetadataInput[]>((acc, item) => {
+    if (item.key !== key) {
+      acc.push(item);
+    } else if (!replaced) {
+      // Replace in place; any further duplicates of the key are dropped.
+      acc.push({ key, value });
+      replaced = true;
+    }
+
+    return acc;
+  }, []);
+
+  return replaced ? next : [...next, { key, value }];
 };

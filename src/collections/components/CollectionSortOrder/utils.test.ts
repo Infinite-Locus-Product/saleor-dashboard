@@ -70,7 +70,29 @@ describe("CollectionSortOrder utils", () => {
       const result = getVariantColor(makeVariantNode("v1", "Forged Iron"));
 
       // Assert
-      expect(result).toEqual({ name: "Forged Iron", key: "forged iron" });
+      expect(result).toEqual({ name: "Forged Iron", key: "forgediron" });
+    });
+
+    it("keys colours the way the storefront does, ignoring punctuation and spacing", () => {
+      // Arrange — one storefront colour, two spellings in Saleor.
+      const hyphenated = getVariantColor(makeVariantNode("v1", "Sand-Drift"));
+      const spaced = getVariantColor(makeVariantNode("v2", "Sand Drift"));
+
+      // Assert — same key, so they become one row and one persisted entry.
+      // Diverging from TenexuBackend's `norm` would persist two entries that
+      // collapse onto one key downstream, and one would silently win.
+      expect(hyphenated.key).toBe("sanddrift");
+      expect(spaced.key).toBe(hyphenated.key);
+      // The display name is kept verbatim.
+      expect(hyphenated.name).toBe("Sand-Drift");
+    });
+
+    it("falls back to a per-variant key when the colour normalizes to nothing", () => {
+      // Act — punctuation-only label would otherwise merge unrelated variants.
+      const result = getVariantColor(makeVariantNode("v1", "---"));
+
+      // Assert
+      expect(result).toEqual({ name: "SKU-v1", key: "variant:v1" });
     });
 
     it("falls back to the SKU and a per-variant key when there is no colour attribute", () => {
@@ -233,6 +255,24 @@ describe("CollectionSortOrder utils", () => {
         { variant: "v2", sortIndex: 2 },
       ]);
     });
+
+    it("drops entries whose optional fields are present but the wrong type", () => {
+      // Arrange — the predicate narrows to SortOrderEntry, so anything it
+      // claims is a string has to actually be one.
+      const value = JSON.stringify([
+        { variant: "v1", productid: "p1", sortIndex: 1, color: "Forged Iron" },
+        { variant: "v2", productid: 5, sortIndex: 2 },
+        { variant: "v3", productid: "p3", sortIndex: 3, color: 7 },
+      ]);
+
+      // Act
+      const result = parseSortOrder(value);
+
+      // Assert
+      expect(result).toEqual([
+        { variant: "v1", productid: "p1", sortIndex: 1, color: "Forged Iron" },
+      ]);
+    });
   });
 
   describe("parseSortConfig", () => {
@@ -379,10 +419,10 @@ describe("CollectionSortOrder utils", () => {
       // Arrange
       const ordered = [makeVariant("v2", "p2"), makeVariant("v1", "p1")];
 
-      // Act / Assert
+      // Act / Assert — each entry carries the colour name the storefront matches on
       expect(buildSortOrder(ordered)).toEqual([
-        { variant: "v2", productid: "p2", sortIndex: 1 },
-        { variant: "v1", productid: "p1", sortIndex: 2 },
+        { variant: "v2", productid: "p2", sortIndex: 1, color: "Color v2" },
+        { variant: "v1", productid: "p1", sortIndex: 2, color: "Color v1" },
       ]);
     });
   });
@@ -440,7 +480,7 @@ describe("CollectionSortOrder utils", () => {
       ]);
     });
 
-    it("replaces the value of an existing key", () => {
+    it("replaces an existing key in place, keeping its position", () => {
       // Arrange
       const metadata = [
         { key: "sorting_order", value: "old" },
@@ -450,11 +490,28 @@ describe("CollectionSortOrder utils", () => {
       // Act
       const result = upsertMetadata(metadata, "sorting_order", "new");
 
-      // Assert
+      // Assert — order preserved. Appending instead would visibly reshuffle the
+      // Metadata card, which renders on the same page, on every edit.
       expect(result).toEqual([
-        { key: "other", value: "x" },
         { key: "sorting_order", value: "new" },
+        { key: "other", value: "x" },
       ]);
+    });
+
+    it("keeps the position of a key in the middle of the array", () => {
+      // Arrange
+      const metadata = [
+        { key: "first", value: "1" },
+        { key: "sorting_order", value: "old" },
+        { key: "last", value: "2" },
+      ];
+
+      // Act
+      const result = upsertMetadata(metadata, "sorting_order", "new");
+
+      // Assert
+      expect(result.map(item => item.key)).toEqual(["first", "sorting_order", "last"]);
+      expect(getMetadataValue(result, "sorting_order")).toBe("new");
     });
 
     it("removes the key when the value is empty", () => {

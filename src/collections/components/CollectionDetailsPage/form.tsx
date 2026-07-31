@@ -23,7 +23,7 @@ import { RichTextContext, type RichTextContextValues } from "@dashboard/utils/ri
 import useRichText from "@dashboard/utils/richText/useRichText";
 import { type OutputData } from "@editorjs/editorjs";
 import type * as React from "react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface CollectionUpdateFormData extends MetadataFormData {
   backgroundImageAlt: string;
@@ -105,10 +105,21 @@ function useCollectionUpdateForm(
     makeChangeHandler: makeMetadataChangeHandler,
   } = useMetadataChangeTrigger();
   const changeMetadata = makeMetadataChangeHandler(handleChange);
+  // `formData` belongs to the render that created this handler, so two calls in
+  // the same tick would both read the same array and the second would drop the
+  // first. Chain from what we last emitted until the form state catches up.
+  const pendingMetadataRef = useRef<MetadataFormData["metadata"] | null>(null);
+
+  useEffect(() => {
+    pendingMetadataRef.current = null;
+  }, [formData.metadata]);
+
   const changeSortOrder = (config: SortOrderConfig) => {
     const value = serializeSortConfig(config);
-    const metadata = upsertMetadata(formData.metadata, SORTING_ORDER_METADATA_KEY, value);
+    const base = pendingMetadataRef.current ?? formData.metadata;
+    const metadata = upsertMetadata(base, SORTING_ORDER_METADATA_KEY, value);
 
+    pendingMetadataRef.current = metadata;
     // Reuse the metadata change trigger so the collection's public metadata is
     // persisted by the existing UpdateMetadata mutation on save.
     changeMetadata({ target: { name: "metadata", value: metadata } });

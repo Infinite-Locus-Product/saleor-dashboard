@@ -1,13 +1,27 @@
 /**
- * One entry of the persisted storefront sort order. Matches the shape the
- * storefront backend already reads (previously stored in Strapi):
- * `{ variant, productid, sortIndex }`. `variant` is the representative variant
- * of a colour (each colour renders as one card on the storefront).
+ * One entry of the persisted storefront sort order.
+ * `{ variant, productid, sortIndex, color }`.
+ *
+ * `variant` is the representative variant of a colour — kept so the dashboard
+ * can restore the saved order/selection on reopen. `color` is the colour's
+ * display name and is what the storefront should match on (product + colour):
+ * a specific representative variant may be unpublished, but the colour is
+ * stable across the product's published variants, so matching on colour keeps
+ * the storefront order intact. `color` is optional on read for backward
+ * compatibility with entries saved before it was added.
  */
 export interface SortOrderEntry {
   variant: string;
-  productid: string;
+  /**
+   * Optional on READ only. `buildSortOrder` always writes it, so an entry
+   * without one is legacy data saved before this feature. Such entries are kept
+   * (dropping them would silently lose part of a merchant's saved order) but
+   * they are useless to a consumer matching on product + colour, so anything
+   * reading this must handle absence rather than assume a string.
+   */
+  productid?: string;
   sortIndex: number;
+  color?: string;
 }
 
 /**
