@@ -1,4 +1,5 @@
 import { useUser } from "@dashboard/auth/useUser";
+import { cacheManagementPath } from "@dashboard/cacheManagement/urls";
 import { categoryListUrl } from "@dashboard/categories/urls";
 import { collectionListUrl } from "@dashboard/collections/urls";
 import { iconSize } from "@dashboard/components/icons";
@@ -45,7 +46,7 @@ import { menuListUrl } from "@dashboard/structures/urls";
 import { languageListUrl } from "@dashboard/translations/urls";
 import { Box } from "@saleor/macaw-ui-next";
 import isEmpty from "lodash/isEmpty";
-import { RotateCcw, Search } from "lucide-react";
+import { DatabaseZap, RotateCcw, Search } from "lucide-react";
 import { useIntl } from "react-intl";
 
 import { type SidebarMenuItem } from "../types";
@@ -330,6 +331,14 @@ export function useMenuStructure() {
       type: !isEmpty(extensions.NAVIGATION_TRANSLATIONS) ? "itemGroup" : "item",
     },
     getExtensionsSection(),
+    {
+      icon: renderIcon(<DatabaseZap size={iconSize.small} strokeWidth={2.2} />),
+      label: intl.formatMessage(sectionNames.cacheManagement),
+      permissions: [PermissionEnum.MANAGE_SETTINGS],
+      id: "cache-management",
+      url: cacheManagementPath,
+      type: "item",
+    },
     {
       icon: renderIcon(<ConfigurationIcon />),
       label: intl.formatMessage(sectionNames.configuration),

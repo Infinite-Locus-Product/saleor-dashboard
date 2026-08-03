@@ -212,6 +212,13 @@ PR descriptions should:
 
 Once opening a pull request or working with GitHub directly, prefer to use `gh` cli to execute operations
 
+**Before opening a PR or asking for re-review, work through [.claude/pr-checklist.md](.claude/pr-checklist.md).**
+Every item there exists because it was missed in review at least once, and each one
+names the failure it catches — state that outlives the data it describes, `[]`
+doubling as an error signal, unbounded pagination, contracts that cross a repo
+boundary, and the i18n extraction CI check that fails unless `locale/` matches the
+extractor exactly.
+
 ## Code review
 
 During code review, do not verify auto-generated files. Such files are suffixed with `.generated.ts`
