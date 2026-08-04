@@ -6,18 +6,22 @@ import { OrderDetailsDocument, type OrderDetailsFragment } from "@dashboard/grap
 import { useEffect } from "react";
 import { useIntl } from "react-intl";
 
+import { ManualRefundButton } from "./ManualRefundButton";
+
 export type FulfillmentMetadataDialogData = OrderDetailsFragment["fulfillments"][0];
 
 interface OrderFulfillmentMetadataDialogProps {
   open: boolean;
   onClose: () => void;
   fulfillment: FulfillmentMetadataDialogData | undefined;
+  order: OrderDetailsFragment | undefined | null;
 }
 
 export const OrderFulfillmentMetadataDialog = ({
   onClose,
   open,
   fulfillment,
+  order,
 }: OrderFulfillmentMetadataDialogProps) => {
   const intl = useIntl();
   const { onSubmit, lastSubmittedData, submitInProgress } = useHandleMetadataSubmit({
@@ -47,6 +51,16 @@ export const OrderFulfillmentMetadataDialog = ({
     }
   }, [open, reset]);
 
+  // Amount refunded for this fulfillment only: sum of each fulfilled line's
+  // unit price times the quantity fulfilled (order total may cover other
+  // fulfillments / shipping, so we don't use it here).
+  const fulfillmentAmount =
+    fulfillment?.lines?.reduce((total, line) => {
+      const unitPrice = line.orderLine?.unitPrice?.gross?.amount ?? 0;
+
+      return total + unitPrice * (line.quantity ?? 0);
+    }, 0) ?? 0;
+
   return (
     <MetadataDialog
       open={open}
@@ -58,6 +72,16 @@ export const OrderFulfillmentMetadataDialog = ({
         defaultMessage: "Fulfillment Metadata",
         id: "lDdWo9",
       })}
+      headerAction={
+        order && fulfillment ? (
+          <ManualRefundButton
+            orderId={order.id}
+            fulfillmentId={fulfillment.id}
+            orderNumber={order.number ?? ""}
+            amount={fulfillmentAmount}
+          />
+        ) : undefined
+      }
       data={{
         metadata: mapFieldArrayToMetadataInput(metadataFields),
         privateMetadata: mapFieldArrayToMetadataInput(privateMetadataFields),

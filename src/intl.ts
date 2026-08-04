@@ -657,6 +657,11 @@ export const sectionNames = defineMessages({
     defaultMessage: "Refunds Settings",
     description: "configuration section name for refund settings",
   },
+  cacheManagement: {
+    defaultMessage: "Cache Management",
+    id: "j8+Qpt",
+    description: "configuration section name for cache management",
+  },
 });
 
 export const commonStatusMessages = defineMessages({

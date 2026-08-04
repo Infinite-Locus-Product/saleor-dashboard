@@ -1,0 +1,15 @@
+.viewer {
+  margin: 0;
+  padding: var(--mu-spacing-3);
+  max-height: 280px;
+  overflow: auto;
+  border-radius: var(--mu-border-radius-3);
+  background-color: var(--mu-colors-background-default2);
+  border: 1px solid var(--mu-colors-border-default1);
+  color: var(--mu-colors-text-default1);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  tab-size: 2;
+}
