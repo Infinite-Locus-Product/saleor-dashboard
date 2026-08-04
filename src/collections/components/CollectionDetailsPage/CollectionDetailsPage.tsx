@@ -34,6 +34,7 @@ import { type ChannelProps, type PageListProps } from "../../../types";
 import CollectionDetails from "../CollectionDetails/CollectionDetails";
 import { CollectionImage } from "../CollectionImage/CollectionImage";
 import CollectionProducts from "../CollectionProducts/CollectionProducts";
+import { CollectionSortOrder } from "../CollectionSortOrder/CollectionSortOrder";
 import CollectionUpdateForm, { type CollectionUpdateData } from "./form";
 
 interface CollectionDetailsPageProps extends PageListProps, ChannelProps {
@@ -131,6 +132,12 @@ const CollectionDetailsPage = ({
               collection={collection}
               currentChannels={currentChannels}
               {...collectionProductsProps}
+            />
+            <CollectionSortOrder
+              collectionId={collection?.id}
+              metadata={data.metadata}
+              disabled={disabled}
+              onChange={handlers.changeSortOrder}
             />
             <SeoForm
               description={data.seoDescription}

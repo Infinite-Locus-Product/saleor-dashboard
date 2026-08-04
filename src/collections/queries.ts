@@ -45,6 +45,53 @@ export const collectionDetails = gql`
   }
 `;
 
+export const collectionSortableVariants = gql`
+  query CollectionSortableVariants($id: ID!, $first: Int, $after: String) {
+    collection(id: $id) {
+      id
+      products(first: $first, after: $after, sortBy: { field: COLLECTION, direction: ASC }) {
+        edges {
+          node {
+            id
+            name
+            thumbnail {
+              url
+            }
+            variants {
+              id
+              name
+              sku
+              media {
+                url
+              }
+              stocks {
+                quantity
+                quantityAllocated
+              }
+              attributes {
+                attribute {
+                  id
+                  slug
+                  name
+                }
+                values {
+                  id
+                  slug
+                  name
+                }
+              }
+            }
+          }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+`;
+
 export const collectionProducts = gql`
   query CollectionProducts($id: ID!, $first: Int, $after: String, $last: Int, $before: String) {
     collection(id: $id) {

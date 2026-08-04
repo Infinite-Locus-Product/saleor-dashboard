@@ -1,5 +1,11 @@
 // @ts-strict-ignore
 import { type ChannelCollectionData } from "@dashboard/channels/utils";
+import { SORTING_ORDER_METADATA_KEY } from "@dashboard/collections/components/CollectionSortOrder/constants";
+import { type SortOrderConfig } from "@dashboard/collections/components/CollectionSortOrder/types";
+import {
+  serializeSortConfig,
+  upsertMetadata,
+} from "@dashboard/collections/components/CollectionSortOrder/utils";
 import { createChannelsChangeHandler } from "@dashboard/collections/utils";
 import { COLLECTION_DETAILS_FORM_ID } from "@dashboard/collections/views/consts";
 import { useExitFormDialog } from "@dashboard/components/Form/useExitFormDialog";
@@ -17,7 +23,7 @@ import { RichTextContext, type RichTextContextValues } from "@dashboard/utils/ri
 import useRichText from "@dashboard/utils/richText/useRichText";
 import { type OutputData } from "@editorjs/editorjs";
 import type * as React from "react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface CollectionUpdateFormData extends MetadataFormData {
   backgroundImageAlt: string;
@@ -34,6 +40,7 @@ export interface CollectionUpdateData extends CollectionUpdateFormData {
 interface CollectionUpdateHandlers {
   changeMetadata: FormChange;
   changeChannels: (id: string, data: Omit<ChannelCollectionData, "name" | "id">) => void;
+  changeSortOrder: (config: SortOrderConfig) => void;
 }
 type UseCollectionUpdateFormResult = CommonUseFormResultWithHandlers<
   CollectionUpdateData,
@@ -98,6 +105,25 @@ function useCollectionUpdateForm(
     makeChangeHandler: makeMetadataChangeHandler,
   } = useMetadataChangeTrigger();
   const changeMetadata = makeMetadataChangeHandler(handleChange);
+  // `formData` belongs to the render that created this handler, so two calls in
+  // the same tick would both read the same array and the second would drop the
+  // first. Chain from what we last emitted until the form state catches up.
+  const pendingMetadataRef = useRef<MetadataFormData["metadata"] | null>(null);
+
+  useEffect(() => {
+    pendingMetadataRef.current = null;
+  }, [formData.metadata]);
+
+  const changeSortOrder = (config: SortOrderConfig) => {
+    const value = serializeSortConfig(config);
+    const base = pendingMetadataRef.current ?? formData.metadata;
+    const metadata = upsertMetadata(base, SORTING_ORDER_METADATA_KEY, value);
+
+    pendingMetadataRef.current = metadata;
+    // Reuse the metadata change trigger so the collection's public metadata is
+    // persisted by the existing UpdateMetadata mutation on save.
+    changeMetadata({ target: { name: "metadata", value: metadata } });
+  };
   const data: CollectionUpdateData = {
     ...formData,
     description: null,
@@ -127,6 +153,7 @@ function useCollectionUpdateForm(
     handlers: {
       changeChannels: handleChannelChange,
       changeMetadata,
+      changeSortOrder,
     },
     submit,
     richText,
