@@ -11553,6 +11553,10 @@
     "context": "date group header",
     "string": "Unknown"
   },
+  "ypU5P4": {
+    "context": "button, pin every colour row in the collection sort order",
+    "string": "Select all"
+  },
   "ypW4Mi": {
     "context": "button refreshing page",
     "string": "Refresh page"
