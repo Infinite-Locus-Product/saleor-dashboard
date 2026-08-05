@@ -70,10 +70,6 @@
     "context": "return button",
     "string": "Return / Replace order"
   },
-  "+SKaAn": {
-    "context": "cache category description",
-    "string": "Clear cached testimonials globally or for one product."
-  },
   "+SYLEL": {
     "context": "refunded fulfillment, section header",
     "string": "Refunded"
@@ -249,10 +245,6 @@
   "/H9LeU": {
     "string": "Explore Saleor App Store"
   },
-  "/I6LhE": {
-    "context": "confirmation dialog body",
-    "string": "Every key under this prefix is dropped. The namespace repopulates lazily as traffic arrives."
-  },
   "/ILyIf": {
     "context": "tax classes menu header",
     "string": "Tax class label"
@@ -288,10 +280,6 @@
   },
   "/eWPsp": {
     "string": "Invalid currency used to create transaction"
-  },
-  "/eZHjL": {
-    "context": "endpoint description",
-    "string": "Clears the preorder namespace."
   },
   "/glQgs": {
     "string": "No channels found"
@@ -416,10 +404,6 @@
     "context": "swatch attribute color picker label",
     "string": "Picker"
   },
-  "0EPMOF": {
-    "context": "endpoint description",
-    "string": "Removes one cached gallery post by gallery, feed and post id."
-  },
   "0FexL7": {
     "context": "min price in channel",
     "string": "Min. value"
@@ -476,10 +460,6 @@
     "context": "countries list menu label when no countries are assigned",
     "string": "There are no countries assigned"
   },
-  "0cFzZ7": {
-    "context": "endpoint description",
-    "string": "Reseeds the stock cache for every variant in the catalogue. Long running and heavy on the backend."
-  },
   "0dCGBW": {
     "context": "button",
     "string": "Create structure"
@@ -525,10 +505,6 @@
   "0mhR+F": {
     "context": "Header row quantity label",
     "string": "Quantity"
-  },
-  "0mkwsE": {
-    "context": "page title",
-    "string": "Cache management"
   },
   "0nLsyM": {
     "string": "No product types found"
@@ -658,10 +634,6 @@
   "1Znp5B": {
     "string": "Be extra careful with taxes and payment extensions, ensure your configuration selects other extension to be used"
   },
-  "1kaYH5": {
-    "context": "endpoint title",
-    "string": "Clear order status cache"
-  },
   "1lk/oS": {
     "context": "button",
     "string": "Add postal code range"
@@ -747,10 +719,6 @@
   "2FQsYj": {
     "context": "button",
     "string": "Clear"
-  },
-  "2FhW9X": {
-    "context": "endpoint title",
-    "string": "Clear navbar cache"
   },
   "2HfSiT": {
     "context": "pagination",
@@ -1622,10 +1590,6 @@
     "context": "Number of variants that have stock available",
     "string": "{count, plural, one {# variant in stock} other {# variants in stock}}"
   },
-  "7GMhel": {
-    "context": "endpoint description",
-    "string": "Drops the cached rating eligibility status for the given orders."
-  },
   "7H2D5m": {
     "context": "attribute value deleted",
     "string": "Value deleted"
@@ -1728,10 +1692,6 @@
     "context": "select title",
     "string": "Select channels you want for {contentType} to be available on"
   },
-  "7u0qyx": {
-    "context": "error toast",
-    "string": "{title} failed"
-  },
   "7v8suW": {
     "context": "info text",
     "string": "This rate will apply to all orders"
@@ -1761,10 +1721,6 @@
   "84VEY1": {
     "string": "Shipping rate updated"
   },
-  "86nF/u": {
-    "context": "cache category",
-    "string": "Generic cache"
-  },
   "86pLaG": {
     "context": "WarehouseSettings public stock label",
     "string": "Public Stock"
@@ -1775,10 +1731,6 @@
   "8BBMRj": {
     "context": "default tax class name for new tax classes",
     "string": "New tax class"
-  },
-  "8BYI1x": {
-    "context": "endpoint title",
-    "string": "Clear specific Taggbox entry"
   },
   "8Cjxdt": {
     "string": "Overcharged"
@@ -1821,10 +1773,6 @@
     "context": "warning when authorized is less than total",
     "string": "The remaining authorization doesn't cover the balance. {shortfall} will need a separate payment."
   },
-  "8KXpmL": {
-    "context": "cache category description",
-    "string": "Clear a cache namespace by its key prefix. Restricted to a known allow-list."
-  },
   "8Kk3r9": {
     "context": "Status when product availability is scheduled for future date",
     "string": "Scheduled for {date}"
@@ -1864,10 +1812,6 @@
     "context": "Warning when channel has no shipping zones",
     "string": "No shipping zones for \"{channelName}\""
   },
-  "8Xt3yN": {
-    "context": "endpoint description",
-    "string": "Pick one of the approved cache prefixes. Arbitrary prefixes are intentionally not allowed."
-  },
   "8a4uf/": {
     "context": "dialog content",
     "string": "{counter,plural,one{Are you sure you want to delete this model?} other{Are you sure you want to delete {displayQuantity} models?}}"
@@ -1882,10 +1826,6 @@
   "8hrH/z": {
     "context": "dialog header",
     "string": "Search Category"
-  },
-  "8hxjSV": {
-    "context": "validation error",
-    "string": "This field is required"
   },
   "8iUzOU": {
     "context": "allow unpaid orders checbkox description",
@@ -2094,10 +2034,6 @@
     "context": "address type",
     "string": "Add new address"
   },
-  "9gz2ns": {
-    "context": "cache category description",
-    "string": "Seed the Redis stock cache from Saleor. Requires the admin key."
-  },
   "9kzIFd": {
     "context": "WarehouseSettings stock title",
     "string": "Stock settings"
@@ -2144,10 +2080,6 @@
   },
   "9uqfGj": {
     "string": "Variant updated"
-  },
-  "9vGytc": {
-    "context": "cache category",
-    "string": "Rating cache"
   },
   "9vQR6c": {
     "context": "collection label",
@@ -2226,17 +2158,9 @@
   "AY7Tuz": {
     "string": "The same object cannot be in both lists"
   },
-  "AYlGuO": {
-    "context": "endpoint title",
-    "string": "Clear all rating cache (emergency)"
-  },
   "AbyDC7": {
     "context": "section header",
     "string": "Eligible Categories"
-  },
-  "AckTuM": {
-    "context": "form field label",
-    "string": "Product ID"
   },
   "Ad9EZ1": {
     "string": "Product updated"
@@ -2271,21 +2195,9 @@
   "AkyGP2": {
     "string": "Channel deleted"
   },
-  "Al8TJe": {
-    "context": "cache category",
-    "string": "Testimonial cache"
-  },
-  "AnfNNK": {
-    "context": "form field help text",
-    "string": "One base64 variant id per line, or comma separated."
-  },
   "AnqH4p": {
     "context": "sale status",
     "string": "Active"
-  },
-  "Aq3irc": {
-    "context": "endpoint title",
-    "string": "Clear ratings for specific orders"
   },
   "AqHafs": {
     "context": "provided email input placeholder",
@@ -2357,10 +2269,6 @@
     "context": "Empty filters text",
     "string": "Add filter to start"
   },
-  "B5sWs6": {
-    "context": "endpoint description",
-    "string": "Reseeds the stock cache for the variant ids you provide."
-  },
   "B8PvdI": {
     "string": "extending Saleor with Webhooks"
   },
@@ -2431,10 +2339,6 @@
     "context": "page title - installing app with manifestUrl provided",
     "string": "Add extension"
   },
-  "BaiyaK": {
-    "context": "endpoint title",
-    "string": "Clear reference data"
-  },
   "BalldE": {
     "string": "Order line"
   },
@@ -2453,10 +2357,6 @@
   "BfJGij": {
     "context": "header",
     "string": "Address Information"
-  },
-  "BhrnfM": {
-    "context": "endpoint title",
-    "string": "Clear only order cache"
   },
   "Bkxrhw": {
     "context": "no webhooks message",
@@ -2619,10 +2519,6 @@
   "Cc3Z40": {
     "string": "Learn Saleor checkout process flow"
   },
-  "Cdsvt8": {
-    "context": "confirmation dialog body",
-    "string": "This walks the entire catalogue and can take several minutes, putting sustained load on the backend. Prefer a targeted seed when you know which variants changed."
-  },
   "Cf7i/g": {
     "context": "Info box title when product is not published",
     "string": "Hidden from public API."
@@ -2637,10 +2533,6 @@
   },
   "CiWUaq": {
     "string": "Make sure to save token, you won't be able to see it again."
-  },
-  "CkjcRZ": {
-    "context": "badge marking an endpoint that needs the admin key",
-    "string": "Admin"
   },
   "ClKKID": {
     "context": "channel publication status",
@@ -2821,10 +2713,6 @@
     "context": "checkbox label",
     "string": "Restrict order value"
   },
-  "Dh6RJE": {
-    "context": "confirmation dialog title",
-    "string": "Clear testimonials for every product?"
-  },
   "DhFqJF": {
     "string": "Edit discount"
   },
@@ -2892,10 +2780,6 @@
     "context": "Description for no shipping zones warning",
     "string": "Customers cannot checkout without shipping methods. Add shipping zones to this channel."
   },
-  "EBMDOA": {
-    "context": "endpoint description",
-    "string": "Drops every rating cache entry. Use only when the rating data is known to be corrupt."
-  },
   "EDihQs": {
     "string": "Staff member updated"
   },
@@ -2943,10 +2827,6 @@
   "ESft7g": {
     "context": "Warning when warehouse with stock not in shipping zone",
     "string": "Stock unreachable in \"{channelName}\""
-  },
-  "EWLDok": {
-    "context": "confirmation dialog body",
-    "string": "Every product page will refetch its testimonials on the next request. Use the per-product action when only one product changed."
   },
   "EXqb2l": {
     "string": "Go to Saleor Cloud"
@@ -3018,10 +2898,6 @@
     "context": "bulk remove button label",
     "string": "Delete shipping zones"
   },
-  "EyHL6C": {
-    "context": "confirmation dialog title",
-    "string": "Clear every rating cache entry?"
-  },
   "F/JMp6": {
     "context": "authorize status full",
     "string": "Full"
@@ -3070,10 +2946,6 @@
   "FBtqtl": {
     "context": "payment status",
     "string": "Unpaid"
-  },
-  "FD4P3W": {
-    "context": "select option",
-    "string": "preorder — pre-order variants"
   },
   "FEWgh/": {
     "context": "column title tag",
@@ -3269,10 +3141,6 @@
     "context": "shipping section header",
     "string": "Shipping"
   },
-  "G1uoF0": {
-    "context": "cache category description",
-    "string": "Regenerate slug maps used for static generation. Safe to run any time."
-  },
   "G3ay2p": {
     "context": "section header",
     "string": "Fulfillment settings"
@@ -3443,10 +3311,6 @@
     "context": "shipping method description",
     "string": "Description"
   },
-  "Gquk5H": {
-    "context": "json viewer heading",
-    "string": "Response"
-  },
   "GsBRWL": {
     "string": "Languages"
   },
@@ -3592,10 +3456,6 @@
   "HW6Vef": {
     "string": "This transaction is non-refundable"
   },
-  "HWRSKP": {
-    "context": "endpoint title",
-    "string": "Clear EDD config (Strapi)"
-  },
   "HYC6cH": {
     "context": "input description",
     "string": "Threshold that cannot be exceeded even if per channel thresholds are still available"
@@ -3691,17 +3551,9 @@
   "I1Mz7h": {
     "string": "Manage Collection Channel Availability"
   },
-  "I1OPkD": {
-    "context": "cache category",
-    "string": "Navbar cache"
-  },
   "I2wCwj": {
     "context": "swatch attribute image label",
     "string": "Image"
-  },
-  "I40Sr0": {
-    "context": "endpoint description",
-    "string": "Drops cached testimonials for a single product id."
   },
   "I40r9Y": {
     "context": "WarehouseSettings all warehouses description",
@@ -3899,10 +3751,6 @@
   "J4E+jp": {
     "string": "Variant name"
   },
-  "J7OcA7": {
-    "context": "form field help text",
-    "string": "One base64 order id per line, or comma separated."
-  },
   "J7mFhU": {
     "context": "currency code select",
     "string": "{code} - {countries}"
@@ -3910,10 +3758,6 @@
   "J9z6wD": {
     "context": "Number of shipping zones configured",
     "string": "{count, plural, one {# shipping zone} other {# shipping zones}}"
-  },
-  "JCAoC9": {
-    "context": "endpoint title",
-    "string": "Generate PDP slugs"
   },
   "JDvxO6": {
     "context": "search gift card placeholder",
@@ -4160,10 +4004,6 @@
   "KYMCYg": {
     "string": "Shipping rate deleted"
   },
-  "KajtmQ": {
-    "context": "form field label",
-    "string": "Gallery ID"
-  },
   "KcsJKm": {
     "context": "error with activatation alert message",
     "string": "Error activating gift {count,plural,one{card} other{cards}}"
@@ -4251,10 +4091,6 @@
     "context": "status pill when order is fully paid",
     "string": "Fully Captured"
   },
-  "L8dhK4": {
-    "context": "endpoint title",
-    "string": "Targeted seed — specific variants"
-  },
   "L8seEc": {
     "string": "Subtotal"
   },
@@ -4276,10 +4112,6 @@
   "LICZeR": {
     "context": "weight",
     "string": "from {value} {unit}"
-  },
-  "LILzpd": {
-    "context": "cache category description",
-    "string": "Refresh the return and exchange reason list."
   },
   "LJPHdt": {
     "context": "cancelled fulfillment, section header",
@@ -4371,10 +4203,6 @@
   "LnRlch": {
     "context": "attribute's editor component entity",
     "string": "Entity"
-  },
-  "LrU/1N": {
-    "context": "confirmation dialog title",
-    "string": "Clear this cache namespace?"
   },
   "Lrp9WW": {
     "string": "Discount of {value} on the purchase of {conditions} through the {channel}"
@@ -4589,10 +4417,6 @@
   },
   "MzXzjL": {
     "string": "Warehouse deleted"
-  },
-  "N/G9uY": {
-    "context": "execution status badge",
-    "string": "Failed"
   },
   "N1Z/Er": {
     "context": "Title when product is not visible in listings",
@@ -4865,10 +4689,6 @@
     "context": "button",
     "string": "Create Channel"
   },
-  "OHazrP": {
-    "context": "endpoint title",
-    "string": "Clear testimonial cache for a product"
-  },
   "OK5+Fh": {
     "string": "Variant"
   },
@@ -4988,10 +4808,6 @@
   "P6+RQ1": {
     "context": "no products placeholder",
     "string": "No products found"
-  },
-  "P6Vq9V": {
-    "context": "execution duration",
-    "string": "{duration} ms"
   },
   "P79U4b": {
     "context": "attribute's slug short code label",
@@ -5327,10 +5143,6 @@
     "context": "Warning when no countries covered",
     "string": "No countries covered"
   },
-  "QiIYWm": {
-    "context": "endpoint title",
-    "string": "Clear freebie feature flag cache"
-  },
   "QiN4hv": {
     "context": "active",
     "string": "Active"
@@ -5352,10 +5164,6 @@
   "QkFeOa": {
     "context": "order refund amount button",
     "string": "Refund"
-  },
-  "Ql2hMH": {
-    "context": "form field label",
-    "string": "Cache key prefix"
   },
   "Ql7OM1": {
     "string": "Performing a manual refund will immediately trigger a refund request and decrease the transaction’s charged amount, impacting the order balance."
@@ -5385,20 +5193,12 @@
     "context": "label for amount already captured from this transaction",
     "string": "Already captured"
   },
-  "R43LZa": {
-    "context": "endpoint description",
-    "string": "Drops both thank-you page caches at once."
-  },
   "R4IIw1": {
     "context": "tracking number of the shipment",
     "string": "Tracking number"
   },
   "R4gIJc": {
     "string": "Search by model name..."
-  },
-  "R5MypQ": {
-    "context": "configuration error",
-    "string": "VITE_TENEXU_API_URL is not configured. Cache operations cannot reach the backend."
   },
   "R5r0+F": {
     "context": "Badge label showing total number of app problems",
@@ -5432,10 +5232,6 @@
   },
   "RKHBh0": {
     "string": "What's New"
-  },
-  "RKv9pp": {
-    "context": "endpoint description",
-    "string": "Clears the cache:freebie namespace."
   },
   "RLTaAR": {
     "context": "order history message",
@@ -5545,10 +5341,6 @@
   "RrCui3": {
     "string": "Summary"
   },
-  "Rxy+mB": {
-    "context": "confirmation dialog title",
-    "string": "Reseed stock cache for every variant?"
-  },
   "RyZd9J": {
     "context": "error message",
     "string": "Please wait a moment before trying again."
@@ -5626,10 +5418,6 @@
   "SKFr04": {
     "string": "Attribute not found."
   },
-  "SL5CuV": {
-    "context": "page subtitle",
-    "string": "Clear and rebuild TenxYou caches without leaving the dashboard"
-  },
   "SM+yG0": {
     "context": "input label",
     "string": "SKU (Stock Keeping Unit)"
@@ -5694,10 +5482,6 @@
   },
   "SceSNp": {
     "string": "Remove following permissions:"
-  },
-  "SdOhFY": {
-    "context": "badge marking a destructive endpoint",
-    "string": "Destructive"
   },
   "SgFE10": {
     "context": "product type digital",
@@ -5893,10 +5677,6 @@
   "Tp5T7U": {
     "string": "Join our OS community of industry experts and learn more about open source at Saleor."
   },
-  "TvENAj": {
-    "context": "cache category description",
-    "string": "Clear rating reference data, per-order ratings or order status."
-  },
   "TxYWkD": {
     "context": "page header, edit view",
     "string": "Edit grant refund"
@@ -5970,10 +5750,6 @@
   },
   "UJ97Lb": {
     "string": "Delete codes"
-  },
-  "UJVDTH": {
-    "context": "endpoint description",
-    "string": "Clears the edd-config namespace."
   },
   "UJnqdm": {
     "context": "dialog header",
@@ -6067,10 +5843,6 @@
     "context": "Description explaining which permissions are needed",
     "string": "Full availability diagnostics require additional permissions: {permissions}"
   },
-  "Ury01J": {
-    "context": "fallback confirmation dialog body",
-    "string": "This operation affects production caches. Continue?"
-  },
   "Us9cA1": {
     "context": "profit margin",
     "string": "Margin"
@@ -6138,10 +5910,6 @@
   },
   "V2BBQu": {
     "string": "Currency in both channels must be the same"
-  },
-  "V6Kme/": {
-    "context": "execute endpoint button",
-    "string": "Generate"
   },
   "V8FhTt": {
     "context": "collection label",
@@ -6696,10 +6464,6 @@
     "context": "expiry date label",
     "string": "Exact date"
   },
-  "YD1L8P": {
-    "context": "endpoint description",
-    "string": "Rebuilds the product listing page slug list."
-  },
   "YEIFiI": {
     "string": "Add new structure item to begin creating structure"
   },
@@ -6986,14 +6750,6 @@
     "context": "details title",
     "string": "Details"
   },
-  "ZmYG9/": {
-    "context": "form field label",
-    "string": "Feed ID"
-  },
-  "Zn3j/j": {
-    "context": "select option",
-    "string": "taggbox: — Taggbox galleries"
-  },
   "ZpVtCa": {
     "string": "Shipping address"
   },
@@ -7016,10 +6772,6 @@
   },
   "Zx1w1e": {
     "string": "edited"
-  },
-  "ZzLEM6": {
-    "context": "cache category description",
-    "string": "Clear the order confirmation and recommendation caches."
   },
   "a+WuZg": {
     "context": "cta button label",
@@ -7138,10 +6890,6 @@
   "aPqizA": {
     "context": "ProductTypeDeleteWarningDialog multiple assigned items description",
     "string": "Are you sure you want to delete selected product types? If you remove them you won’t be able to assign them to created products."
-  },
-  "aTThJR": {
-    "context": "endpoint title",
-    "string": "Generate PLP slugs"
   },
   "aUUgUV": {
     "context": "Button with  app settings label",
@@ -7283,10 +7031,6 @@
   "bDHiYK": {
     "context": "gift card export success alert description",
     "string": "We are currently exporting your gift card codes. As soon as your file is available it will be sent to your email address"
-  },
-  "bFwPQv": {
-    "context": "endpoint title",
-    "string": "Clear pre-order variants"
   },
   "bGqAdR": {
     "context": "seo complete text",
@@ -7451,17 +7195,9 @@
     "context": "button",
     "string": "Remove"
   },
-  "buBb9Z": {
-    "context": "endpoint description",
-    "string": "Rebuilds the slug to variant mapping used by the storefront."
-  },
   "bwJc6V": {
     "context": "column title product",
     "string": "Product"
-  },
-  "byC9m/": {
-    "context": "form field label",
-    "string": "Post ID"
   },
   "byP6IC": {
     "string": "Selected"
@@ -7672,10 +7408,6 @@
   "d+qgix": {
     "string": "Next step"
   },
-  "d/ykN7": {
-    "context": "select option",
-    "string": "cache:freebie — freebie feature flag"
-  },
   "d12NWZ": {
     "context": "tooltip when generate button is disabled because no new variants can be created",
     "string": "All possible variant combinations already exist"
@@ -7771,14 +7503,6 @@
     "context": "products export type label",
     "string": "products"
   },
-  "defBfN": {
-    "context": "execution status badge",
-    "string": "Success"
-  },
-  "dirkvL": {
-    "context": "cache category",
-    "string": "Thank you page cache"
-  },
   "dnbJKr": {
     "string": "This transaction doesn't have any events"
   },
@@ -7789,10 +7513,6 @@
   "dxCVWI": {
     "context": "error message",
     "string": "Cannot request an invoice for draft order"
-  },
-  "dxH6kR": {
-    "context": "form field label",
-    "string": "Order IDs"
   },
   "e+L+q3": {
     "string": "Remember this will also delete all products assigned to this category."
@@ -7852,10 +7572,6 @@
     "context": "Health check label for isAvailableForPurchase field",
     "string": "Can add to cart"
   },
-  "eGsI0H": {
-    "context": "execute endpoint button",
-    "string": "Clear cache"
-  },
   "eIGXwJ": {
     "context": "Alert text",
     "string": "You are using an old version of filter presets. The following presets: {presetNames} must be updated to continue using filters"
@@ -7903,10 +7619,6 @@
   "eaoi2W": {
     "context": "tab name",
     "string": "All warehouses"
-  },
-  "eb9qNN": {
-    "context": "endpoint title",
-    "string": "Clear Taggbox cache"
   },
   "ecM5eL": {
     "context": "page title - creating custom app",
@@ -8130,10 +7842,6 @@
     "context": "button",
     "string": "Assign categories"
   },
-  "g59Lr2": {
-    "context": "confirmation dialog confirm button",
-    "string": "Run operation"
-  },
   "g6yuk2": {
     "context": "export items to csv file, choice field label",
     "string": "Export information for:"
@@ -8183,10 +7891,6 @@
   "gKdGxP": {
     "context": "error message",
     "string": "Only pre-authorized payments can be captured"
-  },
-  "gKmIEO": {
-    "context": "endpoint description",
-    "string": "Drops the cached storefront navigation tree."
   },
   "gMwpNC": {
     "context": "page content",
@@ -8244,10 +7948,6 @@
   "gjBiyj": {
     "string": "Loading..."
   },
-  "gjYBKt": {
-    "context": "endpoint title",
-    "string": "Clear only you-may-like cache"
-  },
   "gksZwp": {
     "context": "button",
     "string": "Create product type"
@@ -8287,10 +7987,6 @@
   "h0IgEq": {
     "context": "checkbox",
     "string": "Automatically send granted refund"
-  },
-  "h0Rqqv": {
-    "context": "endpoint title",
-    "string": "Generate slug variant map"
   },
   "h0mEWF": {
     "context": "Availability card subtitle showing channel count",
@@ -8595,10 +8291,6 @@
     "context": "attribute visibility in storefront",
     "string": "Visible in storefront"
   },
-  "innj1s": {
-    "context": "endpoint description",
-    "string": "Clears the taggbox: namespace."
-  },
   "ipbT0Q": {
     "context": "btn label",
     "string": "Mark all as done"
@@ -8660,10 +8352,6 @@
     "context": "attribute is filterable in dashboard",
     "string": "Filterable in dashboard"
   },
-  "j8+Qpt": {
-    "context": "configuration section name for cache management",
-    "string": "Cache Management"
-  },
   "jBu2yj": {
     "context": "acre-inch unit",
     "string": "acre-inch"
@@ -8707,10 +8395,6 @@
   "jXf/9p": {
     "context": "product availability",
     "string": "Hide in product listings"
-  },
-  "jZKZRP": {
-    "context": "cache category description",
-    "string": "Remove a single cached Taggbox gallery entry."
   },
   "ja+tNj": {
     "string": "requests access to new permissions."
@@ -8787,10 +8471,6 @@
     "context": "product field",
     "string": "Collections"
   },
-  "jy7hbR": {
-    "context": "loading label on the action button",
-    "string": "Running…"
-  },
   "jyaAlB": {
     "context": "button",
     "string": "Create collection"
@@ -8845,10 +8525,6 @@
   "kBCNfL": {
     "context": "Button to verify product availability via public API",
     "string": "Verify via public API"
-  },
-  "kCF3d4": {
-    "context": "endpoint description",
-    "string": "Drops the cached recommendations shown after checkout."
   },
   "kEAjZV": {
     "context": "rich text attribute type",
@@ -8944,10 +8620,6 @@
     "context": "channel publication date",
     "string": "Published since {date}"
   },
-  "kYgKNo": {
-    "context": "confirmation dialog body",
-    "string": "Clears the order summary and the you-may-like recommendations together. You can clear just one of them instead."
-  },
   "kak5vT": {
     "context": "order refund amount",
     "string": "Selected Products Value"
@@ -8958,10 +8630,6 @@
   "kc4c4d": {
     "context": "product label",
     "string": "Product bought to get gift card"
-  },
-  "kcmYp4": {
-    "context": "confirmation dialog title",
-    "string": "Clear both thank-you page caches?"
   },
   "kdK1YM": {
     "context": "placeholder for SKU prefix input",
@@ -9014,10 +8682,6 @@
     "context": "btn label",
     "string": "Go to orders"
   },
-  "l/EbnT": {
-    "context": "cache category",
-    "string": "PDP / PLP slugs"
-  },
   "l0a2tU": {
     "context": "onboarding step description",
     "string": "Go to all products from where you can create a new product and view it in all product list. View the product in GraphQL"
@@ -9025,10 +8689,6 @@
   "l1/Hwb": {
     "context": "invalid date in expirydate field header",
     "string": "Incorrect date entered"
-  },
-  "l1AshA": {
-    "context": "cache category",
-    "string": "Inventory / stock cache"
   },
   "l1pZJx": {
     "string": "Not fully authorised"
@@ -9169,10 +8829,6 @@
   },
   "lfXze9": {
     "string": "Delete vouchers"
-  },
-  "lfgOQ+": {
-    "context": "endpoint description",
-    "string": "Drops cached user ratings for the order ids you provide."
   },
   "lgateT": {
     "context": "Warning when no stock in channel warehouses",
@@ -9328,10 +8984,6 @@
   "mgFyBA": {
     "string": "This name should be unique"
   },
-  "mgHCmd": {
-    "context": "form field help text",
-    "string": "Base64 product id, e.g. UHJvZHVjdDoxMjM="
-  },
   "mkBgDe": {
     "string": "Product types deleted"
   },
@@ -9470,10 +9122,6 @@
   "nTF6tG": {
     "context": "number of order",
     "string": "No. of Order"
-  },
-  "nTPxGJ": {
-    "context": "endpoint title",
-    "string": "Clear by prefix (advanced)"
   },
   "nUp0Lp": {
     "context": "tab label for variant selection attributes",
@@ -9712,10 +9360,6 @@
     "context": "transaction refund tiles disabled transaction",
     "string": "This transaction is non-refundable."
   },
-  "p2omjs": {
-    "context": "cache category description",
-    "string": "Refresh the storefront navigation menu."
-  },
   "p4X/0H": {
     "context": "button, assign variants to sale and save",
     "string": "Assign and save"
@@ -9752,10 +9396,6 @@
   },
   "pEf/m+": {
     "string": "There are no previews at the moment. Stay tuned!"
-  },
-  "pFBqwI": {
-    "context": "copy button",
-    "string": "Copy response"
   },
   "pFVX6g": {
     "string": "Variant with these attributes already exists"
@@ -10059,10 +9699,6 @@
   "qgQeVW": {
     "string": "Generate Voucher Codes"
   },
-  "qhkYak": {
-    "context": "fallback confirmation dialog title",
-    "string": "Confirm cache operation"
-  },
   "qkRuT0": {
     "context": "attribute type",
     "string": "Product Attribute"
@@ -10269,10 +9905,6 @@
     "context": "Status label",
     "string": "Status"
   },
-  "s3jN+U": {
-    "context": "success toast",
-    "string": "{title} finished in {duration} ms"
-  },
   "s3jmO9": {
     "context": "input label",
     "string": "Reason notes"
@@ -10453,10 +10085,6 @@
   "t1scMK": {
     "string": "Refunds settings"
   },
-  "t2H1d1": {
-    "context": "cache category",
-    "string": "Taggbox cache"
-  },
   "t3aiWF": {
     "context": "section header",
     "string": "Excluded Products"
@@ -10546,10 +10174,6 @@
   },
   "tiY7bx": {
     "string": "Add new product"
-  },
-  "tjDEUU": {
-    "context": "endpoint description",
-    "string": "Rebuilds the product detail page slug list."
   },
   "tl1/1E": {
     "string": "Learn more about {orderManagement}"
@@ -10763,10 +10387,6 @@
     "context": "empty state prompt",
     "string": "Select values above to generate variants"
   },
-  "ulauCH": {
-    "context": "confirmation dialog body",
-    "string": "This is the emergency reset. All rating data will be recomputed on demand, which briefly increases database load. Use a narrower scope if you can."
-  },
   "ulh3kf": {
     "string": "Collections"
   },
@@ -10839,10 +10459,6 @@
   },
   "v3WWK+": {
     "string": "Status is invalid"
-  },
-  "v3dhRu": {
-    "context": "execute endpoint button",
-    "string": "Seed"
   },
   "v7KAxy": {
     "context": "file picker button label",
@@ -11042,10 +10658,6 @@
     "context": "Description for status when product has availability issues",
     "string": "Has availability issues"
   },
-  "vuEGc1": {
-    "context": "endpoint description",
-    "string": "Refreshes the return and exchange reason list."
-  },
   "vuKrlW": {
     "string": "Stock"
   },
@@ -11131,10 +10743,6 @@
     "context": "Next page button",
     "string": "Next"
   },
-  "wEmeZA": {
-    "context": "cache category",
-    "string": "Exchange reasons cache"
-  },
   "wFVOKJ": {
     "string": "Go to warehouses"
   },
@@ -11149,10 +10757,6 @@
   "wLB8B3": {
     "context": "column header",
     "string": "Visibility"
-  },
-  "wNPW1v": {
-    "context": "select option",
-    "string": "edd-config — EDD config from Strapi"
   },
   "wNQzS/": {
     "string": "The primary address of this customer."
@@ -11288,10 +10892,6 @@
   "x9iS/H": {
     "string": "Manual refund triggered for order #{orderNumber}"
   },
-  "x9xxX/": {
-    "context": "endpoint title",
-    "string": "Clear exchange reasons cache"
-  },
   "xAHOGV": {
     "context": "dialog header",
     "string": "Assign Variant"
@@ -11378,10 +10978,6 @@
   "xo5UIb": {
     "context": "dialog title",
     "string": "Delete category"
-  },
-  "xof2B4": {
-    "context": "toast after copying",
-    "string": "Copied to clipboard"
   },
   "xol6jX": {
     "string": "You don't have permission to manage orders"
@@ -11557,10 +11153,6 @@
     "context": "button refreshing page",
     "string": "Refresh page"
   },
-  "yqx+1z": {
-    "context": "endpoint title",
-    "string": "Full seed — all variants"
-  },
   "ys0jH2": {
     "context": "channel publication status",
     "string": "Published"
@@ -11569,20 +11161,8 @@
     "context": "draft orders section name",
     "string": "Drafts"
   },
-  "yw2c1p": {
-    "context": "form field label",
-    "string": "Variant IDs"
-  },
-  "yxrATV": {
-    "context": "endpoint description",
-    "string": "Drops the cached order summary shown after checkout."
-  },
   "yyJcyW": {
     "string": "App manifest contains issues. You can still install it, but it may not work properly. See technical details below:"
-  },
-  "yzIdUV": {
-    "context": "validation error",
-    "string": "Provide at least one id"
   },
   "yzYXW/": {
     "context": "header, dialog",
@@ -11590,10 +11170,6 @@
   },
   "z/2AZY": {
     "string": "Discount type"
-  },
-  "z/TalQ": {
-    "context": "endpoint title",
-    "string": "Clear all testimonial cache"
   },
   "z/pKCq": {
     "context": "structure name",
@@ -11703,10 +11279,6 @@
     "context": "fulfillment status returned",
     "string": "Returned"
   },
-  "zUbXWK": {
-    "context": "endpoint title",
-    "string": "Clear all (order + you may like)"
-  },
   "zWM89r": {
     "context": "numeric attribute units of",
     "string": "Units of"
@@ -11778,10 +11350,6 @@
   "zoUlyR": {
     "string": "Go to product types"
   },
-  "zp5mbU": {
-    "context": "endpoint description",
-    "string": "Drops cached testimonials for every product."
-  },
   "zp9VHt": {
     "context": "cta button label",
     "string": "Explore Updates"
@@ -11807,10 +11375,6 @@
   },
   "zv9OGI": {
     "string": "No models found"
-  },
-  "zwWiyE": {
-    "context": "endpoint description",
-    "string": "Drops cached rating questions and options."
   },
   "zxs6G3": {
     "string": "Manage how you ship out orders"
