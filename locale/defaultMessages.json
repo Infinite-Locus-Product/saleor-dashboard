@@ -270,6 +270,10 @@
   "/Zee1r": {
     "string": "Only added postal codes will be able to use this shipping rate"
   },
+  "/chseE": {
+    "context": "cohort column status",
+    "string": "Status"
+  },
   "/cow4T": {
     "context": "WarehousesSection select field placeholder",
     "string": "Select Warehouse"
@@ -579,6 +583,10 @@
     "context": "section header",
     "string": "Fulfilled"
   },
+  "17WvL8": {
+    "context": "cohort csv error",
+    "string": "CSV upload failed"
+  },
   "19/lwV": {
     "string": "Determine attributes used to create product types"
   },
@@ -720,6 +728,10 @@
     "context": "button",
     "string": "Clear"
   },
+  "2HBc4N": {
+    "context": "cohort search field placeholder",
+    "string": "Search by cohort name"
+  },
   "2HfSiT": {
     "context": "pagination",
     "string": "No. of rows"
@@ -794,6 +806,10 @@
   "2i81/P": {
     "context": "section header button",
     "string": "Manage"
+  },
+  "2kMOsk": {
+    "context": "cohort end date helper",
+    "string": "Optional. After this date the cohort stops being evaluated."
   },
   "2nnp9+": {
     "context": "Info box title when product is not available for purchase",
@@ -1121,6 +1137,14 @@
     "context": "order history message",
     "string": "Payment confirmation was sent to customer"
   },
+  "4ZeNaF": {
+    "context": "cohort status filter, no filter",
+    "string": "All statuses"
+  },
+  "4b9++e": {
+    "context": "cohort status inactive",
+    "string": "Inactive"
+  },
   "4fJ17F": {
     "context": "Charge in progress transaction amount, data display header",
     "string": "Pending charge"
@@ -1225,6 +1249,10 @@
   "5HwLx9": {
     "context": "alert",
     "string": "Warehouse limit reached"
+  },
+  "5JCVzr": {
+    "context": "cohort csv result summary",
+    "string": "{invalid} of {total} phone numbers were invalid. {valid} imported."
   },
   "5JT4v2": {
     "context": "dialog header",
@@ -1376,6 +1404,10 @@
   "5x6yT9": {
     "context": "weight",
     "string": "{fromValue} {fromUnit} - {toValue} {toUnit}"
+  },
+  "610W5b": {
+    "context": "cohort name locked helper",
+    "string": "Locked — this name is the tag applied to members."
   },
   "6230rS": {
     "string": "Discount rules for carts and draft orders."
@@ -1773,6 +1805,10 @@
     "context": "warning when authorized is less than total",
     "string": "The remaining authorization doesn't cover the balance. {shortfall} will need a separate payment."
   },
+  "8KUORF": {
+    "context": "cohort delete error",
+    "string": "Failed to delete cohort"
+  },
   "8Kk3r9": {
     "context": "Status when product availability is scheduled for future date",
     "string": "Scheduled for {date}"
@@ -1856,6 +1892,10 @@
   "8uo4v1": {
     "context": "title",
     "string": "Checkout limits"
+  },
+  "8v88/1": {
+    "context": "cohorts list page title",
+    "string": "Cohorts"
   },
   "8vJCJ4": {
     "string": "Define and manage your sales channels"
@@ -2808,6 +2848,10 @@
     "context": "orders queued label in success state",
     "string": "Orders queued:"
   },
+  "EMkOt2": {
+    "context": "cohort column type",
+    "string": "Type"
+  },
   "EP+jcU": {
     "context": "checkbox",
     "string": "Refund shipment costs"
@@ -2823,6 +2867,10 @@
   "ER/yBq": {
     "context": "max price in channel",
     "string": "Max. value"
+  },
+  "ES67Zg": {
+    "context": "cohort create page title",
+    "string": "Create cohort"
   },
   "ESft7g": {
     "context": "Warning when warehouse with stock not in shipping zone",
@@ -2878,6 +2926,10 @@
   },
   "Eq3GFh": {
     "string": "Is giftcard"
+  },
+  "Eq6IDm": {
+    "context": "cohort delete button",
+    "string": "Delete cohort"
   },
   "ErvPaM": {
     "context": "header",
@@ -3074,6 +3126,10 @@
   },
   "FpIcp9": {
     "string": "No customers found"
+  },
+  "FsVajs": {
+    "context": "pagination previous",
+    "string": "Previous"
   },
   "Ftz7VI": {
     "context": "input label, transaction amount",
@@ -3307,6 +3363,10 @@
     "context": "button",
     "string": "Unassign"
   },
+  "GorVjc": {
+    "context": "cohort name field",
+    "string": "Cohort name"
+  },
   "GpqEl5": {
     "context": "shipping method description",
     "string": "Description"
@@ -3390,6 +3450,10 @@
     "context": "draft created from replace event title",
     "string": "Draft was reissued from order"
   },
+  "H8NcEt": {
+    "context": "cohorts create button",
+    "string": "Create cohort"
+  },
   "HA0fD3": {
     "string": "Channel created"
   },
@@ -3399,6 +3463,10 @@
   },
   "HAlOn1": {
     "string": "Name"
+  },
+  "HDFGW8": {
+    "context": "cohort type static",
+    "string": "Static"
   },
   "HFo3Qe": {
     "context": "successfully created gift card alert title",
@@ -3570,6 +3638,10 @@
   "I8mqqj": {
     "context": "PageTypeDeleteWarningDialog single assigned items button label",
     "string": "View pages"
+  },
+  "I9QkIo": {
+    "context": "cohort sync frequency helper",
+    "string": "How often the sync job re-evaluates this cohort."
   },
   "IBw72y": {
     "context": "switch button",
@@ -3886,6 +3958,10 @@
   "JjeZEG": {
     "context": "section header",
     "string": "Organize Product"
+  },
+  "JkB+5c": {
+    "context": "pagination next",
+    "string": "Next"
   },
   "JkO0jp": {
     "context": "input description",
@@ -4747,6 +4823,10 @@
     "context": "stock input label",
     "string": "Initial stock (all warehouses)"
   },
+  "OoK9be": {
+    "context": "cohort status active",
+    "string": "Active"
+  },
   "OpgSjI": {
     "context": "dialog header",
     "string": "Assign Model"
@@ -4800,6 +4880,10 @@
   },
   "P4Hja1": {
     "string": "Create new shipping zone"
+  },
+  "P4Lu8g": {
+    "context": "cohort sync frequency field",
+    "string": "Sync frequency (hours)"
   },
   "P5HhQl": {
     "context": "catalog section name",
@@ -4910,6 +4994,10 @@
   "PXx4Jk": {
     "context": "window title",
     "string": "Create Product"
+  },
+  "PYEnZw": {
+    "context": "cohort name rename helper",
+    "string": "Can only be renamed while the cohort has no members."
   },
   "PaQFmR": {
     "context": "onboarding step title",
@@ -5116,6 +5204,10 @@
     "context": "button, unassign attribute from object",
     "string": "Unassign and save"
   },
+  "QadVBN": {
+    "context": "cohort list loading",
+    "string": "Loading cohorts…"
+  },
   "Qb2XN5": {
     "string": "\"Mark as paid\" feature creates a {link} - used by Payment Apps"
   },
@@ -5225,6 +5317,10 @@
   "REVk27": {
     "context": "info text",
     "string": "Set up an end date of preorder. When end date will be reached product will be automatically taken from preorder to standard selling"
+  },
+  "RFmnnc": {
+    "context": "cohort list load error",
+    "string": "Failed to load cohorts"
   },
   "RK6l3Z": {
     "context": "radio button label",
@@ -5513,6 +5609,10 @@
     "context": "Define where this attribute should be used in Saleor system",
     "string": "Define where this attribute should be used in Saleor system"
   },
+  "T0tlKB": {
+    "context": "cohort type dynamic",
+    "string": "Dynamic"
+  },
   "T1f2Yl": {
     "string": "Variant Name"
   },
@@ -5713,6 +5813,10 @@
     "context": "Label for published toggle",
     "string": "Published"
   },
+  "U7b7A+": {
+    "context": "cohort name helper",
+    "string": "Also used as the tag written to each member. Cannot be changed once the cohort has members."
+  },
   "U86VKF": {
     "context": "number of structures",
     "string": "Items"
@@ -5838,6 +5942,10 @@
   },
   "Uqf8Ny": {
     "string": "Create new category"
+  },
+  "Uqz8iD": {
+    "context": "cohort delete confirmation body",
+    "string": "Delete {name}? Its {count, plural, one {# member} other {# members}} will be untagged. Cohorts still referenced by a coupon cannot be deleted."
   },
   "Ur9yW3": {
     "context": "Description explaining which permissions are needed",
@@ -6185,6 +6293,10 @@
   "Wlc67M": {
     "context": "error message",
     "string": "Cannot choose a shipping method for an order without the shipping address"
+  },
+  "WlgxDT": {
+    "context": "cohorts section name",
+    "string": "Cohorts"
   },
   "Wm+KUd": {
     "string": "Headers"
@@ -6591,6 +6703,10 @@
     "context": "label",
     "string": "Shipping zone name"
   },
+  "YqYVTM": {
+    "context": "cohort update error",
+    "string": "Failed to update cohort"
+  },
   "Ys86kI": {
     "string": "Refunded amount will not be automatically returned to the customer. You’ll need to decide on a method and refund via balance sheet section of the order."
   },
@@ -6664,6 +6780,10 @@
   "ZDJEat": {
     "context": "button",
     "string": "Load More"
+  },
+  "ZFVbyH": {
+    "context": "cohort csv card title",
+    "string": "Members — CSV upload"
   },
   "ZFfG4L": {
     "context": "ProductTypeDeleteWarningDialog single assigned items description",
@@ -6894,6 +7014,10 @@
   "aUUgUV": {
     "context": "Button with  app settings label",
     "string": "Extension settings"
+  },
+  "aVu9Gr": {
+    "context": "cohort type filter, no filter",
+    "string": "All types"
   },
   "aWJPo+": {
     "context": "tooltip explaining why cut-off date checkbox is disabled",
@@ -7199,6 +7323,10 @@
     "context": "column title product",
     "string": "Product"
   },
+  "byBGJJ": {
+    "context": "cohort members summary",
+    "string": "{count, plural, one {# member} other {# members}} · type {type}"
+  },
   "byP6IC": {
     "string": "Selected"
   },
@@ -7503,6 +7631,10 @@
     "context": "products export type label",
     "string": "products"
   },
+  "dgvcmB": {
+    "context": "cohort search field label",
+    "string": "Search"
+  },
   "dnbJKr": {
     "string": "This transaction doesn't have any events"
   },
@@ -7568,6 +7700,10 @@
     "context": "Message when product is not in any channel",
     "string": "Product is not listed in any channel"
   },
+  "eBXGcW": {
+    "context": "cohort list empty state",
+    "string": "No cohorts found. Create one to start targeting coupons."
+  },
   "eCA3n1": {
     "context": "Health check label for isAvailableForPurchase field",
     "string": "Can add to cart"
@@ -7596,6 +7732,10 @@
   "eS8xZ6": {
     "context": "card header",
     "string": "Tax class rates: {country}"
+  },
+  "eUQwpQ": {
+    "context": "cohort general card title",
+    "string": "General information"
   },
   "eUjFjW": {
     "string": "Permission group created"
@@ -7679,6 +7819,10 @@
   "f71A+Y": {
     "context": "Title for delivery configuration section in channel",
     "string": "Delivery configuration"
+  },
+  "f9H0FI": {
+    "context": "cohort create inactive note",
+    "string": "New cohorts are created inactive. Upload members, then activate."
   },
   "fDc5ys": {
     "context": "order transaction refund summary label",
@@ -8059,6 +8203,10 @@
   "hMRP6J": {
     "string": "Default Address"
   },
+  "hNx2Ld": {
+    "context": "cohort end date field",
+    "string": "End date"
+  },
   "hOxIeP": {
     "string": "Availability"
   },
@@ -8097,6 +8245,10 @@
   },
   "hYWxeg": {
     "string": "The extension requests permissions you cannot grant or that exceed its allowed scope. Review the extension's manifest and your permissions. {docsLink} ({errorCode})"
+  },
+  "heQuLb": {
+    "context": "cohort not found",
+    "string": "Cohort not found"
   },
   "hh0xW7": {
     "string": "Channel Name"
@@ -8487,6 +8639,14 @@
     "context": "product type",
     "string": "Type"
   },
+  "k+ZU9P": {
+    "context": "cohort active toggle",
+    "string": "Active"
+  },
+  "k/D/xm": {
+    "context": "cohort total count",
+    "string": "{count, plural, one {# cohort} other {# cohorts}}"
+  },
   "k/mTEl": {
     "context": "distance units type",
     "string": "Distance"
@@ -8638,6 +8798,10 @@
   "kdRcqU": {
     "string": "Search customers..."
   },
+  "ke8nVq": {
+    "context": "cohort csv upload help",
+    "string": "Upload a CSV with a phone column (max 500 rows, up to 5 files per cohort). Numbers that don't match an existing customer are reported back — the rest are still imported."
+  },
   "kfvvnM": {
     "string": "Provided amount cannot exceed charged amount for the selected transaction"
   },
@@ -8776,6 +8940,10 @@
   "lLwtgs": {
     "string": "Variants are disabled in this product type"
   },
+  "lN2qfW": {
+    "context": "cohort csv uploading",
+    "string": "Uploading…"
+  },
   "lNZuWl": {
     "string": "All orders"
   },
@@ -8822,6 +8990,10 @@
   "lb5uDM": {
     "context": "metadata edit form, error message",
     "string": "Metadata key cannot be empty"
+  },
+  "le6DvG": {
+    "context": "cohort column created",
+    "string": "Created"
   },
   "lehGc9": {
     "context": "section header",
@@ -8881,6 +9053,10 @@
   "lzdvwp": {
     "context": "field is optional",
     "string": "Optional"
+  },
+  "m/XqXh": {
+    "context": "cohort load error",
+    "string": "Failed to load cohort"
   },
   "m0Dz+2": {
     "string": "Please set up a new password for your account. Repeat your new password to make sure you will be able to remember it."
@@ -9109,6 +9285,10 @@
     "context": "error message",
     "string": "Not enough items to fulfill"
   },
+  "nQFeNl": {
+    "context": "cohort description field",
+    "string": "Description"
+  },
   "nQQVdc": {
     "string": "Go to vouchers"
   },
@@ -9249,6 +9429,10 @@
   "oEFc87": {
     "context": "Warning when no shipping zones configured",
     "string": "No shipping zones"
+  },
+  "oEULRP": {
+    "context": "cohort csv invalid sample row",
+    "string": "Row {row}: {phone} — {reason}"
   },
   "oHbgcK": {
     "context": "PageTypeDeleteWarningDialog title",
@@ -9456,6 +9640,10 @@
   "pVFoOk": {
     "string": "Are you sure you want to delete {collectionName}?"
   },
+  "pWCH+K": {
+    "context": "cohort column last synced",
+    "string": "Last synced"
+  },
   "pWClYm": {
     "context": "card title",
     "string": "Default settings"
@@ -9548,6 +9736,10 @@
   },
   "q4EmsW": {
     "string": "Total:"
+  },
+  "q4RXId": {
+    "context": "cohort column name",
+    "string": "Name"
   },
   "q5I8Ac": {
     "string": "An unexpected GraphQL error occurred. ({errorCode})"
@@ -10281,6 +10473,10 @@
   "uD93er": {
     "context": "dialog header",
     "string": "Changed Customer"
+  },
+  "uFU3jY": {
+    "context": "cohort create error",
+    "string": "Failed to create cohort"
   },
   "uGqPKY": {
     "string": "Select a Model Type. All Models extending the type will be available as refund reasons when issuing a refund."
@@ -11282,6 +11478,10 @@
   "zUHPnm": {
     "context": "fulfillment status returned",
     "string": "Returned"
+  },
+  "zVgWx6": {
+    "context": "cohort column members",
+    "string": "Members"
   },
   "zWM89r": {
     "context": "numeric attribute units of",

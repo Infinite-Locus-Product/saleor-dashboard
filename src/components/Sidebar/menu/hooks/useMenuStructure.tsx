@@ -1,5 +1,6 @@
 import { useUser } from "@dashboard/auth/useUser";
 import { categoryListUrl } from "@dashboard/categories/urls";
+import { cohortListUrl } from "@dashboard/cohorts/urls";
 import { collectionListUrl } from "@dashboard/collections/urls";
 import { iconSize } from "@dashboard/components/icons";
 import { configurationMenuUrl } from "@dashboard/configuration/urls";
@@ -271,6 +272,12 @@ export function useMenuStructure() {
           label: intl.formatMessage(sectionNames.vouchers),
           id: "vouchers",
           url: voucherListUrl(),
+          type: "item",
+        },
+        {
+          label: intl.formatMessage(sectionNames.cohorts),
+          id: "cohorts",
+          url: cohortListUrl(),
           type: "item",
         },
         ...mapToExtensionsItems(extensions.NAVIGATION_DISCOUNTS, appExtensionsHeaderItem),
