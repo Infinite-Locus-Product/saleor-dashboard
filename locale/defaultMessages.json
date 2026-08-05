@@ -1087,6 +1087,10 @@
     "context": "product availability",
     "string": "Enabling this checkbox will remove product from search and category pages. It will be available on collection pages."
   },
+  "4VXEsW": {
+    "context": "error shown when selected file is too large",
+    "string": "CSV exceeds 10 MB limit"
+  },
   "4VivsY": {
     "string": "Total price"
   },
@@ -1318,6 +1322,10 @@
     "context": "translations section name",
     "string": "Translations"
   },
+  "5gG17o": {
+    "context": "request id label in success state",
+    "string": "Request id:"
+  },
   "5hFkdO": {
     "context": "checkbox label",
     "string": "Grant this extension full access to the store"
@@ -1415,6 +1423,10 @@
   "6HHPFy": {
     "context": "tax strategy combobox hint",
     "string": "Select the method of tax calculation"
+  },
+  "6I3ybj": {
+    "context": "label for specific-product voucher discount line in order summary",
+    "string": "Product Specific Voucher"
   },
   "6IteaF": {
     "string": "Apps are available for Saleor Cloud users. Most of them are available for self-hosting."
@@ -1930,6 +1942,10 @@
     "context": "attribute can be searched in storefront",
     "string": "Filterable in storefront"
   },
+  "9Kq+/h": {
+    "context": "placeholder shown when no file has been chosen",
+    "string": "No file selected"
+  },
   "9MGrEp": {
     "string": "Is available"
   },
@@ -1972,6 +1988,10 @@
   },
   "9UHfux": {
     "string": "Voucher Specific Information"
+  },
+  "9Vs399": {
+    "context": "batch reference label in success state",
+    "string": "Batch ref:"
   },
   "9WhNiN": {
     "context": "Pending authorization transaction amount, data display header",
@@ -2784,6 +2804,10 @@
   "EM730i": {
     "string": "Manage Channel Availability"
   },
+  "EMDYk6": {
+    "context": "orders queued label in success state",
+    "string": "Orders queued:"
+  },
   "EP+jcU": {
     "context": "checkbox",
     "string": "Refund shipment costs"
@@ -3070,6 +3094,9 @@
   "FwHWUm": {
     "context": "alert",
     "string": "SKU limit reached"
+  },
+  "FweFrF": {
+    "string": "Failed to trigger manual refund"
   },
   "Fxa6xp": {
     "context": "page header",
@@ -3472,6 +3499,10 @@
     "context": "attribute's label'",
     "string": "Default Label"
   },
+  "HkD+ng": {
+    "context": "success state title",
+    "string": "Import accepted"
+  },
   "HlCkMT": {
     "string": "Order line added"
   },
@@ -3835,6 +3866,9 @@
     "context": "dropdown label when there are no channels assigned",
     "string": "No channels"
   },
+  "JgitMx": {
+    "string": "Refunding…"
+  },
   "JiRKgJ": {
     "context": "dialog search placeholder",
     "string": "Search by collection name, etc..."
@@ -3894,6 +3928,10 @@
   "K//bUK": {
     "context": "refund button",
     "string": "Refund"
+  },
+  "K/B+CK": {
+    "context": "submit button",
+    "string": "Start import"
   },
   "K/gnGg": {
     "string": "If you want to disable this User please uncheck the box below."
@@ -4495,6 +4533,9 @@
   "NWxomz": {
     "string": "Fulfillment status"
   },
+  "NXt/Hw": {
+    "string": "Trigger manual refund"
+  },
   "NZtcLb": {
     "context": "gift card bulk create success dialog content",
     "string": "We have issued all of your requested gift cards. You can download the list of new gift cards using the button below."
@@ -4502,6 +4543,10 @@
   "NelCIl": {
     "context": "content section name",
     "string": "Content"
+  },
+  "NhNByJ": {
+    "context": "secondary action button — open CSV bulk order import",
+    "string": "Bulk order"
   },
   "NhQboB": {
     "context": "dialog header",
@@ -5870,6 +5915,10 @@
     "context": "collection label",
     "string": "Hidden"
   },
+  "VDMaX1": {
+    "context": "file input label",
+    "string": "CSV file"
+  },
   "VEE4gD": {
     "context": "error message",
     "string": "Shipping method is not valid for chosen shipping address"
@@ -6453,6 +6502,10 @@
     "context": "product types section name",
     "string": "Product Types"
   },
+  "YT9HBt": {
+    "context": "generic error notification when import throws",
+    "string": "Bulk order import failed"
+  },
   "YTvn5m": {
     "context": "automatic completion zero delay warning message",
     "string": "Setting delay to 0 will complete checkouts immediately after payment. This may break your storefront if it expects the Checkout object to remain available. ({link})"
@@ -7010,6 +7063,10 @@
     "context": "number of products",
     "string": "Products ({quantity})"
   },
+  "bOwXha": {
+    "context": "email validation error notification",
+    "string": "Please enter a valid email address"
+  },
   "bPFp8B": {
     "context": "product type",
     "string": "Product Type"
@@ -7152,6 +7209,10 @@
     "context": "status",
     "string": "Active"
   },
+  "c4AJJb": {
+    "context": "close button label in success state",
+    "string": "Close"
+  },
   "c5fFin": {
     "context": "ExitFormPrompt title",
     "string": "Leave without saving changes?"
@@ -7189,6 +7250,10 @@
   "cEO6Yx": {
     "context": "dialog header",
     "string": "Activate Extension"
+  },
+  "cEoA5A": {
+    "context": "preselected channel label",
+    "string": "Channel"
   },
   "cErw9O": {
     "context": "Shown when warehouse count cannot be determined",
@@ -7358,6 +7423,10 @@
   "d3jlO3": {
     "context": "Label prefix for the creation date of a recurring problem",
     "string": "Started at"
+  },
+  "d5yffo": {
+    "context": "total rows label in success state",
+    "string": "Rows:"
   },
   "d68yq7": {
     "string": "Delete gift cards"
@@ -8872,6 +8941,9 @@
     "context": "ChannelsSection select field label",
     "string": "Channel"
   },
+  "mM0D67": {
+    "string": "Confirm refund?"
+  },
   "mMOskm": {
     "string": "Open product detail"
   },
@@ -9140,6 +9212,10 @@
   },
   "o/4OCR": {
     "string": "Shipping has already been refunded"
+  },
+  "o3usYM": {
+    "context": "fallback name when a specific-product voucher has no name",
+    "string": "Specific products"
   },
   "o5GUx9": {
     "string": "Outstanding balance"
@@ -9796,6 +9872,10 @@
     "context": "attribute can be used only in variants",
     "string": "Variant Only"
   },
+  "rw3mPU": {
+    "context": "notification email helper text",
+    "string": "Where to send the per-order result. Leave blank to use the default ops mailing list."
+  },
   "rwOx2s": {
     "string": "Please provide a transaction reference using the input below:"
   },
@@ -10236,6 +10316,10 @@
     "context": "Enable email confirmation",
     "string": "Enable email confirmation"
   },
+  "uRnkBf": {
+    "context": "dialog body description",
+    "string": "Upload a CSV of B2B order lines. Each unique order_ref becomes one confirmed Saleor order. You will receive an email with the per-order result when the import finishes."
+  },
   "uT5L4h": {
     "context": "cancel button label",
     "string": "Cancel"
@@ -10375,6 +10459,10 @@
   },
   "v3WWK+": {
     "string": "Status is invalid"
+  },
+  "v7KAxy": {
+    "context": "file picker button label",
+    "string": "Choose CSV"
   },
   "v8UngX": {
     "string": "Search warehouses..."
@@ -10801,6 +10889,9 @@
     "context": "dialog header",
     "string": "Delete structure"
   },
+  "x9iS/H": {
+    "string": "Manual refund triggered for order #{orderNumber}"
+  },
   "xAHOGV": {
     "context": "dialog header",
     "string": "Assign Variant"
@@ -10982,6 +11073,10 @@
     "context": "delete shipping method",
     "string": "Are you sure you want to delete {name}?"
   },
+  "yQBnJm": {
+    "context": "dialog header",
+    "string": "Bulk order import"
+  },
   "ySqncG": {
     "context": "ExitFormPrompt keep editing button",
     "string": "Keep editing"
@@ -10995,6 +11090,10 @@
   },
   "yT5zvU": {
     "string": "{counter,plural,one{Are you sure you want to delete this collection?} other{Are you sure you want to delete {displayQuantity} collections?}}"
+  },
+  "yWuaxm": {
+    "context": "notification email input label",
+    "string": "Result email (optional)"
   },
   "yatGsm": {
     "context": "card title",
@@ -11101,6 +11200,10 @@
   "z8jo8h": {
     "context": "button",
     "string": "View products"
+  },
+  "z8pCrE": {
+    "context": "tooltip for specific-product voucher discount line",
+    "string": "Voucher applied to specific products"
   },
   "z9c6/C": {
     "string": "Deprecated"
