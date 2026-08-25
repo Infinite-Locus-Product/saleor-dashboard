@@ -17,6 +17,31 @@ export const messages = defineMessages({
     defaultMessage: "Channel",
     description: "preselected channel label",
   },
+  orderTypeLabel: {
+    id: "P5eKtW",
+    defaultMessage: "Order type",
+    description: "radio group label for the batch order type",
+  },
+  orderTypeHint: {
+    id: "wOv3S7",
+    defaultMessage: "Applies to every order in this file. Upload twice to import both types.",
+    description: "helper text explaining the order type is batch-wide",
+  },
+  orderTypeB2B: {
+    id: "Z4+Ezj",
+    defaultMessage: "B2B (domestic)",
+    description: "order type radio option",
+  },
+  orderTypeInternational: {
+    id: "6mfCoR",
+    defaultMessage: "International (export)",
+    description: "order type radio option",
+  },
+  orderTypeRequired: {
+    id: "wqBa9j",
+    defaultMessage: "Select an order type",
+    description: "validation error when no order type is chosen",
+  },
   fileLabel: {
     id: "VDMaX1",
     defaultMessage: "CSV file",

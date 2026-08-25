@@ -2,12 +2,16 @@ import BackButton from "@dashboard/components/BackButton";
 import { ConfirmButton } from "@dashboard/components/ConfirmButton";
 import { DashboardModal } from "@dashboard/components/Modal";
 import { useNotifier } from "@dashboard/hooks/useNotifier";
-import { Box, Button, Input, Text } from "@saleor/macaw-ui-next";
+import { Box, Button, Input, RadioGroup, Text } from "@saleor/macaw-ui-next";
 import { UploadCloud } from "lucide-react";
 import { useRef, useState } from "react";
 import { useIntl } from "react-intl";
 
-import { type BulkOrderImportAck, importBulkOrders } from "../../api/bulkOrderApi";
+import {
+  type BulkOrderImportAck,
+  type BulkOrderType,
+  importBulkOrders,
+} from "../../api/bulkOrderApi";
 import { messages } from "./messages";
 
 interface BulkOrderImportDialogProps {
@@ -32,6 +36,9 @@ const BulkOrderImportDialogContent = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
+  // Starts null on purpose: preselecting B2B would let an operator import a
+  // whole international batch as domestic just by not looking at this field.
+  const [orderType, setOrderType] = useState<BulkOrderType | null>(null);
   const [notifyEmail, setNotifyEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [ack, setAck] = useState<BulkOrderImportAck | null>(null);
@@ -52,6 +59,12 @@ const BulkOrderImportDialogContent = ({
   const handleSubmit = async (): Promise<void> => {
     if (!file || !channelSlug) return;
 
+    if (!orderType) {
+      notify({ status: "error", text: intl.formatMessage(messages.orderTypeRequired) });
+
+      return;
+    }
+
     const emailTrimmed = notifyEmail.trim();
 
     if (emailTrimmed && !EMAIL_RE.test(emailTrimmed)) {
@@ -66,6 +79,7 @@ const BulkOrderImportDialogContent = ({
       const result = await importBulkOrders({
         file,
         defaultChannel: channelSlug,
+        orderType,
         notifyEmail: emailTrimmed || undefined,
       });
 
@@ -113,6 +127,34 @@ const BulkOrderImportDialogContent = ({
               </Text>
               <Text size={3}>{channelName}</Text>
             </Box>
+
+            <RadioGroup
+              label={intl.formatMessage(messages.orderTypeLabel)}
+              size="medium"
+              value={orderType ?? ""}
+              onValueChange={value => setOrderType(value as BulkOrderType)}
+            >
+              <Box marginTop={2}>
+                <RadioGroup.Item
+                  id="bulk-order-type-b2b"
+                  value="B2B"
+                  data-test-id="bulk-order-type-b2b"
+                  marginBottom={2}
+                >
+                  <Text size={2}>{intl.formatMessage(messages.orderTypeB2B)}</Text>
+                </RadioGroup.Item>
+                <RadioGroup.Item
+                  id="bulk-order-type-international"
+                  value="INTERNATIONAL"
+                  data-test-id="bulk-order-type-international"
+                >
+                  <Text size={2}>{intl.formatMessage(messages.orderTypeInternational)}</Text>
+                </RadioGroup.Item>
+              </Box>
+              <Text size={2} color="default2">
+                {intl.formatMessage(messages.orderTypeHint)}
+              </Text>
+            </RadioGroup>
 
             <Box display="grid" gap={2}>
               {/* htmlFor associates this label with the hidden input for screen readers */}
@@ -166,7 +208,7 @@ const BulkOrderImportDialogContent = ({
           {!ack && (
             <ConfirmButton
               transitionState={submitting ? "loading" : "default"}
-              disabled={!file || submitting}
+              disabled={!file || !orderType || submitting}
               onClick={handleSubmit}
               variant="primary"
               data-test-id="bulk-order-submit"
