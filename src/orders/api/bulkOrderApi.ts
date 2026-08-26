@@ -19,6 +19,14 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
+/**
+ * Commercial type of the batch. Mutually exclusive and mandatory — the backend
+ * rejects a request without it, because the value becomes `order_type` metadata
+ * on every order in the file and ERP reads it to pick domestic vs export
+ * treatment. Mirrors ORDER_TYPES in the backend's constant/bulkOrder.ts.
+ */
+export type BulkOrderType = "B2B" | "INTERNATIONAL";
+
 export interface BulkOrderImportAck {
   accepted: boolean;
   batchRef: string;
@@ -31,6 +39,7 @@ export interface BulkOrderImportAck {
 export async function importBulkOrders(params: {
   file: File;
   defaultChannel: string;
+  orderType: BulkOrderType;
   notifyEmail?: string;
 }): Promise<BulkOrderImportAck> {
   if (!BASE_URL) {
@@ -43,6 +52,7 @@ export async function importBulkOrders(params: {
 
   body.append("file", params.file);
   body.append("defaultChannel", params.defaultChannel);
+  body.append("orderType", params.orderType);
 
   if (params.notifyEmail) body.append("notifyEmail", params.notifyEmail);
 

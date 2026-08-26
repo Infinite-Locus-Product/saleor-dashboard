@@ -1545,6 +1545,10 @@
     "context": "section header",
     "string": "About this extension"
   },
+  "6mfCoR": {
+    "context": "order type radio option",
+    "string": "International (export)"
+  },
   "6orx1c": {
     "string": "Billing address"
   },
@@ -4889,6 +4893,10 @@
     "context": "catalog section name",
     "string": "Catalog"
   },
+  "P5eKtW": {
+    "context": "radio group label for the batch order type",
+    "string": "Order type"
+  },
   "P6+RQ1": {
     "context": "no products placeholder",
     "string": "No products found"
@@ -6740,6 +6748,10 @@
   "Z3T6zR": {
     "context": "card title",
     "string": "Return & Replace"
+  },
+  "Z4+Ezj": {
+    "context": "order type radio option",
+    "string": "B2B (domestic)"
   },
   "Z6QAbw": {
     "string": "This variant does not have any digital content"
@@ -10964,6 +10976,10 @@
     "context": "relative time",
     "string": "just now"
   },
+  "wOv3S7": {
+    "context": "helper text explaining the order type is batch-wide",
+    "string": "Applies to every order in this file. Upload twice to import both types."
+  },
   "wQdR8M": {
     "string": "Add search engine title and description to make this category easier to find"
   },
@@ -11050,6 +11066,10 @@
   "wpli4O": {
     "context": "WarehouseSettings private stock label",
     "string": "Private Stock"
+  },
+  "wqBa9j": {
+    "context": "validation error when no order type is chosen",
+    "string": "Select an order type"
   },
   "wsDF7X": {
     "context": "product variant attribute entity type",
