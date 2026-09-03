@@ -3,7 +3,7 @@ services:
     image: 565386896838.dkr.ecr.ap-south-1.amazonaws.com/prod/saleor-backend:300420262144 #ghcr.io/saleor/saleor-dashboard:latest
     container_name: saleor_dashboard
     ports:
-      - "9000:80"
+      - "9011:80"
     restart: unless-stopped
     environment:
       - API_URL=https://api-saleor.tenxyou.com/graphql/
