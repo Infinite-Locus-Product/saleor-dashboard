@@ -1,6 +1,7 @@
 import ActionDialog from "@dashboard/components/ActionDialog";
+import { useAddressValidation } from "@dashboard/components/AddressEdit/useAddressValidation";
 import useNavigator from "@dashboard/hooks/useNavigator";
-import { Box, Button, Input, Skeleton, Text } from "@saleor/macaw-ui-next";
+import { Box, Button, Combobox, Input, Skeleton, Text } from "@saleor/macaw-ui-next";
 import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -27,6 +28,7 @@ const EMPTY_ADDRESS: CodHoldShippingAddress = {
   streetAddress2: "",
   city: "",
   postalCode: "",
+  countryArea: "",
   country: "IN",
   phone: "",
 };
@@ -42,6 +44,8 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [paymentLinkUrl, setPaymentLinkUrl] = useState<string | null>(null);
+  const { areas: countryAreaChoices, getDisplayValue: getCountryAreaDisplayValue } =
+    useAddressValidation(address.country);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,6 +64,7 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
           streetAddress2: a.streetAddress2,
           city: a.city,
           postalCode: a.postalCode,
+          countryArea: a.countryArea || "",
           country: a.country?.code || "IN",
           phone: a.phone,
         });
@@ -89,6 +94,12 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
 
     if (activeAction !== "release" && !note.trim()) {
       setActionError("A note is required for this action.");
+
+      return;
+    }
+
+    if (activeAction === "updateAddress" && !address.countryArea.trim()) {
+      setActionError("State (countryArea) is required for this address.");
 
       return;
     }
@@ -352,6 +363,15 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
               onChange={e => setAddress({ ...address, postalCode: e.target.value })}
             />
           </Box>
+          <Combobox
+            label="State"
+            options={countryAreaChoices}
+            value={{
+              label: getCountryAreaDisplayValue(address.countryArea),
+              value: address.countryArea,
+            }}
+            onChange={v => setAddress({ ...address, countryArea: v?.value ?? "" })}
+          />
           <Input
             label="Phone"
             value={address.phone}
