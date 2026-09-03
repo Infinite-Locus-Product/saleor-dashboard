@@ -39,7 +39,9 @@ export interface CodHoldOrderSnapshot {
     streetAddress1: string;
     streetAddress2: string;
     city: string;
+    cityArea: string;
     postalCode: string;
+    countryArea: string;
     country: { code: string; country: string };
   } | null;
   lines: { id: string; productName: string; variantName: string; quantity: number }[];
@@ -71,7 +73,13 @@ export interface CodHoldShippingAddress {
   city: string;
   cityArea?: string;
   postalCode: string;
-  countryArea?: string;
+  // Required, not optional: Saleor's per-country address rules reject a
+  // missing state for India (and most other countries) with an unhelpful,
+  // field-name-less "This field is required." x2. The backend's own
+  // skipValidation: true does NOT bypass this on the deployed instance
+  // (confirmed 2026-09-04 by calling orderUpdate directly against Saleor),
+  // so this is a real required field in the form instead.
+  countryArea: string;
   country: string;
   phone: string;
 }
