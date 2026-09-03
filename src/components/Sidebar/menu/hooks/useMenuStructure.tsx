@@ -1,5 +1,6 @@
 import { useUser } from "@dashboard/auth/useUser";
 import { categoryListUrl } from "@dashboard/categories/urls";
+import { codHoldQueuePath, codHoldSettingsPath } from "@dashboard/cod-hold/urls";
 import { collectionListUrl } from "@dashboard/collections/urls";
 import { iconSize } from "@dashboard/components/icons";
 import { configurationMenuUrl } from "@dashboard/configuration/urls";
@@ -45,7 +46,7 @@ import { menuListUrl } from "@dashboard/structures/urls";
 import { languageListUrl } from "@dashboard/translations/urls";
 import { Box } from "@saleor/macaw-ui-next";
 import isEmpty from "lodash/isEmpty";
-import { RotateCcw, Search } from "lucide-react";
+import { Lock, RotateCcw, Search } from "lucide-react";
 import { useIntl } from "react-intl";
 
 import { type SidebarMenuItem } from "../types";
@@ -97,6 +98,30 @@ export function useMenuStructure() {
         permissions: [],
         id: "returns-exchange",
         url: returnsQueuePath,
+        type: "itemGroup" as const,
+      } satisfies SidebarMenuItem,
+      {
+        children: [
+          {
+            label: "Held Orders",
+            id: "cod-hold-queue",
+            url: codHoldQueuePath,
+            permissions: [],
+            type: "item" as const,
+          },
+          {
+            label: "Settings",
+            id: "cod-hold-settings",
+            url: codHoldSettingsPath,
+            permissions: [],
+            type: "item" as const,
+          },
+        ],
+        icon: renderIcon(<Lock size={iconSize.small} strokeWidth={2.2} />),
+        label: "COD Hold",
+        permissions: [],
+        id: "cod-hold",
+        url: codHoldQueuePath,
         type: "itemGroup" as const,
       } satisfies SidebarMenuItem,
     ];
