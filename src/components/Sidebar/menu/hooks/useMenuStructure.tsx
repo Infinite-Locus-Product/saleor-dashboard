@@ -36,6 +36,7 @@ import { productListUrl } from "@dashboard/products/urls";
 import { useCXPermission } from "@dashboard/returns-exchange/hooks/useCXPermission";
 import {
   manualExchangeListPath,
+  manualReturnListPath,
   notificationSettingsPath,
   returnsQueuePath,
 } from "@dashboard/returns-exchange/urls";
@@ -81,6 +82,13 @@ export function useMenuStructure() {
             label: "Manual Exchanges",
             id: "manual-exchanges",
             url: manualExchangeListPath,
+            permissions: [],
+            type: "item" as const,
+          },
+          {
+            label: "Manual Returns",
+            id: "manual-returns",
+            url: manualReturnListPath,
             permissions: [],
             type: "item" as const,
           },
