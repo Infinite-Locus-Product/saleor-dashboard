@@ -8,8 +8,9 @@ import {
 } from "./types";
 
 export const returnReasonsFixture: ReturnReason[] = [
-  { id: 1, reason: "Size issue" },
-  { id: 2, reason: "Damaged product" },
+  { id: 1, reason: "Size issue", requires_note: false },
+  { id: 2, reason: "Damaged product", requires_note: false },
+  { id: 3, reason: "Other (please specify)", requires_note: true },
 ];
 
 const baseLookupItem: LookupItem = {
