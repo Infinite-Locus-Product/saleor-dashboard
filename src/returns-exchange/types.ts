@@ -146,6 +146,8 @@ export type LookupClassification =
 export interface ReturnReason {
   id: number;
   reason: string;
+  /** Backend flag: this reason cannot be submitted without a note (e.g. "Other (please specify)"). */
+  requires_note?: boolean;
 }
 
 export interface PickupAddress {

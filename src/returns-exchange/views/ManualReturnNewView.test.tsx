@@ -440,6 +440,55 @@ describe("ManualReturnNewView", () => {
       await screen.findByTestId("mr-step-review");
     });
 
+    it("TTXY-5883 requires a note when the reason requires one (Other), with no minimum length", async () => {
+      // Arrange
+      lookupMock.mockResolvedValue(prepaidLookup);
+      renderView();
+      await lookUp();
+      toggleItem("Linen Shirt");
+      next();
+      await screen.findByTestId("mr-step-reason");
+
+      // Act
+      await chooseReason("Other (please specify)");
+
+      // Assert
+      expect(screen.getByLabelText("Note (required)")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Note (optional)")).not.toBeInTheDocument();
+      expect(screen.getByTestId("mr-note-counter")).not.toHaveTextContent("minimum");
+
+      // Act — blank note blocks the step
+      next();
+
+      // Assert
+      expect(screen.getByText("Note is required for this return reason")).toBeInTheDocument();
+      expect(screen.getByTestId("mr-step-reason")).toBeInTheDocument();
+
+      // Act — a short note is accepted (the 15-char minimum is override-only)
+      typeNote("Torn zip");
+      next();
+
+      // Assert
+      await screen.findByTestId("mr-step-review");
+    });
+
+    it("TTXY-5883 keeps the note optional for reasons that do not require one", async () => {
+      // Arrange
+      lookupMock.mockResolvedValue(prepaidLookup);
+      renderView();
+      await lookUp();
+      toggleItem("Linen Shirt");
+      next();
+      await screen.findByTestId("mr-step-reason");
+
+      // Act
+      await chooseReason("Damaged product");
+      next();
+
+      // Assert
+      await screen.findByTestId("mr-step-review");
+    });
+
     it("FE-NEW08 requires an override note of 15–1000 characters when a selected unit needs override", async () => {
       // Arrange
       lookupMock.mockResolvedValue(prepaidLookup);

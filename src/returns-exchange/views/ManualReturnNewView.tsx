@@ -149,15 +149,24 @@ const deliverySummary = (item: LookupItem): string | null => {
   return parts.join(" · ");
 };
 
-const validateNote = (note: string, required: boolean): string | null => {
+interface NoteRule {
+  required: boolean;
+  minLength: number;
+  label: string;
+}
+
+const validateNote = (note: string, { required, minLength, label }: NoteRule): string | null => {
   const length = note.trim().length;
 
   if (length > OVERRIDE_NOTE_MAX) {
-    return `${required ? "Override note" : "Note"} must be ${OVERRIDE_NOTE_MAX} characters or fewer`;
+    return `${label} must be ${OVERRIDE_NOTE_MAX} characters or fewer`;
   }
 
-  if (required && length < OVERRIDE_NOTE_MIN) {
-    return `Override note must be at least ${OVERRIDE_NOTE_MIN} characters`;
+  if (required && length < minLength) {
+    // TTXY-5883: reasons like "Other (please specify)" only need a note, not a minimum length.
+    return minLength > 1
+      ? `${label} must be at least ${minLength} characters`
+      : "Note is required for this return reason";
   }
 
   return null;
@@ -484,7 +493,7 @@ export const ManualReturnNewView = () => {
   );
 
   const totalUnits = selectedLines.reduce((sum, line) => sum + line.quantity, 0);
-  const noteRequired = selectedLines.some(line => line.item.requiresOverride);
+  const overrideNoteRequired = selectedLines.some(line => line.item.requiresOverride);
   const requiresContact = lookup?.requiresRefundContact === true;
   const currency = lookup?.currency ?? "INR";
 
@@ -501,9 +510,18 @@ export const ManualReturnNewView = () => {
     label: reason.reason,
   }));
   const selectedReasonOption = reasonOptions.find(option => option.value === reasonId) ?? null;
+  const selectedReason = reasons.find(reason => String(reason.id) === reasonId) ?? null;
+  // TTXY-5883 — the backend flags reasons that cannot be submitted without a note.
+  const reasonNoteRequired = selectedReason?.requires_note === true;
+  const noteRequired = overrideNoteRequired || reasonNoteRequired;
+  const noteLabel = overrideNoteRequired ? "Override note" : "Note";
 
   const reasonError = reasonId ? null : "Select a return reason";
-  const noteError = validateNote(overrideNote, noteRequired);
+  const noteError = validateNote(overrideNote, {
+    required: noteRequired,
+    minLength: overrideNoteRequired ? OVERRIDE_NOTE_MIN : 1,
+    label: noteLabel,
+  });
   const showReasonErrors = Boolean(attempted.reason);
 
   const emailError = !refundEmail.trim()
@@ -943,7 +961,7 @@ export const ManualReturnNewView = () => {
         renderItemGroup("Not yet shipped", order.unfulfilledItems, "mr-unfulfilled")}
 
       <Box aria-live="polite">
-        {noteRequired && (
+        {overrideNoteRequired && (
           <Box
             role="status"
             data-test-id="mr-override-notice"
@@ -1012,7 +1030,13 @@ export const ManualReturnNewView = () => {
         <Box marginTop={4}>
           <Textarea
             id="mr-override-note"
-            label={noteRequired ? "Override note (required)" : "Note (optional)"}
+            label={
+              overrideNoteRequired
+                ? "Override note (required)"
+                : reasonNoteRequired
+                  ? "Note (required)"
+                  : "Note (optional)"
+            }
             value={overrideNote}
             onChange={event => setOverrideNote(event.target.value)}
             error={showNoteError}
@@ -1028,7 +1052,7 @@ export const ManualReturnNewView = () => {
             display="block"
             marginTop={1}
           >
-            {`${noteLength} / ${OVERRIDE_NOTE_MAX}${noteRequired ? ` · minimum ${OVERRIDE_NOTE_MIN}` : ""}`}
+            {`${noteLength} / ${OVERRIDE_NOTE_MAX}${overrideNoteRequired ? ` · minimum ${OVERRIDE_NOTE_MIN}` : ""}`}
           </Text>
         </Box>
 
@@ -1168,9 +1192,7 @@ export const ManualReturnNewView = () => {
               value={overrideReasons.map(overrideReasonLabel).join(", ")}
             />
           )}
-          {trimmedNote && (
-            <DetailField label={noteRequired ? "Override note" : "Note"} value={trimmedNote} />
-          )}
+          {trimmedNote && <DetailField label={noteLabel} value={trimmedNote} />}
         </Section>
 
         {order.requiresRefundContact && (
