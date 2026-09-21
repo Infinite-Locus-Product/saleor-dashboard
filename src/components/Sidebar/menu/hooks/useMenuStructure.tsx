@@ -103,7 +103,7 @@ export function useMenuStructure() {
       {
         children: [
           {
-            label: "Held Orders",
+            label: "COD Hold",
             id: "cod-hold-queue",
             url: codHoldQueuePath,
             permissions: [],
@@ -118,7 +118,7 @@ export function useMenuStructure() {
           },
         ],
         icon: renderIcon(<Lock size={iconSize.small} strokeWidth={2.2} />),
-        label: "COD Hold",
+        label: "Held Orders",
         permissions: [],
         id: "cod-hold",
         url: codHoldQueuePath,
