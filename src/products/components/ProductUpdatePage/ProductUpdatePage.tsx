@@ -76,6 +76,7 @@ import { ProductShipping } from "../ProductShipping";
 import { ProductTaxes } from "../ProductTaxes/ProductTaxes";
 import { type BulkCreateResult } from "../ProductVariantGenerator/types";
 import { ProductVariants } from "../ProductVariants/ProductVariants";
+import { RebuildCacheCard } from "../RebuildCacheCard/RebuildCacheCard";
 import ProductUpdateForm from "./form";
 import { messages } from "./messages";
 import ProductChannelsListingsDialog from "./ProductChannelsListingsDialog";
@@ -568,6 +569,7 @@ const ProductUpdatePage = ({
                     onFetchMore={fetchMoreTaxClasses}
                   />
                 </Box>
+                <RebuildCacheCard productId={product?.id} />
                 {PRODUCT_DETAILS_WIDGETS.length > 0 && productId && (
                   <>
                     <Divider />
