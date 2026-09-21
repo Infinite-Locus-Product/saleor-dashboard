@@ -472,4 +472,35 @@ describe("CollectionSortOrder render", () => {
     // Sorting by a quantity we don't have would look authoritative and be arbitrary.
     expect(screen.getByTestId("sort-by-inventory")).toBeDisabled();
   });
+
+  it("pins every row at once with Select all", () => {
+    const onChange = jest.fn();
+    const Host = () => (
+      <CollectionSortOrder collectionId="c1" metadata={[]} disabled={false} onChange={onChange} />
+    );
+
+    render(<Host />, { wrapper: Wrapper });
+    loadList();
+
+    // Nothing pinned to start with.
+    expect(
+      screen.queryAllByRole("checkbox").filter(cb => cb.getAttribute("aria-checked") === "true"),
+    ).toHaveLength(0);
+
+    // Act
+    fireEvent.click(screen.getByTestId("select-all-variants"));
+
+    // Assert — every row pinned, in the order shown.
+    expect(
+      screen.getAllByRole("checkbox").filter(cb => cb.getAttribute("aria-checked") === "true"),
+    ).toHaveLength(2);
+
+    const config: SortOrderConfig = onChange.mock.calls[0][0];
+
+    expect(config.order.map(entry => entry.variant)).toEqual(["v1", "v2"]);
+    expect(config.order.map(entry => entry.sortIndex)).toEqual([1, 2]);
+
+    // The button disables itself once there is nothing left to select.
+    expect(screen.getByTestId("select-all-variants")).toBeDisabled();
+  });
 });

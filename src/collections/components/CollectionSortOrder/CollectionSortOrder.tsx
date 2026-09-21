@@ -197,6 +197,13 @@ export const CollectionSortOrder = ({
     emitListChange(moved, selected);
   };
 
+  const handleSelectAll = () => {
+    const next = new Set(items.map(item => item.variantId));
+
+    setSelected(next);
+    emitListChange(items, next);
+  };
+
   const handleSortByInventory = () => {
     const sorted = sortByInventory(items);
 
@@ -214,6 +221,7 @@ export const CollectionSortOrder = ({
   };
 
   const itemIds = useMemo(() => items.map(item => item.id), [items]);
+  const allSelected = items.length > 0 && items.every(item => selected.has(item.variantId));
 
   return (
     <DashboardCard paddingBottom={4} data-test-id="collection-sort-order">
@@ -236,6 +244,18 @@ export const CollectionSortOrder = ({
               defaultMessage="Sort by inventory"
               id="bUqn+U"
               description="button, sort collection products by available stock"
+            />
+          </Button>
+          <Button
+            data-test-id="select-all-variants"
+            variant="secondary"
+            disabled={disabled || !listReady || items.length === 0 || allSelected}
+            onClick={handleSelectAll}
+          >
+            <FormattedMessage
+              defaultMessage="Select all"
+              id="ypU5P4"
+              description="button, pin every colour row in the collection sort order"
             />
           </Button>
           <Button
