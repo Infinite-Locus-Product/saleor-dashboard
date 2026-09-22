@@ -50,6 +50,11 @@ export interface CodHoldOrderSnapshot {
 export interface CodHoldOrderDetail extends CodHoldOrder {
   callLogs: CodHoldCallLog[];
   orderSnapshot: CodHoldOrderSnapshot | null;
+  // COD → Prepaid Conversion via WhatsApp: the manual Send Payment Link
+  // (Easebuzz) action is retired behind its own flag, independent of the
+  // now-standing automatic GoKwik flow — false hides the feature entirely,
+  // not just disables the button.
+  sendPaymentLinkEnabled: boolean;
 }
 
 export interface CodHoldListItem {
@@ -64,6 +69,9 @@ export interface CodHoldSettings {
   slaOnTrackHours: number;
   slaDelayedHours: number;
   slaBreachedHours: number;
+  // COD → Prepaid Conversion via WhatsApp: how long every COD order sits in
+  // the universal pre-CX hold window before the risk-list check runs.
+  conversionHoldMinutes: number;
   alertRecipients: string[];
 }
 
