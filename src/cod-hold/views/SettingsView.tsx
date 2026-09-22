@@ -21,6 +21,7 @@ export const SettingsView = () => {
     slaOnTrackHours: "",
     slaDelayedHours: "",
     slaBreachedHours: "",
+    conversionHoldMinutes: "",
   });
   const [savingThresholds, setSavingThresholds] = useState(false);
   const [thresholdsError, setThresholdsError] = useState<string | null>(null);
@@ -34,6 +35,7 @@ export const SettingsView = () => {
       slaOnTrackHours: String(result.slaOnTrackHours),
       slaDelayedHours: String(result.slaDelayedHours),
       slaBreachedHours: String(result.slaBreachedHours),
+      conversionHoldMinutes: String(result.conversionHoldMinutes),
     });
   }, []);
 
@@ -51,6 +53,7 @@ export const SettingsView = () => {
         slaOnTrackHours: Number(thresholds.slaOnTrackHours),
         slaDelayedHours: Number(thresholds.slaDelayedHours),
         slaBreachedHours: Number(thresholds.slaBreachedHours),
+        conversionHoldMinutes: Number(thresholds.conversionHoldMinutes),
       });
 
       setSettings(updated);
@@ -68,14 +71,33 @@ export const SettingsView = () => {
         COD Hold Settings
       </Text>
 
-      {/* SLA thresholds */}
+      {/* Conversion hold window + SLA thresholds — one card, saved together via one endpoint */}
       <Box borderWidth={1} borderStyle="solid" borderColor="default1" borderRadius={3} padding={4}>
-        <Text size={5} fontWeight="bold" display="block" marginBottom={3}>
+        <Text size={5} fontWeight="bold" display="block" marginBottom={1}>
+          Conversion Hold Window
+        </Text>
+        <Text size={3} color="default2" display="block" marginBottom={3}>
+          Every COD order is suppressed from the ERP for this many minutes so GoKwik can WhatsApp a
+          prepaid conversion offer. Only after this window expires unconverted does the
+          pincode/phone risk-list check below run, deciding whether the order lands on this
+          dashboard for CX review or is released to the ERP as a normal COD order.
+        </Text>
+        <Box __minWidth="180px" marginBottom={4}>
+          <Input
+            type="number"
+            label="Conversion hold window (minutes)"
+            value={thresholds.conversionHoldMinutes}
+            onChange={e => setThresholds({ ...thresholds, conversionHoldMinutes: e.target.value })}
+          />
+        </Box>
+
+        <Text size={5} fontWeight="bold" display="block" marginBottom={1}>
           SLA Thresholds
         </Text>
         <Text size={3} color="default2" display="block" marginBottom={3}>
-          An order past the BREACHED threshold is also auto-released to the ERP as a normal COD
-          order if no agent has acted on it.
+          Apply once an order has landed on this dashboard (after the conversion hold window above,
+          on a risk-list match). An order past the BREACHED threshold is also auto-released to the
+          ERP as a normal COD order if no agent has acted on it.
         </Text>
         <Box display="flex" gap={3} alignItems="flex-end" flexWrap="wrap">
           <Box __minWidth="140px">

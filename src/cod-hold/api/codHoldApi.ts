@@ -161,7 +161,10 @@ export async function fetchSettings(): Promise<CodHoldSettings> {
 }
 
 export async function saveSettings(
-  settings: Pick<CodHoldSettings, "slaOnTrackHours" | "slaDelayedHours" | "slaBreachedHours">,
+  settings: Pick<
+    CodHoldSettings,
+    "slaOnTrackHours" | "slaDelayedHours" | "slaBreachedHours" | "conversionHoldMinutes"
+  >,
 ): Promise<CodHoldSettings> {
   return apiRequest("PUT", "/cod-hold/settings", settings);
 }

@@ -291,13 +291,15 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
         >
           Update Address
         </Button>
-        <Button
-          variant="secondary"
-          disabled={!isHeld}
-          onClick={() => setActiveAction("sendPaymentLink")}
-        >
-          Send Payment Link
-        </Button>
+        {detail.sendPaymentLinkEnabled && (
+          <Button
+            variant="secondary"
+            disabled={!isHeld}
+            onClick={() => setActiveAction("sendPaymentLink")}
+          >
+            Send Payment Link
+          </Button>
+        )}
         <Button variant="primary" disabled={!isHeld} onClick={() => setActiveAction("release")}>
           Release as COD
         </Button>
@@ -381,23 +383,27 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
         </Box>
       </ActionDialog>
 
-      {/* Send payment link dialog */}
-      <ActionDialog
-        open={activeAction === "sendPaymentLink"}
-        onClose={closeDialog}
-        onConfirm={paymentLinkUrl ? closeDialog : handleConfirm}
-        confirmButtonState={submitting ? "loading" : "default"}
-        title="Send payment link"
-        confirmButtonLabel={paymentLinkUrl ? "Done" : "Send link"}
-      >
-        {paymentLinkUrl ? (
-          <Text size={3} color="success1">
-            Payment link sent via WhatsApp: {paymentLinkUrl}
-          </Text>
-        ) : (
-          <NoteField note={note} onChange={setNote} error={actionError} />
-        )}
-      </ActionDialog>
+      {/* Send payment link dialog — feature retired behind its own flag,
+          independent of the now-standing automatic GoKwik flow; not rendered
+          at all when disabled, not just gated by the trigger button above. */}
+      {detail.sendPaymentLinkEnabled && (
+        <ActionDialog
+          open={activeAction === "sendPaymentLink"}
+          onClose={closeDialog}
+          onConfirm={paymentLinkUrl ? closeDialog : handleConfirm}
+          confirmButtonState={submitting ? "loading" : "default"}
+          title="Send payment link"
+          confirmButtonLabel={paymentLinkUrl ? "Done" : "Send link"}
+        >
+          {paymentLinkUrl ? (
+            <Text size={3} color="success1">
+              Payment link sent via WhatsApp: {paymentLinkUrl}
+            </Text>
+          ) : (
+            <NoteField note={note} onChange={setNote} error={actionError} />
+          )}
+        </ActionDialog>
+      )}
     </Box>
   );
 };
