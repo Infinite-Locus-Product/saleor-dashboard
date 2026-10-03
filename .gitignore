@@ -63,3 +63,9 @@ storybook-static/
 !.claude
 !.claude/**/.claude-plugin/
 playwright-failures*/
+
+# Delivery Rule 6 test gate, machine-specific
+.test-gate.local.conf
+!.githooks/
+!.githooks/*
+!.test-gate.conf

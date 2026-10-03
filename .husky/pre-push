@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+# Delivery Rule 6: full-suite test gate
+.githooks/test-gate.sh pre-push
