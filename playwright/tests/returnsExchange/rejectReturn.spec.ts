@@ -83,15 +83,13 @@ test("TC: TTXY-6032 K2 reason validation 9 / 10 / 501 chars #e2e", async ({ page
   await expect(page.getByTestId("reject-reason-counter")).toHaveText("10/500");
   await expect(confirm(page)).toBeEnabled();
 
+  // No maxLength cap: 501 chars are accepted into the field, flagged over-limit, never sendable.
   await reasonInput(page).fill("x".repeat(501));
-  // Either the textarea caps input at 500 (maxLength) or confirm is disabled — 501 is never sent.
-  const value = await reasonInput(page).inputValue();
-
-  if (value.length > 500) {
-    await expect(confirm(page)).toBeDisabled();
-  } else {
-    expect(value.length).toBe(500);
-  }
+  await expect(reasonInput(page)).toHaveValue("x".repeat(501));
+  await expect(page.getByTestId("reject-reason-counter")).toHaveText("501/500");
+  await expect(page.getByTestId("reject-reason-hint")).toHaveText("Maximum 500 characters");
+  await expect(reasonInput(page)).toHaveAttribute("aria-invalid", "true");
+  await expect(confirm(page)).toBeDisabled();
 });
 
 test("TC: TTXY-6032 K3 warnings for no calls and for 'Agreed to exchange' #e2e", async ({
@@ -126,19 +124,31 @@ test("TC: TTXY-6032 K3 warnings for no calls and for 'Agreed to exchange' #e2e",
   );
 });
 
-test("TC: TTXY-6032 K4 reject 409 shows an error toast and keeps the dialog open #e2e", async ({
+test("TC: TTXY-6032 K4 reject 409 closes the dialog, reloads the closed request and shows an error toast #e2e", async ({
   page,
 }) => {
+  // Another agent approved the request while this one was typing the reason.
+  let current = makeDetail({ cx_status: "CX_REVIEW", call_logs: [callLog(1, null)] });
+
   await mockCxReturnsApi(page, {
-    detail: () => makeDetail({ cx_status: "CX_REVIEW", call_logs: [callLog(1, null)] }),
-    reject: () => ({
-      status: 409,
-      body: {
-        ok: false,
-        code: "ALREADY_CLOSED",
-        message: "Return request is already closed (APPROVED)",
-      },
-    }),
+    detail: () => current,
+    reject: () => {
+      current = makeDetail({
+        cx_status: "APPROVED",
+        auto_approval_due_at: null,
+        sla_hours_remaining: null,
+        call_logs: [callLog(1, null)],
+      });
+
+      return {
+        status: 409,
+        body: {
+          ok: false,
+          code: "ALREADY_CLOSED",
+          message: "Return request is already closed (APPROVED)",
+        },
+      };
+    },
   });
 
   await page.goto(detailUrl("REQ-6120"));
@@ -147,6 +157,28 @@ test("TC: TTXY-6032 K4 reject 409 shows an error toast and keeps the dialog open
   await confirm(page).click();
 
   await new BasePage(page).expectErrorBannerMessage("Return request is already closed (APPROVED)");
+  await expect(dialog(page)).toBeHidden();
+  await expect(page.getByText(/Read Only — Return Closed/)).toBeVisible();
+  await expect(rejectButton(page)).toHaveCount(0);
+});
+
+test("TC: TTXY-6032 K4b reject 500 shows an error toast and keeps the dialog open with the reason #e2e", async ({
+  page,
+}) => {
+  await mockCxReturnsApi(page, {
+    detail: () => makeDetail({ cx_status: "CX_REVIEW", call_logs: [callLog(1, null)] }),
+    reject: () => ({
+      status: 500,
+      body: { ok: false, code: "INTERNAL", message: "Could not reject the return, try again" },
+    }),
+  });
+
+  await page.goto(detailUrl("REQ-6120"));
+  await rejectButton(page).click();
+  await reasonInput(page).fill(REASON);
+  await confirm(page).click();
+
+  await new BasePage(page).expectErrorBannerMessage("Could not reject the return, try again");
   await expect(dialog(page)).toBeVisible();
   await expect(reasonInput(page)).toHaveValue(REASON);
 });

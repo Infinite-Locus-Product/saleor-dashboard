@@ -5,6 +5,7 @@ import {
   type CXReturnRequest,
   type NotificationSettings,
 } from "../types";
+import { CXApiError } from "./cxApiError";
 import { getTenexuBaseUrl } from "./tenexuBaseUrl";
 
 function getAuthHeaders(): HeadersInit {
@@ -29,10 +30,15 @@ async function apiRequest<T>(method: string, path: string, body?: any): Promise<
     headers: getAuthHeaders(),
     body: body ? JSON.stringify(body) : undefined,
   });
-  const json = await res.json();
+  // A non-JSON error body (e.g. a proxy's HTML 502) must still surface the HTTP status.
+  const json = await res.json().catch(() => null);
 
-  if (!res.ok || json?.ok === false) {
-    throw new Error(json?.message || `Request failed: ${res.status}`);
+  if (!res.ok || json?.ok === false || json === null) {
+    throw new CXApiError(
+      json?.message || `Request failed: ${res.status}`,
+      res.status,
+      typeof json?.code === "string" ? json.code : null,
+    );
   }
 
   return json;

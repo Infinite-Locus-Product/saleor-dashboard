@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import { fetchReturns } from "../api/returnsApi";
 import { type CXReturnRequest } from "../types";
@@ -233,6 +233,126 @@ describe("ReturnsQueueView — TTXY-6032 pincode + rejected", () => {
     // Assert
     await waitFor(() => expect(lastParams().pincode).toBeFalsy());
     expect(screen.queryByTestId("pincode-filter-clear")).not.toBeInTheDocument();
+  });
+
+  it("C4 a slow, stale pincode response does not overwrite the newer unfiltered result", async () => {
+    // Arrange
+    let resolveSlow: (v: unknown) => void = () => undefined;
+    const slowPincode = new Promise(resolve => {
+      resolveSlow = resolve;
+    });
+
+    fetchMock.mockImplementation((params: any) =>
+      params?.pincode
+        ? slowPincode
+        : Promise.resolve(page([makeRow(), makeRow({ id: 2, request_id: "REQ-1002" })], 2)),
+    );
+    render(<ReturnsQueueView />);
+    await screen.findByText("REQ-1002");
+
+    // Act: apply (slow) then clear straight away (fast)
+    applyPincode("560001");
+    fireEvent.click(await screen.findByTestId("pincode-filter-clear"));
+    await waitFor(() => expect(lastParams().pincode).toBeFalsy());
+    await screen.findByText("REQ-1002");
+
+    await act(async () => {
+      resolveSlow(page([makeRow({ id: 3, request_id: "REQ-1003" })], 1));
+    });
+
+    // Assert: the late 560001 response is ignored
+    expect(screen.getByText("REQ-1001")).toBeInTheDocument();
+    expect(screen.getByText("REQ-1002")).toBeInTheDocument();
+    expect(screen.queryByText("REQ-1003")).not.toBeInTheDocument();
+    expect(screen.getByText("2 total requests")).toBeInTheDocument();
+  });
+
+  it("C5 with another filter active, the empty state is generic and offers Clear all + Clear pincode", async () => {
+    // Arrange
+    fetchMock.mockImplementation(async (params: any) =>
+      params?.pincode ? page([], 0) : page([makeRow()]),
+    );
+    render(<ReturnsQueueView />);
+    await screen.findByText("REQ-1001");
+    fireEvent.click(screen.getByRole("button", { name: "Pending" }));
+    await waitFor(() => expect(lastParams().status).toBe("RETURN_PENDING"));
+    await screen.findByText("REQ-1001");
+
+    // Act
+    applyPincode("110011");
+
+    // Assert
+    expect(
+      await screen.findByText("No return requests match the current filters."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/No return requests for pincode/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Clear pincode" })).toBeInTheDocument();
+
+    // Act
+    fireEvent.click(screen.getByTestId("empty-state-clear-all"));
+
+    // Assert
+    expect(await screen.findByText("REQ-1001")).toBeInTheDocument();
+    expect(lastParams()).toEqual(
+      expect.objectContaining({ status: undefined, pincode: undefined, page: 1 }),
+    );
+  });
+
+  it("C5 with no pincode but other filters, the empty state is generic with Clear all only", async () => {
+    // Arrange
+    fetchMock.mockImplementation(async (params: any) =>
+      params?.status ? page([], 0) : page([makeRow()]),
+    );
+    render(<ReturnsQueueView />);
+    await screen.findByText("REQ-1001");
+
+    // Act
+    fireEvent.click(screen.getByRole("button", { name: "Rejected" }));
+
+    // Assert
+    expect(
+      await screen.findByText("No return requests match the current filters."),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("empty-state-clear-all")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clear pincode" })).not.toBeInTheDocument();
+  });
+
+  it("C6 the inline pincode error is linked to the input (aria-describedby, aria-invalid)", async () => {
+    // Arrange
+    fetchMock.mockResolvedValue(page([makeRow()]));
+    render(<ReturnsQueueView />);
+    await screen.findByText("REQ-1001");
+
+    // Act
+    applyPincode("56000");
+
+    // Assert
+    const error = await screen.findByText("Enter a 6-digit pincode");
+    const input = screen.getByTestId("pincode-filter-input");
+
+    expect(error.id).toBeTruthy();
+    expect(input.getAttribute("aria-describedby")?.split(" ")).toContain(error.id);
+    expect(input).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("C6 a typed-but-unapplied pincode shows which pincode is actually applied", async () => {
+    // Arrange
+    fetchMock.mockResolvedValue(page([makeRow()]));
+    render(<ReturnsQueueView />);
+    await screen.findByText("REQ-1001");
+    applyPincode("560001");
+    await waitFor(() => expect(lastParams().pincode).toBe("560001"));
+    await screen.findByText("REQ-1001");
+
+    // Assert: draft == applied -> no hint
+    expect(screen.queryByTestId("pincode-filter-applied")).not.toBeInTheDocument();
+
+    // Act
+    fireEvent.change(screen.getByTestId("pincode-filter-input"), { target: { value: "560002" } });
+
+    // Assert
+    expect(screen.getByTestId("pincode-filter-applied")).toHaveTextContent("Filtering by 560001");
+    expect(lastParams().pincode).toBe("560001");
   });
 
   it('J9 "Rejected" is a status filter chip that filters by RETURN_REJECTED', async () => {

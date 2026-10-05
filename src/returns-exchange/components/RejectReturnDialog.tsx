@@ -15,6 +15,11 @@ export interface RejectReturnDialogProps {
   lastUserAction: CXUserAction | string | null | undefined;
 }
 
+// Static ids: only one reject dialog is ever mounted (React 17 has no useId).
+const HINT_ID = "reject-reason-hint";
+const COUNTER_ID = "reject-reason-counter";
+const HELPER_ID = "reject-reason-helper";
+
 const HELPER_TEXT =
   "This is final and can't be undone. The customer will see 'Return rejected' and can't raise a return or exchange on this item.";
 
@@ -40,7 +45,10 @@ export const RejectReturnDialog = ({
 
   const trimmed = reason.trim();
   const tooLong = trimmed.length > REJECTION_REASON_MAX;
-  const isValid = trimmed.length >= REJECTION_REASON_MIN && !tooLong;
+  const tooShort = trimmed.length < REJECTION_REASON_MIN;
+  const isValid = !tooShort && !tooLong;
+  // "Too short" only counts as an error once the agent has typed something.
+  const invalid = tooLong || (tooShort && reason.length > 0);
 
   return (
     <ActionDialog
@@ -69,12 +77,25 @@ export const RejectReturnDialog = ({
             onChange={e => setReason(e.target.value)}
             rows={4}
             width="100%"
-            error={tooLong}
+            error={invalid}
             disabled={submitting}
+            aria-invalid={invalid}
+            aria-describedby={`${HINT_ID} ${COUNTER_ID} ${HELPER_ID}`}
             data-test-id="reject-reason-input"
           />
-          <Box display="flex" justifyContent="flex-end">
+          <Box display="flex" justifyContent="space-between" gap={2}>
             <Text
+              id={HINT_ID}
+              size={2}
+              color={invalid ? "critical1" : "default2"}
+              data-test-id="reject-reason-hint"
+            >
+              {tooLong
+                ? `Maximum ${REJECTION_REASON_MAX} characters`
+                : `Minimum ${REJECTION_REASON_MIN} characters`}
+            </Text>
+            <Text
+              id={COUNTER_ID}
               size={2}
               color={tooLong ? "critical1" : "default2"}
               data-test-id="reject-reason-counter"
@@ -83,7 +104,7 @@ export const RejectReturnDialog = ({
             </Text>
           </Box>
         </Box>
-        <Text size={2} color="default2">
+        <Text id={HELPER_ID} size={2} color="default2">
           {HELPER_TEXT}
         </Text>
       </Box>

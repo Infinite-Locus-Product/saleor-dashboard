@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { isCXApiError } from "../api/cxApiError";
 import {
   fetchCallLogs,
   fetchProductVariants,
@@ -30,12 +31,21 @@ import { type CXCallLog, type CXReturnDetail, type ProductVariant } from "../typ
 import { logCallPath, returnsQueuePath, sizeSelectionPath } from "../urls";
 import { isClosedStatus } from "../utils/cxReturnStatus";
 
-const formatDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString("en-IN", {
+// e.g. "4 Oct 2026, 3:15 pm"
+const formatDateTime = (iso: string): string =>
+  new Date(iso).toLocaleString("en-IN", {
     day: "numeric",
     month: "short",
     year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
   });
+
+// The request was closed (approved / auto-approved / exchanged) or removed since the page
+// loaded, so retrying can never succeed; LLD §7: close the dialog, reload, then toast.
+const isStaleRequestError = (err: unknown): boolean =>
+  isCXApiError(err) && (err.status === 409 || err.status === 404);
 
 interface RequestDetailViewProps {
   requestId: string;
@@ -187,7 +197,8 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
   };
 
   // Reject (TTXY-6032). The backend takes the agent from the session, so only the reason is
-  // sent. On failure the dialog stays open with the typed reason.
+  // sent. A 409 / 404 means the request is no longer open: close the dialog and reload so the
+  // page shows its real state. Any other failure keeps the dialog open with the typed reason.
   const handleReject = async (reason: string): Promise<void> => {
     setRejecting(true);
 
@@ -196,8 +207,15 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
       setRejectDialogOpen(false);
       await reload();
       notify({ status: "success", text: "Return rejected" });
-    } catch (err: any) {
-      notify({ status: "error", text: err?.message ?? "Failed to reject return" });
+    } catch (err: unknown) {
+      const text = err instanceof Error && err.message ? err.message : "Failed to reject return";
+
+      if (isStaleRequestError(err)) {
+        setRejectDialogOpen(false);
+        await reload();
+      }
+
+      notify({ status: "error", text });
     } finally {
       setRejecting(false);
     }
@@ -575,7 +593,7 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
                 <Button
                   variant="primary"
                   size="medium"
-                  disabled={!canExchange || isTerminal}
+                  disabled={!canExchange || isTerminal || rejecting}
                   onClick={() => navigate(sizeSelectionPath(requestId))}
                   title={!canExchange ? "Log a call with 'Agreed to exchange' first" : undefined}
                 >
@@ -770,8 +788,8 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
                 </Text>
               )}
               <Text size={2} color="default2" display="block">
-                Rejected by {detail.rejected_by_name || detail.last_activity_by_name || "CX agent"}
-                {detail.rejected_at ? ` on ${formatDate(detail.rejected_at)}` : ""}
+                Rejected by {detail.rejected_by_name || "CX agent"}
+                {detail.rejected_at ? ` on ${formatDateTime(detail.rejected_at)}` : ""}
               </Text>
             </Box>
           )}
@@ -1023,7 +1041,7 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
           <Button
             variant="secondary"
             size="medium"
-            disabled={!canExchange}
+            disabled={!canExchange || rejecting}
             onClick={() => navigate(sizeSelectionPath(requestId))}
             title={!canExchange ? "Log a call with 'Agreed to exchange' first" : undefined}
           >
@@ -1046,7 +1064,7 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
             variant="primary"
             size="medium"
             onClick={() => setApproveDialogOpen(true)}
-            disabled={approving || !canApprove}
+            disabled={approving || rejecting || !canApprove}
             title={
               !canApprove
                 ? hasDisagreed || callLogs.length >= 2
@@ -1076,7 +1094,10 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
       {rejectDialogOpen && (
         <RejectReturnDialog
           open
-          onClose={() => setRejectDialogOpen(false)}
+          // Ignored while the request is in flight so the typed reason can't be lost.
+          onClose={() => {
+            if (!rejecting) setRejectDialogOpen(false);
+          }}
           onConfirm={handleReject}
           submitting={rejecting}
           callCount={callLogs.length}

@@ -1,7 +1,7 @@
 import useNavigator from "@dashboard/hooks/useNavigator";
 import { Box, Button, Input, Select, Skeleton, Text } from "@saleor/macaw-ui-next";
 import { AlertTriangle, RefreshCw, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fetchReturns } from "../api/returnsApi";
 import { SLABadge } from "../components/SLABadge";
@@ -55,9 +55,14 @@ const EMPTY_FILTERS: Filters = {
 };
 
 const PINCODE_ERROR = "Enter a 6-digit pincode";
+const PINCODE_ERROR_ID = "pincode-filter-error";
 
 function hasActiveFilters(f: Filters) {
   return Object.values(f).some(v => v !== "");
+}
+
+function isOnlyPincodeFilter(f: Filters): boolean {
+  return f.pincode !== "" && Object.entries(f).every(([key, v]) => key === "pincode" || v === "");
 }
 
 export const ReturnsQueueView = () => {
@@ -70,6 +75,9 @@ export const ReturnsQueueView = () => {
   const [total, setTotal] = useState(0);
   const [pincodeInput, setPincodeInput] = useState("");
   const [pincodeError, setPincodeError] = useState<string | null>(null);
+  // Bumped per request (and on unmount); only the latest request may set state, so a slow
+  // older response can't overwrite a newer filter result.
+  const requestSeq = useRef(0);
 
   const criticalCount = requests.filter(r => r.sla_tier === "CRITICAL").length;
 
@@ -107,6 +115,8 @@ export const ReturnsQueueView = () => {
   };
 
   const load = useCallback(async () => {
+    const seq = ++requestSeq.current;
+
     setLoading(true);
     setError(null);
 
@@ -125,18 +135,30 @@ export const ReturnsQueueView = () => {
         limit: LIMIT,
       });
 
+      if (seq !== requestSeq.current) return;
+
       setRequests(result.data);
       setTotal(result.pagination.total);
     } catch (err: any) {
+      if (seq !== requestSeq.current) return;
+
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   }, [filters, page]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Invalidate any in-flight request on unmount.
+  useEffect(
+    () => (): void => {
+      requestSeq.current++;
+    },
+    [],
+  );
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
 
@@ -282,6 +304,8 @@ export const ReturnsQueueView = () => {
                 }}
                 inputMode="numeric"
                 error={!!pincodeError}
+                aria-invalid={!!pincodeError}
+                aria-describedby={pincodeError ? PINCODE_ERROR_ID : undefined}
                 size="small"
                 data-test-id="pincode-filter-input"
               />
@@ -293,6 +317,16 @@ export const ReturnsQueueView = () => {
               >
                 Apply
               </Button>
+              {filters.pincode && pincodeInput.trim() !== filters.pincode && (
+                <Text
+                  size={1}
+                  color="default2"
+                  whiteSpace="nowrap"
+                  data-test-id="pincode-filter-applied"
+                >
+                  Filtering by {filters.pincode}
+                </Text>
+              )}
               {filters.pincode && (
                 <Button
                   variant="tertiary"
@@ -305,7 +339,7 @@ export const ReturnsQueueView = () => {
               )}
             </Box>
             {pincodeError && (
-              <Text size={2} color="critical1" display="block" marginTop={1}>
+              <Text id={PINCODE_ERROR_ID} size={2} color="critical1" display="block" marginTop={1}>
                 {pincodeError}
               </Text>
             )}
@@ -380,12 +414,31 @@ export const ReturnsQueueView = () => {
           gap={3}
           textAlign="center"
         >
-          {filters.pincode ? (
+          {isOnlyPincodeFilter(filters) ? (
             <>
               <Text color="default2">No return requests for pincode {filters.pincode}.</Text>
               <Button variant="secondary" size="small" onClick={clearPincode}>
                 Clear pincode
               </Button>
+            </>
+          ) : hasActiveFilters(filters) ? (
+            <>
+              <Text color="default2">No return requests match the current filters.</Text>
+              <Box display="flex" gap={2}>
+                {filters.pincode && (
+                  <Button variant="secondary" size="small" onClick={clearPincode}>
+                    Clear pincode
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={clearFilters}
+                  data-test-id="empty-state-clear-all"
+                >
+                  Clear all
+                </Button>
+              </Box>
             </>
           ) : (
             <Text color="default2">No return requests found</Text>

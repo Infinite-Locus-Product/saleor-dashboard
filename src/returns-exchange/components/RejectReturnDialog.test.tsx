@@ -139,6 +139,47 @@ describe("RejectReturnDialog (TTXY-6032)", () => {
     expect(screen.queryByText(AGREED_WARNING)).not.toBeInTheDocument();
   });
 
+  it("C2 shows a 'Minimum 10 characters' hint linked to the textarea, not invalid before typing", () => {
+    // Act
+    renderDialog();
+
+    // Assert
+    const hint = screen.getByTestId("reject-reason-hint");
+
+    expect(hint).toHaveTextContent("Minimum 10 characters");
+    expect(hint.id).toBeTruthy();
+    expect(reasonInput().getAttribute("aria-describedby")?.split(" ")).toContain(hint.id);
+    expect(reasonInput()).not.toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("C2 1–9 typed chars mark the field invalid and keep the minimum hint", () => {
+    renderDialog();
+
+    typeReason("damaged");
+
+    expect(reasonInput()).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByTestId("reject-reason-hint")).toHaveTextContent("Minimum 10 characters");
+  });
+
+  it("C2 a valid reason clears aria-invalid", () => {
+    renderDialog();
+
+    typeReason("damaged");
+    typeReason("1234567890");
+
+    expect(reasonInput()).not.toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("C2 more than 500 chars marks the field invalid and says so", () => {
+    renderDialog();
+
+    typeReason("x".repeat(501));
+
+    expect(reasonInput()).toHaveAttribute("aria-invalid", "true");
+    expect(counter()).toHaveTextContent("501/500");
+    expect(screen.getByTestId("reject-reason-hint")).toHaveTextContent("Maximum 500 characters");
+  });
+
   it("J11 renders nothing when closed", () => {
     renderDialog({ open: false });
 

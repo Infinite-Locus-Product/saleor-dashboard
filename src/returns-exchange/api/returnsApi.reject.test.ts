@@ -3,6 +3,7 @@
  * getTenexuBaseUrl() (./tenexuBaseUrl) instead of reading import.meta.env at module top,
  * otherwise this file cannot be imported under @swc/jest.
  */
+import { CXApiError } from "./cxApiError";
 import { fetchReturns, submitRejectReturn } from "./returnsApi";
 
 jest.mock("./tenexuBaseUrl", () => ({
@@ -83,6 +84,44 @@ describe("returnsApi — reject + pincode (TTXY-6032)", () => {
     // Act & Assert
     await expect(submitRejectReturn("REQ-1", "A valid reason here")).rejects.toThrow(
       "Return request is already closed (APPROVED)",
+    );
+  });
+
+  it.each([
+    [409, "ALREADY_CLOSED", "Return request is already closed (APPROVED)"],
+    [404, "NOT_FOUND", "Return request not found"],
+    [400, "INVALID_REASON", "Reason must be 10–500 characters"],
+  ])(
+    "C1 submitRejectReturn throws a CXApiError carrying status %p and code %p",
+    async (status, code, message) => {
+      // Arrange
+      fetchMock.mockResolvedValue(jsonResponse(status, { ok: false, code, message }));
+
+      // Act
+      const error = await submitRejectReturn("REQ-1", "A valid reason here").catch(e => e);
+
+      // Assert
+      expect(error).toBeInstanceOf(CXApiError);
+      expect(error).toBeInstanceOf(Error);
+      expect(error).toEqual(expect.objectContaining({ status, code, message }));
+    },
+  );
+
+  it("C1 a failure without a JSON body still carries the HTTP status and a null code", async () => {
+    // Arrange
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: () => Promise.reject(new SyntaxError("Unexpected token <")),
+    });
+
+    // Act
+    const error = await submitRejectReturn("REQ-1", "A valid reason here").catch(e => e);
+
+    // Assert
+    expect(error).toBeInstanceOf(CXApiError);
+    expect(error).toEqual(
+      expect.objectContaining({ status: 502, code: null, message: "Request failed: 502" }),
     );
   });
 
