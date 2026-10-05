@@ -93,9 +93,22 @@ export const ReturnsQueueView = () => {
     setPage(1);
   };
 
+  const clearPincode = (): void => {
+    setPincodeInput("");
+    setPincodeError(null);
+    setFilter("pincode", "");
+  };
+
   // Applied on Enter / Apply only; an invalid value shows an inline error and never fetches.
+  // An empty value clears the filter.
   const applyPincode = (): void => {
     const value = pincodeInput.trim();
+
+    if (value === "") {
+      clearPincode();
+
+      return;
+    }
 
     if (!isValidPincode(value)) {
       setPincodeError(PINCODE_ERROR);
@@ -106,12 +119,6 @@ export const ReturnsQueueView = () => {
     setPincodeError(null);
     setPincodeInput(value);
     setFilter("pincode", value);
-  };
-
-  const clearPincode = (): void => {
-    setPincodeInput("");
-    setPincodeError(null);
-    setFilter("pincode", "");
   };
 
   const load = useCallback(async () => {

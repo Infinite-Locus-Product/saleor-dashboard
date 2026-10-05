@@ -13,9 +13,9 @@ import {
   UserX,
   XCircle,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 
-import { isCXApiError } from "../api/cxApiError";
+import { isApprovalInProgressError, isStaleRequestError } from "../api/cxApiError";
 import {
   fetchCallLogs,
   fetchProductVariants,
@@ -42,10 +42,8 @@ const formatDateTime = (iso: string): string =>
     hour12: true,
   });
 
-// The request was closed (approved / auto-approved / exchanged) or removed since the page
-// loaded, so retrying can never succeed; LLD §7: close the dialog, reload, then toast.
-const isStaleRequestError = (err: unknown): boolean =>
-  isCXApiError(err) && (err.status === 409 || err.status === 404);
+// A long reason with no spaces (e.g. a URL) must wrap inside the 320px sidebar / timeline.
+const WRAPPING_TEXT_STYLE: CSSProperties = { overflowWrap: "anywhere", whiteSpace: "pre-wrap" };
 
 interface RequestDetailViewProps {
   requestId: string;
@@ -168,8 +166,19 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
       setApproveDialogOpen(false);
       await reload();
       notify({ status: "success", text: "Return approved" });
-    } catch (err: any) {
-      notify({ status: "error", text: err.message ?? "Failed to approve return" });
+    } catch (err: unknown) {
+      const text = err instanceof Error && err.message ? err.message : "Failed to approve return";
+
+      // Stale request: close and reload so the page shows its real state, then toast.
+      // Approval in progress: nothing changed yet, so just close; the agent can retry later.
+      if (isStaleRequestError(err)) {
+        setApproveDialogOpen(false);
+        await reload();
+      } else if (isApprovalInProgressError(err)) {
+        setApproveDialogOpen(false);
+      }
+
+      notify({ status: "error", text });
     } finally {
       setApproving(false);
     }
@@ -197,8 +206,9 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
   };
 
   // Reject (TTXY-6032). The backend takes the agent from the session, so only the reason is
-  // sent. A 409 / 404 means the request is no longer open: close the dialog and reload so the
-  // page shows its real state. Any other failure keeps the dialog open with the typed reason.
+  // sent. A stale 409 / 404 means the request is no longer open: close the dialog and reload so
+  // the page shows its real state. Any other failure (incl. 409 APPROVAL_IN_PROGRESS, which can
+  // be retried) keeps the dialog open with the typed reason.
   const handleReject = async (reason: string): Promise<void> => {
     setRejecting(true);
 
@@ -743,7 +753,7 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
                           : ""}
                       </Text>
                       {entry.action_type === "RETURN_REJECTED" && entry.context?.reason && (
-                        <Text size={2} display="block" marginBottom={1}>
+                        <Text size={2} display="block" marginBottom={1} style={WRAPPING_TEXT_STYLE}>
                           Reason: {String(entry.context.reason)}
                         </Text>
                       )}
@@ -783,7 +793,7 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
                 Return Rejected
               </Text>
               {detail.rejection_reason && (
-                <Text size={3} display="block" marginBottom={2}>
+                <Text size={3} display="block" marginBottom={2} style={WRAPPING_TEXT_STYLE}>
                   {detail.rejection_reason}
                 </Text>
               )}

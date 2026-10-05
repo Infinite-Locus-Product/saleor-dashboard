@@ -2,7 +2,7 @@ import { useUser } from "@dashboard/auth/useUser";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import { CXApiError } from "../api/cxApiError";
-import { fetchReturn, submitRejectReturn } from "../api/returnsApi";
+import { fetchReturn, submitApproveReturn, submitRejectReturn } from "../api/returnsApi";
 import { type CXReturnDetail } from "../types";
 import { RequestDetailView } from "./RequestDetailView";
 
@@ -30,6 +30,7 @@ jest.mock("../api/returnsApi", () => ({
 
 const fetchReturnMock = fetchReturn as jest.Mock;
 const rejectMock = submitRejectReturn as jest.Mock;
+const approveMock = submitApproveReturn as jest.Mock;
 
 const REASON = "Customer used the product; tags removed per photos";
 
@@ -171,6 +172,7 @@ describe("RequestDetailView — TTXY-6032 reject", () => {
     });
     fetchReturnMock.mockReset();
     rejectMock.mockReset();
+    approveMock.mockReset();
     mockNotify.mockReset();
     mockNavigate.mockReset();
   });
@@ -346,6 +348,58 @@ describe("RequestDetailView — TTXY-6032 reject", () => {
     },
   );
 
+  it("R2-C2 a 409 APPROVAL_IN_PROGRESS on reject keeps the dialog open with the reason, toasts and does not reload", async () => {
+    // Arrange
+    await renderDetail(makeDetail({ cx_status: "CX_REVIEW", call_logs: [call(1, null)] }));
+    rejectMock.mockRejectedValue(
+      new CXApiError("An approval is in progress, try again shortly", 409, "APPROVAL_IN_PROGRESS"),
+    );
+
+    const fetchCallsBefore = fetchReturnMock.mock.calls.length;
+
+    // Act
+    typeReasonAndConfirm(openRejectDialog());
+
+    // Assert
+    await waitFor(() =>
+      expect(mockNotify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "error",
+          text: "An approval is in progress, try again shortly",
+        }),
+      ),
+    );
+    expect(screen.getByTestId("reject-reason-input")).toHaveValue(REASON);
+    expect(fetchReturnMock.mock.calls.length).toBe(fetchCallsBefore);
+  });
+
+  it.each([
+    [409, "LINE_REJECTED", "Return line already rejected"],
+    [409, null, "Conflict"],
+  ])(
+    "R2-C2 a %p (%s) on reject is still treated as stale: dialog closes and the request reloads",
+    async (status, code, message) => {
+      // Arrange
+      await renderDetail(makeDetail({ cx_status: "CX_REVIEW", call_logs: [call(1, null)] }));
+      rejectMock.mockRejectedValue(new CXApiError(message, status, code));
+      fetchReturnMock.mockResolvedValue(rejectedDetail());
+
+      const fetchCallsBefore = fetchReturnMock.mock.calls.length;
+
+      // Act
+      typeReasonAndConfirm(openRejectDialog());
+
+      // Assert
+      await waitFor(() =>
+        expect(mockNotify).toHaveBeenCalledWith(
+          expect.objectContaining({ status: "error", text: message }),
+        ),
+      );
+      expect(fetchReturnMock.mock.calls.length).toBeGreaterThan(fetchCallsBefore);
+      expect(screen.queryByTestId("reject-reason-input")).not.toBeInTheDocument();
+    },
+  );
+
   it("C3 while the reject is in flight the dialog cannot be dismissed and Approve / Convert are disabled", async () => {
     // Arrange: enough calls to approve, and an agreed exchange so Convert is enabled
     await renderDetail(
@@ -498,5 +552,140 @@ describe("RequestDetailView — TTXY-6032 reject", () => {
     expect(timeline.getByText(/RETURN REJECTED/)).toBeInTheDocument();
     expect(timeline.getByText(REASON, { exact: false })).toBeInTheDocument();
     expect(timeline.getByText(/CX_REVIEW → RETURN_REJECTED/)).toBeInTheDocument();
+  });
+});
+
+describe("RequestDetailView — TTXY-6041 round 2", () => {
+  const approvableDetail = () =>
+    makeDetail({
+      cx_status: "CX_REVIEW",
+      call_logs: [call(1, null), call(2, null)],
+      call_count: 2,
+    });
+
+  const confirmApprove = () => {
+    fireEvent.click(screen.getByRole("button", { name: /Approve Return/ }));
+
+    const dialog = screen.getByRole("dialog");
+
+    fireEvent.click(within(dialog).getByTestId("submit"));
+  };
+
+  beforeEach(() => {
+    (useUser as jest.Mock).mockReturnValue({
+      user: { id: "VXNlcjo3", email: "ravi@tenxyou.com", firstName: "Ravi", lastName: "Kumar" },
+    });
+    fetchReturnMock.mockReset();
+    rejectMock.mockReset();
+    approveMock.mockReset();
+    mockNotify.mockReset();
+    mockNavigate.mockReset();
+  });
+
+  it.each([
+    [409, "ALREADY_CLOSED", "Return request is already closed (RETURN_REJECTED)"],
+    [409, "LINE_REJECTED", "Return line has been rejected"],
+    [404, "NOT_FOUND", "Return request not found"],
+  ])(
+    "R2-C1 a %p (%s) on approve closes the dialog, reloads the request, then shows an error toast",
+    async (status, code, message) => {
+      // Arrange
+      await renderDetail(approvableDetail());
+      approveMock.mockRejectedValue(new CXApiError(message, status, code));
+      fetchReturnMock.mockResolvedValue(rejectedDetail());
+
+      const fetchCallsBefore = fetchReturnMock.mock.calls.length;
+
+      // Act
+      confirmApprove();
+
+      // Assert
+      await waitFor(() =>
+        expect(mockNotify).toHaveBeenCalledWith(
+          expect.objectContaining({ status: "error", text: message }),
+        ),
+      );
+      expect(fetchReturnMock.mock.calls.length).toBeGreaterThan(fetchCallsBefore);
+      // reload happens before the toast
+      expect(fetchReturnMock.mock.invocationCallOrder.at(-1)).toBeLessThan(
+        mockNotify.mock.invocationCallOrder.at(-1) as number,
+      );
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(await screen.findByTestId("rejected-pill")).toBeInTheDocument();
+    },
+  );
+
+  it("R2-C1 a 409 APPROVAL_IN_PROGRESS on approve closes the dialog and shows the toast", async () => {
+    // Arrange
+    await renderDetail(approvableDetail());
+    approveMock.mockRejectedValue(
+      new CXApiError("An approval is in progress", 409, "APPROVAL_IN_PROGRESS"),
+    );
+
+    // Act
+    confirmApprove();
+
+    // Assert
+    await waitFor(() =>
+      expect(mockNotify).toHaveBeenCalledWith(
+        expect.objectContaining({ status: "error", text: "An approval is in progress" }),
+      ),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("R2-C1 (control) any other approve error keeps the dialog open and does not reload", async () => {
+    // Arrange
+    await renderDetail(approvableDetail());
+    approveMock.mockRejectedValue(new CXApiError("Server error", 500, null));
+
+    const fetchCallsBefore = fetchReturnMock.mock.calls.length;
+
+    // Act
+    confirmApprove();
+
+    // Assert
+    await waitFor(() =>
+      expect(mockNotify).toHaveBeenCalledWith(
+        expect.objectContaining({ status: "error", text: "Server error" }),
+      ),
+    );
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(fetchReturnMock.mock.calls.length).toBe(fetchCallsBefore);
+  });
+
+  it("R2-C4 long rejection reasons wrap in the sidebar and the timeline", async () => {
+    // Arrange
+    const longReason = `https://example.com/${"a".repeat(300)}`;
+
+    // Act
+    await renderDetail(
+      rejectedDetail({
+        rejection_reason: longReason,
+        audit_trail: [
+          {
+            id: 11,
+            entity_type: "cx_return_request",
+            entity_id: "REQ-6120",
+            actor_type: "cx_agent",
+            actor_id: "VXNlcjo3",
+            actor_name: "Ravi Kumar",
+            action_type: "RETURN_REJECTED",
+            context: { reason: longReason },
+            created_at: "2026-10-04T08:30:00Z",
+          },
+        ],
+      }),
+    );
+
+    // Assert
+    const sidebarReason = within(screen.getByTestId("rejection-summary")).getByText(longReason);
+    const timelineReason = within(screen.getByTestId("status-timeline")).getByText(longReason, {
+      exact: false,
+    });
+
+    [sidebarReason, timelineReason].forEach(el => {
+      expect(el).toHaveStyle({ overflowWrap: "anywhere", whiteSpace: "pre-wrap" });
+    });
   });
 });

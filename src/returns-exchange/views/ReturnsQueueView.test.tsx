@@ -235,6 +235,27 @@ describe("ReturnsQueueView — TTXY-6032 pincode + rejected", () => {
     expect(screen.queryByTestId("pincode-filter-clear")).not.toBeInTheDocument();
   });
 
+  it.each(["", "   "])(
+    "R2-C5 applying an empty pincode (%p) clears the filter instead of showing an error",
+    async value => {
+      // Arrange
+      fetchMock.mockResolvedValue(page([makeRow()]));
+      render(<ReturnsQueueView />);
+      await screen.findByText("REQ-1001");
+      applyPincode("560001");
+      await waitFor(() => expect(lastParams().pincode).toBe("560001"));
+
+      // Act
+      applyPincode(value);
+
+      // Assert
+      await waitFor(() => expect(lastParams().pincode).toBeFalsy());
+      expect(screen.queryByText("Enter a 6-digit pincode")).not.toBeInTheDocument();
+      expect(screen.getByTestId("pincode-filter-input")).toHaveValue("");
+      expect(screen.queryByTestId("pincode-filter-clear")).not.toBeInTheDocument();
+    },
+  );
+
   it("C4 a slow, stale pincode response does not overwrite the newer unfiltered result", async () => {
     // Arrange
     let resolveSlow: (v: unknown) => void = () => undefined;
