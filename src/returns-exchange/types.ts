@@ -4,7 +4,8 @@ export type CXReturnStatus =
   | "CX_ACTION"
   | "EXCHANGED"
   | "APPROVED"
-  | "AUTO_APPROVED";
+  | "AUTO_APPROVED"
+  | "RETURN_REJECTED";
 
 export type SLATier = "SAFE" | "AT_RISK" | "CRITICAL";
 export type CXCallOutcome = "Answered" | "No Answer" | "Busy" | "Callback Requested";
@@ -44,12 +45,34 @@ export interface CXReturnRequest {
   updated_at: string;
   last_activity_by_id: string | null;
   last_activity_by_name: string | null;
+  /** Delivery pincode (from the order's shipping address); null when unknown. */
+  pincode: string | null;
+  /** Set when cx_status = RETURN_REJECTED (TTXY-6032). */
+  rejection_reason: string | null;
+  rejected_by_id: string | null;
+  rejected_by_name: string | null;
+  rejected_at: string | null;
   // Computed
   sla_tier: SLATier;
   sla_hours_remaining: number | null;
   call_count: number;
   last_call_outcome: string | null;
   last_call_user_action: string | null;
+}
+
+export interface CXReturnListFilters {
+  status?: string;
+  search?: string;
+  sla_tier?: string;
+  product?: string;
+  return_reason?: string;
+  date_from?: string;
+  date_to?: string;
+  last_activity_by?: string;
+  /** 6-digit delivery pincode; sent only when non-empty. */
+  pincode?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface CXCallLog {

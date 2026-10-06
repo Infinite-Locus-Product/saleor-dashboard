@@ -1,13 +1,14 @@
 import useNavigator from "@dashboard/hooks/useNavigator";
 import { Box, Button, Input, Select, Skeleton, Text } from "@saleor/macaw-ui-next";
 import { AlertTriangle, RefreshCw, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fetchReturns } from "../api/returnsApi";
 import { SLABadge } from "../components/SLABadge";
 import { StatusChip } from "../components/StatusChip";
 import { type CXReturnRequest, type CXReturnStatus, type SLATier } from "../types";
 import { requestDetailPath } from "../urls";
+import { isClosedStatus, isValidPincode } from "../utils/cxReturnStatus";
 
 const STATUSES: { value: CXReturnStatus; label: string }[] = [
   { value: "RETURN_PENDING", label: "Pending" },
@@ -16,6 +17,7 @@ const STATUSES: { value: CXReturnStatus; label: string }[] = [
   { value: "EXCHANGED", label: "Exchanged" },
   { value: "APPROVED", label: "Approved" },
   { value: "AUTO_APPROVED", label: "Auto Approved" },
+  { value: "RETURN_REJECTED", label: "Rejected" },
 ];
 
 const SLA_OPTIONS = [
@@ -36,6 +38,8 @@ interface Filters {
   date_from: string;
   date_to: string;
   last_activity_by: string;
+  /** Applied (validated) pincode; the input's draft value lives in `pincodeInput`. */
+  pincode: string;
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -47,10 +51,18 @@ const EMPTY_FILTERS: Filters = {
   date_from: "",
   date_to: "",
   last_activity_by: "",
+  pincode: "",
 };
+
+const PINCODE_ERROR = "Enter a 6-digit pincode";
+const PINCODE_ERROR_ID = "pincode-filter-error";
 
 function hasActiveFilters(f: Filters) {
   return Object.values(f).some(v => v !== "");
+}
+
+function isOnlyPincodeFilter(f: Filters): boolean {
+  return f.pincode !== "" && Object.entries(f).every(([key, v]) => key === "pincode" || v === "");
 }
 
 export const ReturnsQueueView = () => {
@@ -61,6 +73,11 @@ export const ReturnsQueueView = () => {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [pincodeInput, setPincodeInput] = useState("");
+  const [pincodeError, setPincodeError] = useState<string | null>(null);
+  // Bumped per request (and on unmount); only the latest request may set state, so a slow
+  // older response can't overwrite a newer filter result.
+  const requestSeq = useRef(0);
 
   const criticalCount = requests.filter(r => r.sla_tier === "CRITICAL").length;
 
@@ -71,10 +88,42 @@ export const ReturnsQueueView = () => {
 
   const clearFilters = () => {
     setFilters(EMPTY_FILTERS);
+    setPincodeInput("");
+    setPincodeError(null);
     setPage(1);
   };
 
+  const clearPincode = (): void => {
+    setPincodeInput("");
+    setPincodeError(null);
+    setFilter("pincode", "");
+  };
+
+  // Applied on Enter / Apply only; an invalid value shows an inline error and never fetches.
+  // An empty value clears the filter.
+  const applyPincode = (): void => {
+    const value = pincodeInput.trim();
+
+    if (value === "") {
+      clearPincode();
+
+      return;
+    }
+
+    if (!isValidPincode(value)) {
+      setPincodeError(PINCODE_ERROR);
+
+      return;
+    }
+
+    setPincodeError(null);
+    setPincodeInput(value);
+    setFilter("pincode", value);
+  };
+
   const load = useCallback(async () => {
+    const seq = ++requestSeq.current;
+
     setLoading(true);
     setError(null);
 
@@ -88,22 +137,35 @@ export const ReturnsQueueView = () => {
         date_from: filters.date_from || undefined,
         date_to: filters.date_to || undefined,
         last_activity_by: filters.last_activity_by || undefined,
+        pincode: filters.pincode || undefined,
         page,
         limit: LIMIT,
       });
 
+      if (seq !== requestSeq.current) return;
+
       setRequests(result.data);
       setTotal(result.pagination.total);
     } catch (err: any) {
+      if (seq !== requestSeq.current) return;
+
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   }, [filters, page]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Invalidate any in-flight request on unmount.
+  useEffect(
+    () => (): void => {
+      requestSeq.current++;
+    },
+    [],
+  );
 
   const totalPages = Math.ceil(total / LIMIT) || 1;
 
@@ -228,6 +290,68 @@ export const ReturnsQueueView = () => {
             />
           </Box>
 
+          {/* Pincode (applied on Enter / Apply) */}
+          <Box __minWidth="200px">
+            <Text size={2} color="default2" display="block" marginBottom={1}>
+              Pincode
+            </Text>
+            <Box display="flex" gap={2} alignItems="center">
+              <Input
+                label="6-digit pincode"
+                value={pincodeInput}
+                onChange={e => {
+                  setPincodeInput(e.target.value);
+                  setPincodeError(null);
+                }}
+                onKeyDown={e => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    applyPincode();
+                  }
+                }}
+                inputMode="numeric"
+                error={!!pincodeError}
+                aria-invalid={!!pincodeError}
+                aria-describedby={pincodeError ? PINCODE_ERROR_ID : undefined}
+                size="small"
+                data-test-id="pincode-filter-input"
+              />
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={applyPincode}
+                data-test-id="pincode-filter-apply"
+              >
+                Apply
+              </Button>
+              {filters.pincode && pincodeInput.trim() !== filters.pincode && (
+                <Text
+                  size={1}
+                  color="default2"
+                  whiteSpace="nowrap"
+                  data-test-id="pincode-filter-applied"
+                >
+                  Filtering by {filters.pincode}
+                </Text>
+              )}
+              {filters.pincode && (
+                <Button
+                  variant="tertiary"
+                  size="small"
+                  icon={<X size={13} />}
+                  onClick={clearPincode}
+                  aria-label="Clear pincode filter"
+                  data-test-id="pincode-filter-clear"
+                />
+              )}
+            </Box>
+            {pincodeError && (
+              <Text id={PINCODE_ERROR_ID} size={2} color="critical1" display="block" marginTop={1}>
+                {pincodeError}
+              </Text>
+            )}
+          </Box>
+
           {/* Date Range */}
           <Box __minWidth="130px">
             <Text size={2} color="default2" display="block" marginBottom={1}>
@@ -289,8 +413,43 @@ export const ReturnsQueueView = () => {
           <Text color="critical1">{error}</Text>
         </Box>
       ) : requests.length === 0 ? (
-        <Box padding={8} textAlign="center">
-          <Text color="default2">No return requests found</Text>
+        <Box
+          padding={8}
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          gap={3}
+          textAlign="center"
+        >
+          {isOnlyPincodeFilter(filters) ? (
+            <>
+              <Text color="default2">No return requests for pincode {filters.pincode}.</Text>
+              <Button variant="secondary" size="small" onClick={clearPincode}>
+                Clear pincode
+              </Button>
+            </>
+          ) : hasActiveFilters(filters) ? (
+            <>
+              <Text color="default2">No return requests match the current filters.</Text>
+              <Box display="flex" gap={2}>
+                {filters.pincode && (
+                  <Button variant="secondary" size="small" onClick={clearPincode}>
+                    Clear pincode
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={clearFilters}
+                  data-test-id="empty-state-clear-all"
+                >
+                  Clear all
+                </Button>
+              </Box>
+            </>
+          ) : (
+            <Text color="default2">No return requests found</Text>
+          )}
         </Box>
       ) : (
         <>
@@ -299,14 +458,15 @@ export const ReturnsQueueView = () => {
               <Box as="tr" borderBottomWidth={1} borderColor="default1" borderStyle="solid">
                 {[
                   { label: "Request ID", width: "10%" },
-                  { label: "Customer Name", width: "13%" },
+                  { label: "Customer Name", width: "12%" },
                   { label: "Order #", width: "8%" },
-                  { label: "Product", width: "14%" },
-                  { label: "Return Reason", width: "12%" },
+                  { label: "Pincode", width: "7%" },
+                  { label: "Product", width: "12%" },
+                  { label: "Return Reason", width: "11%" },
                   { label: "Submitted At", width: "10%" },
                   { label: "SLA Remaining", width: "11%" },
                   { label: "Status", width: "10%" },
-                  { label: "Last Activity By", width: "12%" },
+                  { label: "Last Activity By", width: "9%" },
                 ].map(col => (
                   <Box
                     key={col.label}
@@ -352,6 +512,11 @@ export const ReturnsQueueView = () => {
                   {/* Order # */}
                   <Box as="td" paddingX={3} paddingY={3}>
                     <Text size={3}>#{req.saleor_order_number}</Text>
+                  </Box>
+
+                  {/* Pincode */}
+                  <Box as="td" paddingX={3} paddingY={3}>
+                    <Text size={3}>{req.pincode || "—"}</Text>
                   </Box>
 
                   {/* Product */}
@@ -403,7 +568,13 @@ export const ReturnsQueueView = () => {
 
                   {/* SLA Remaining */}
                   <Box as="td" paddingX={3} paddingY={3}>
-                    <SLABadge tier={req.sla_tier} hoursRemaining={req.sla_hours_remaining} />
+                    {isClosedStatus(req.cx_status) ? (
+                      <Text size={3} color="default2">
+                        —
+                      </Text>
+                    ) : (
+                      <SLABadge tier={req.sla_tier} hoursRemaining={req.sla_hours_remaining} />
+                    )}
                   </Box>
 
                   {/* Status */}

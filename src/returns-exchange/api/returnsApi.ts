@@ -1,17 +1,12 @@
 import {
   type CXCallLog,
   type CXReturnDetail,
+  type CXReturnListFilters,
   type CXReturnRequest,
   type NotificationSettings,
 } from "../types";
-
-const BASE_URL = import.meta.env.VITE_TENEXU_API_URL;
-
-if (!BASE_URL) {
-  throw new Error(
-    "VITE_TENEXU_API_URL is not set. The CX returns module cannot reach the backend without it.",
-  );
-}
+import { CXApiError } from "./cxApiError";
+import { getTenexuBaseUrl } from "./tenexuBaseUrl";
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("_saleor_auth_token") || "";
@@ -28,15 +23,22 @@ function getAuthHeaders(): HeadersInit {
 }
 
 async function apiRequest<T>(method: string, path: string, body?: any): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  // Resolved per call (throws when VITE_TENEXU_API_URL is unset) instead of reading
+  // import.meta.env at module load, so the module can be imported under jest.
+  const res = await fetch(`${getTenexuBaseUrl()}${path}`, {
     method,
     headers: getAuthHeaders(),
     body: body ? JSON.stringify(body) : undefined,
   });
-  const json = await res.json();
+  // A non-JSON error body (e.g. a proxy's HTML 502) must still surface the HTTP status.
+  const json = await res.json().catch(() => null);
 
-  if (!res.ok || json?.ok === false) {
-    throw new Error(json?.message || `Request failed: ${res.status}`);
+  if (!res.ok || json?.ok === false || json === null) {
+    throw new CXApiError(
+      json?.message || `Request failed: ${res.status}`,
+      res.status,
+      typeof json?.code === "string" ? json.code : null,
+    );
   }
 
   return json;
@@ -44,18 +46,7 @@ async function apiRequest<T>(method: string, path: string, body?: any): Promise<
 
 // ─── Returns ─────────────────────────────────────────────────────────────────
 
-export async function fetchReturns(params: {
-  status?: string;
-  search?: string;
-  sla_tier?: string;
-  product?: string;
-  return_reason?: string;
-  date_from?: string;
-  date_to?: string;
-  last_activity_by?: string;
-  page?: number;
-  limit?: number;
-}): Promise<{
+export async function fetchReturns(params: CXReturnListFilters): Promise<{
   data: CXReturnRequest[];
   pagination: { total: number; page: number; limit: number };
 }> {
@@ -76,6 +67,10 @@ export async function fetchReturns(params: {
   if (params.date_to) qs.set("date_to", params.date_to);
 
   if (params.last_activity_by) qs.set("last_activity_by", params.last_activity_by);
+
+  const pincode = params.pincode?.trim();
+
+  if (pincode) qs.set("pincode", pincode);
 
   if (params.page) qs.set("page", String(params.page));
 
@@ -157,6 +152,25 @@ export async function submitMarkUnreachable(
   data: { cx_agent_id: string; cx_agent_name: string },
 ): Promise<void> {
   await apiRequest("POST", `/cx/returns/${requestId}/mark-unreachable`, data);
+}
+
+/**
+ * Rejects an open return request (TTXY-6032, LLD §4.1). The agent is taken from the
+ * session on the backend, so the body carries only the reason.
+ */
+export async function submitRejectReturn(
+  requestId: string,
+  reason: string,
+): Promise<CXReturnDetail> {
+  const result = await apiRequest<any>(
+    "POST",
+    `/cx/returns/${encodeURIComponent(requestId)}/reject`,
+    {
+      reason,
+    },
+  );
+
+  return result.data;
 }
 
 export async function fetchCallLogs(requestId: string): Promise<CXCallLog[]> {
