@@ -69,6 +69,3 @@ playwright-failures*/
 !.githooks/
 !.githooks/*
 !.test-gate.conf
-
-# Claude Code instructions are personal - never committed
-CLAUDE.md
