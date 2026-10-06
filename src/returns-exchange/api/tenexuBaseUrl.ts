@@ -9,7 +9,7 @@ export function getTenexuBaseUrl(): string {
 
   if (!baseUrl) {
     throw new Error(
-      "VITE_TENEXU_API_URL is not set. The CX manual-return module cannot reach the backend without it.",
+      "VITE_TENEXU_API_URL is not set. The CX returns module cannot reach the backend without it.",
     );
   }
 

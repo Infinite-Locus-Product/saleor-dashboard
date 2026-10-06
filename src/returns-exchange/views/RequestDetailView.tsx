@@ -4,20 +4,46 @@ import useNavigator from "@dashboard/hooks/useNavigator";
 import { useNotifier } from "@dashboard/hooks/useNotifier";
 import { getUserName } from "@dashboard/misc";
 import { Box, Button, Skeleton, Text } from "@saleor/macaw-ui-next";
-import { ArrowLeft, CheckCircle, ChevronDown, Phone, RotateCcw, UserX } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  CheckCircle,
+  ChevronDown,
+  Phone,
+  RotateCcw,
+  UserX,
+  XCircle,
+} from "lucide-react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 
+import { isApprovalInProgressError, isStaleRequestError } from "../api/cxApiError";
 import {
   fetchCallLogs,
   fetchProductVariants,
   fetchReturn,
   submitApproveReturn,
   submitMarkUnreachable,
+  submitRejectReturn,
 } from "../api/returnsApi";
+import { RejectReturnDialog } from "../components/RejectReturnDialog";
 import { SLABadge } from "../components/SLABadge";
 import { StatusChip } from "../components/StatusChip";
 import { type CXCallLog, type CXReturnDetail, type ProductVariant } from "../types";
 import { logCallPath, returnsQueuePath, sizeSelectionPath } from "../urls";
+import { isClosedStatus } from "../utils/cxReturnStatus";
+
+// e.g. "4 Oct 2026, 3:15 pm"
+const formatDateTime = (iso: string): string =>
+  new Date(iso).toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+// A long reason with no spaces (e.g. a URL) must wrap inside the 320px sidebar / timeline.
+const WRAPPING_TEXT_STYLE: CSSProperties = { overflowWrap: "anywhere", whiteSpace: "pre-wrap" };
 
 interface RequestDetailViewProps {
   requestId: string;
@@ -32,6 +58,8 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
   const [error, setError] = useState<string | null>(null);
   const [approving, setApproving] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
   const [callLogs, setCallLogs] = useState<CXCallLog[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [cxActionsOpen, setCxActionsOpen] = useState(false);
@@ -138,8 +166,19 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
       setApproveDialogOpen(false);
       await reload();
       notify({ status: "success", text: "Return approved" });
-    } catch (err: any) {
-      notify({ status: "error", text: err.message ?? "Failed to approve return" });
+    } catch (err: unknown) {
+      const text = err instanceof Error && err.message ? err.message : "Failed to approve return";
+
+      // Stale request: close and reload so the page shows its real state, then toast.
+      // Approval in progress: nothing changed yet, so just close; the agent can retry later.
+      if (isStaleRequestError(err)) {
+        setApproveDialogOpen(false);
+        await reload();
+      } else if (isApprovalInProgressError(err)) {
+        setApproveDialogOpen(false);
+      }
+
+      notify({ status: "error", text });
     } finally {
       setApproving(false);
     }
@@ -166,8 +205,34 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
     }
   };
 
-  const isTerminal =
-    detail && ["EXCHANGED", "APPROVED", "AUTO_APPROVED"].includes(detail.cx_status);
+  // Reject (TTXY-6032). The backend takes the agent from the session, so only the reason is
+  // sent. A stale 409 / 404 means the request is no longer open: close the dialog and reload so
+  // the page shows its real state. Any other failure (incl. 409 APPROVAL_IN_PROGRESS, which can
+  // be retried) keeps the dialog open with the typed reason.
+  const handleReject = async (reason: string): Promise<void> => {
+    setRejecting(true);
+
+    try {
+      await submitRejectReturn(requestId, reason);
+      setRejectDialogOpen(false);
+      await reload();
+      notify({ status: "success", text: "Return rejected" });
+    } catch (err: unknown) {
+      const text = err instanceof Error && err.message ? err.message : "Failed to reject return";
+
+      if (isStaleRequestError(err)) {
+        setRejectDialogOpen(false);
+        await reload();
+      }
+
+      notify({ status: "error", text });
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  const isTerminal = isClosedStatus(detail?.cx_status);
+  const isRejected = detail?.cx_status === "RETURN_REJECTED";
   const lastUserAction = detail?.last_user_action;
   // Approval gate: per LogCallView guidance, agents must log ≥2 call attempts before
   // approving — unless the customer has explicitly disagreed to exchange (terminal user
@@ -272,7 +337,20 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
                   Log Call
                 </Button>
               )}
-              {isTerminal && (
+              {isRejected && (
+                <Box
+                  borderRadius={2}
+                  paddingX={2}
+                  paddingY={1}
+                  backgroundColor="critical1"
+                  data-test-id="rejected-pill"
+                >
+                  <Text size={2} color="critical1" fontWeight="bold">
+                    Return Rejected
+                  </Text>
+                </Box>
+              )}
+              {isTerminal && !isRejected && (
                 <Box
                   borderRadius={2}
                   paddingX={2}
@@ -525,7 +603,7 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
                 <Button
                   variant="primary"
                   size="medium"
-                  disabled={!canExchange || !!isTerminal}
+                  disabled={!canExchange || isTerminal || rejecting}
                   onClick={() => navigate(sizeSelectionPath(requestId))}
                   title={!canExchange ? "Log a call with 'Agreed to exchange' first" : undefined}
                 >
@@ -652,7 +730,7 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
 
           {/* Status Timeline */}
           {detail.audit_trail && detail.audit_trail.length > 0 && (
-            <Card>
+            <Card testId="status-timeline">
               <Text size={5} fontWeight="bold" display="block" marginBottom={1}>
                 Status Timeline
               </Text>
@@ -674,6 +752,11 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
                           ? `: ${entry.context.from} → ${entry.context.to}`
                           : ""}
                       </Text>
+                      {entry.action_type === "RETURN_REJECTED" && entry.context?.reason && (
+                        <Text size={2} display="block" marginBottom={1} style={WRAPPING_TEXT_STYLE}>
+                          Reason: {String(entry.context.reason)}
+                        </Text>
+                      )}
                       <Text size={2} color="default2">
                         by {entry.actor_name || "System"}
                       </Text>
@@ -695,8 +778,34 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
 
         {/* ── RIGHT SIDEBAR ── */}
         <Box display="flex" flexDirection="column" gap={4}>
+          {/* Rejection summary */}
+          {isRejected && (
+            <Box
+              borderWidth={1}
+              borderColor="critical1"
+              borderStyle="solid"
+              borderRadius={3}
+              padding={4}
+              backgroundColor="critical1"
+              data-test-id="rejection-summary"
+            >
+              <Text size={3} fontWeight="bold" color="critical1" display="block" marginBottom={2}>
+                Return Rejected
+              </Text>
+              {detail.rejection_reason && (
+                <Text size={3} display="block" marginBottom={2} style={WRAPPING_TEXT_STYLE}>
+                  {detail.rejection_reason}
+                </Text>
+              )}
+              <Text size={2} color="default2" display="block">
+                Rejected by {detail.rejected_by_name || "CX agent"}
+                {detail.rejected_at ? ` on ${formatDateTime(detail.rejected_at)}` : ""}
+              </Text>
+            </Box>
+          )}
+
           {/* Terminal status badge */}
-          {isTerminal && (
+          {isTerminal && !isRejected && (
             <Box
               borderWidth={1}
               borderColor="default1"
@@ -942,7 +1051,7 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
           <Button
             variant="secondary"
             size="medium"
-            disabled={!canExchange}
+            disabled={!canExchange || rejecting}
             onClick={() => navigate(sizeSelectionPath(requestId))}
             title={!canExchange ? "Log a call with 'Agreed to exchange' first" : undefined}
           >
@@ -951,10 +1060,21 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
           </Button>
 
           <Button
+            variant="error"
+            size="medium"
+            onClick={() => setRejectDialogOpen(true)}
+            disabled={rejecting}
+            data-test-id="reject-return-button"
+          >
+            <XCircle size={14} />
+            Reject Return
+          </Button>
+
+          <Button
             variant="primary"
             size="medium"
             onClick={() => setApproveDialogOpen(true)}
-            disabled={approving || !canApprove}
+            disabled={approving || rejecting || !canApprove}
             title={
               !canApprove
                 ? hasDisagreed || callLogs.length >= 2
@@ -979,15 +1099,37 @@ export const RequestDetailView = ({ requestId }: RequestDetailViewProps) => {
       >
         <Text>Approve this return request? This action cannot be undone.</Text>
       </ActionDialog>
+
+      {/* Mounted per open so every open starts with an empty reason. */}
+      {rejectDialogOpen && (
+        <RejectReturnDialog
+          open
+          // Ignored while the request is in flight so the typed reason can't be lost.
+          onClose={() => {
+            if (!rejecting) setRejectDialogOpen(false);
+          }}
+          onConfirm={handleReject}
+          submitting={rejecting}
+          callCount={callLogs.length}
+          lastUserAction={lastUserAction}
+        />
+      )}
     </Box>
   );
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function Card({ children }: { children: React.ReactNode }) {
+function Card({ children, testId }: { children: React.ReactNode; testId?: string }) {
   return (
-    <Box borderWidth={1} borderColor="default1" borderStyle="solid" borderRadius={3} padding={5}>
+    <Box
+      borderWidth={1}
+      borderColor="default1"
+      borderStyle="solid"
+      borderRadius={3}
+      padding={5}
+      data-test-id={testId}
+    >
       {children}
     </Box>
   );
