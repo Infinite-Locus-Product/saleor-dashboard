@@ -1,7 +1,6 @@
 /**
- * The backend now requires a staff token with MANAGE_PRODUCTS on
- * rebuild-product-variant-cache, and answers a repeat inside its cooldown
- * with 429 + a "try again in Ns" message the card shows as-is.
+ * The backend answers a repeat rebuild inside its cooldown with 429 + a
+ * "try again in Ns" message the card shows as-is.
  */
 import { rebuildProductVariantCache } from "./rebuildProductCacheApi";
 
@@ -21,11 +20,9 @@ describe("rebuildProductVariantCache", () => {
   beforeEach(() => {
     fetchMock.mockReset();
     (global as any).fetch = fetchMock;
-    localStorage.setItem("_saleor_auth_token", "tok-123");
-    localStorage.setItem("_saleorRefreshToken", "ref-456");
   });
 
-  it("sends the staff token and refresh token with the rebuild request", async () => {
+  it("POSTs the product id to rebuild-product-variant-cache", async () => {
     // Arrange
     fetchMock.mockResolvedValue(jsonResponse(200, { success: true }));
 
@@ -37,13 +34,7 @@ describe("rebuildProductVariantCache", () => {
 
     expect(url).toBe("https://api.test/saleor/rebuild-product-variant-cache");
     expect(init.method).toBe("POST");
-    expect(init.headers).toEqual(
-      expect.objectContaining({
-        Authorization: "Bearer tok-123",
-        "X-Refresh-Token": "ref-456",
-        "Content-Type": "application/json",
-      }),
-    );
+    expect(init.headers).toEqual({ "Content-Type": "application/json" });
     expect(JSON.parse(init.body)).toEqual({
       first: 10,
       productId: "UHJvZHVjdDo1MTc=",
