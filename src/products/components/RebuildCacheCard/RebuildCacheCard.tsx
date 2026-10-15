@@ -32,12 +32,17 @@ export const RebuildCacheCard = ({ productId }: RebuildCacheCardProps) => {
         }),
       });
     } catch (error) {
+      // The backend's message says why (e.g. "Try again in 126s." during the
+      // rebuild cooldown, or a missing permission); fall back to a generic one.
       notify({
         status: "error",
-        text: intl.formatMessage({
-          defaultMessage: "Failed to rebuild cache",
-          id: "anlSAo",
-        }),
+        text:
+          error instanceof Error && error.message
+            ? error.message
+            : intl.formatMessage({
+                defaultMessage: "Failed to rebuild cache",
+                id: "anlSAo",
+              }),
       });
     } finally {
       setLoading(false);
