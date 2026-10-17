@@ -1,22 +1,15 @@
 /**
  * Thin client for the TenXyou backend's rebuild-product-variant-cache endpoint.
- * The /saleor/* routes authenticate via the backend's own server-level Saleor
- * token, so no auth headers are sent from the dashboard.
+ * The backend refuses a repeat inside its per-product cooldown with 429 + a
+ * "try again in Ns" message, which is thrown as-is so the card can show it.
  */
-
-const BASE_URL = import.meta.env.VITE_TENEXU_API_URL as string | undefined;
+import { getTenexuBaseUrl } from "@dashboard/returns-exchange/api/tenexuBaseUrl";
 
 export async function rebuildProductVariantCache(params: {
   productId: string;
   channel?: string;
 }): Promise<void> {
-  if (!BASE_URL) {
-    throw new Error(
-      "VITE_TENEXU_API_URL is not set. The rebuild-cache action cannot reach the backend without it.",
-    );
-  }
-
-  const res = await fetch(`${BASE_URL}/saleor/rebuild-product-variant-cache`, {
+  const res = await fetch(`${getTenexuBaseUrl()}/saleor/rebuild-product-variant-cache`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
