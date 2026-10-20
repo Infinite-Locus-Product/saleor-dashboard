@@ -9,6 +9,9 @@ import {
   manualExchangeNewOrderPath,
   manualExchangeNewPath,
   manualExchangeNewSizePath,
+  manualRefundDetailPath,
+  manualRefundListPath,
+  manualRefundNewPath,
   manualReturnDetailPath,
   manualReturnListPath,
   manualReturnNewPath,
@@ -21,6 +24,9 @@ import { LogCallView } from "./views/LogCallView";
 import { ManualExchangeDetailView } from "./views/ManualExchangeDetailView";
 import { ManualExchangeListView } from "./views/ManualExchangeListView";
 import { ManualExchangeNewView } from "./views/ManualExchangeNewView";
+import { ManualRefundDetailView } from "./views/ManualRefundDetailView";
+import { ManualRefundListView } from "./views/ManualRefundListView";
+import { ManualRefundNewView } from "./views/ManualRefundNewView";
 import { ManualReturnDetailView } from "./views/ManualReturnDetailView";
 import { ManualReturnListView } from "./views/ManualReturnListView";
 import { ManualReturnNewView } from "./views/ManualReturnNewView";
@@ -115,6 +121,39 @@ const ReturnsExchangeSection = () => (
       render={() => (
         <CXAccessGuard>
           <ManualReturnListView />
+        </CXAccessGuard>
+      )}
+    />
+
+    {/* Manual refund — new (must come before detail so "new" isn't read as an MRF id) */}
+    <Route
+      exact
+      path={manualRefundNewPath}
+      render={() => (
+        <CXAccessGuard featureName="Manual Refunds">
+          <ManualRefundNewView />
+        </CXAccessGuard>
+      )}
+    />
+
+    {/* Manual refund — detail */}
+    <Route
+      exact
+      path={manualRefundDetailPath(":mrfId")}
+      render={({ match }) => (
+        <CXAccessGuard featureName="Manual Refunds">
+          <ManualRefundDetailView mrfId={match.params.mrfId!} />
+        </CXAccessGuard>
+      )}
+    />
+
+    {/* Manual refund list */}
+    <Route
+      exact
+      path={manualRefundListPath}
+      render={() => (
+        <CXAccessGuard featureName="Manual Refunds">
+          <ManualRefundListView />
         </CXAccessGuard>
       )}
     />

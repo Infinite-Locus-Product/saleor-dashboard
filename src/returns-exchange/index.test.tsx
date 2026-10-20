@@ -19,6 +19,15 @@ jest.mock("./views/ManualReturnNewView", () => ({
 jest.mock("./views/ManualReturnDetailView", () => ({
   ManualReturnDetailView: ({ mrId }: { mrId: string }) => `manual-return-detail-view:${mrId}`,
 }));
+jest.mock("./views/ManualRefundListView", () => ({
+  ManualRefundListView: () => "manual-refund-list-view",
+}));
+jest.mock("./views/ManualRefundNewView", () => ({
+  ManualRefundNewView: () => "manual-refund-new-view",
+}));
+jest.mock("./views/ManualRefundDetailView", () => ({
+  ManualRefundDetailView: ({ mrfId }: { mrfId: string }) => `manual-refund-detail-view:${mrfId}`,
+}));
 jest.mock("./views/ManualExchangeListView", () => ({
   ManualExchangeListView: () => "manual-exchange-list-view",
 }));
