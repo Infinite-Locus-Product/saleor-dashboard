@@ -269,7 +269,7 @@ export const ManualRefundNewView = () => {
             <>
               {!lookup.delivery_notes.some(note => note.eligible) && (
                 <Text size={3} color="critical1" display="block" marginBottom={3} role="alert">
-                  None of these delivery notes can be refunded. An active return is required.
+                  None of these delivery notes can be refunded. The reason is shown on each one.
                 </Text>
               )}
               <Box display="flex" flexDirection="column" gap={3}>
