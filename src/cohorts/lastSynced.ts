@@ -14,9 +14,20 @@ const IST_FORMAT = new Intl.DateTimeFormat("en-IN", {
   timeStyle: "short",
 });
 
-/** Date and time in IST (the operating team's timezone), e.g. "22 Oct 2026, 11:00 am IST". */
-export const formatIstDateTime = (value: string): string =>
-  `${IST_FORMAT.format(new Date(value))} IST`;
+/**
+ * Date and time in IST (the operating team's timezone), e.g. "22 Oct 2026, 11:00 am IST".
+ * Never throws: an unparseable value is shown as-is (a dash when empty), since
+ * Intl.DateTimeFormat#format throws a RangeError on an invalid Date.
+ */
+export const formatIstDateTime = (value: string): string => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value || "—";
+  }
+
+  return `${IST_FORMAT.format(date)} IST`;
+};
 
 /**
  * A failed or partial latest attempt wins over an older success, so a stale

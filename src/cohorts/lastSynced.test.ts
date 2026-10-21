@@ -25,6 +25,28 @@ describe("formatIstDateTime", () => {
     expect(text).toMatch(/11:00/);
     expect(text).toMatch(/IST$/);
   });
+
+  it("C7b — does not throw on an invalid date string and shows the raw value", () => {
+    // Arrange
+    const garbage = "not-a-date";
+
+    // Act
+    const text = formatIstDateTime(garbage);
+
+    // Assert
+    expect(text).toBe("not-a-date");
+  });
+
+  it("C7b — shows a dash for an empty string", () => {
+    // Arrange
+    const empty = "";
+
+    // Act
+    const text = formatIstDateTime(empty);
+
+    // Assert
+    expect(text).toBe("—");
+  });
 });
 
 describe("describeLastSync", () => {
@@ -34,6 +56,7 @@ describe("describeLastSync", () => {
   });
 
   it("U2 — a successful sync shows its time", () => {
+    // Arrange — fields are built inline
     // Act
     const view = describeLastSync(
       fields({
@@ -48,6 +71,7 @@ describe("describeLastSync", () => {
   });
 
   it("treats a pre-fix cohort (no status column yet) with last_synced_at as success", () => {
+    // Arrange — fields are built inline
     // Act
     const view = describeLastSync(fields({ last_synced_at: "2026-10-01T00:00:00Z" }));
 
@@ -58,6 +82,7 @@ describe("describeLastSync", () => {
   it.each(["failed", "partial"] as const)(
     "U3 — a %s latest attempt is shown as such, with the last success kept separate",
     status => {
+      // Arrange — fields are built inline
       // Act
       const view = describeLastSync(
         fields({
@@ -77,6 +102,7 @@ describe("describeLastSync", () => {
   );
 
   it("U3b — a failed first attempt has no last success", () => {
+    // Arrange — fields are built inline
     // Act
     const view = describeLastSync(
       fields({ last_sync_status: "failed", last_sync_attempt_at: "2026-10-22T05:30:00Z" }),

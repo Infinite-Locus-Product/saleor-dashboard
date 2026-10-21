@@ -20,8 +20,10 @@ import {
   uploadCohortCsv,
 } from "../api/cohortsApi";
 import { CohortDeleteDialog } from "../components/CohortDeleteDialog";
+import { CohortErrorText } from "../components/CohortErrorText";
 import { CohortLastSync } from "../components/CohortLastSync";
-import { cohortMessages } from "../messages";
+import { type CohortErrorView, describeCohortError } from "../errors";
+import { cohortMessages, cohortTypeMessages } from "../messages";
 import {
   type Cohort,
   type CohortIngestSummary,
@@ -45,48 +47,80 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
 
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<CohortErrorView | null>(null);
 
   const [uploading, setUploading] = React.useState(false);
   const [summary, setSummary] = React.useState<CohortIngestSummary | null>(null);
-  const [uploadError, setUploadError] = React.useState<string | null>(null);
+  const [uploadError, setUploadError] = React.useState<CohortErrorView | null>(null);
 
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
-  const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [deleteError, setDeleteError] = React.useState<CohortErrorView | null>(null);
   const [linkedCoupons, setLinkedCoupons] = React.useState<CohortLinkedCoupon[] | null>(null);
-  const [couponLookupError, setCouponLookupError] = React.useState<string | null>(null);
+  const [couponLookupError, setCouponLookupError] = React.useState<CohortErrorView | null>(null);
+  // Bumped to re-run the coupon lookup while the dialog stays open (after a failed delete).
+  const [couponLookupRun, setCouponLookupRun] = React.useState(0);
 
   const [syncing, setSyncing] = React.useState(false);
   const [syncResult, setSyncResult] = React.useState<CohortSyncResult | null>(null);
-  const [syncError, setSyncError] = React.useState<string | null>(null);
+  const [syncError, setSyncError] = React.useState<CohortErrorView | null>(null);
+  // Which card failed to re-fetch the cohort after its action succeeded (C7d).
+  const [refreshWarning, setRefreshWarning] = React.useState<"sync" | "upload" | null>(null);
 
+  // Incremented whenever the form is (re)hydrated from a saved record, so a
+  // slower background refresh cannot overwrite a newer saved record.
+  const recordVersion = React.useRef(0);
+
+  /** Load a record into BOTH the cohort and the editable form fields. Only for load and save. */
   const hydrate = React.useCallback((next: Cohort) => {
+    recordVersion.current += 1;
     setCohort(next);
     setDescription(next.description ?? "");
     setStatus(next.status);
     setSyncHours(String(next.sync_frequency_hours ?? 1));
   }, []);
 
+  /**
+   * C1 — re-fetch the cohort record (member count, sync state) after a sync or
+   * CSV upload WITHOUT touching the form, so unsaved edits survive.
+   * Resolves false when the refresh failed.
+   */
+  const refreshRecord = React.useCallback(async (): Promise<boolean> => {
+    const version = recordVersion.current;
+
+    try {
+      const next = await fetchCohort(id);
+
+      if (recordVersion.current === version) {
+        setCohort(next);
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }, [id]);
+
   React.useEffect(() => {
     let cancelled = false;
 
     setLoading(true);
+    setError(null);
     fetchCohort(id)
-      .then(next => !cancelled && hydrate(next))
-      .catch(
-        err =>
-          !cancelled &&
-          setError(
-            err instanceof Error ? err.message : intl.formatMessage(cohortMessages.loadCohortError),
-          ),
-      )
-      .finally(() => !cancelled && setLoading(false));
+      .then(next => {
+        if (!cancelled) hydrate(next);
+      })
+      .catch(err => {
+        if (!cancelled) setError(describeCohortError("load", err));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [id, hydrate, intl]);
+  }, [id, hydrate]);
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -102,43 +136,60 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
 
       hydrate(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : intl.formatMessage(cohortMessages.updateError));
+      setError(describeCohortError("update", err));
     } finally {
       setSaving(false);
     }
   };
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const input = event.target;
+    const file = input.files?.[0];
 
     if (!file) return;
 
     setUploading(true);
     setUploadError(null);
     setSummary(null);
+    setRefreshWarning(null);
 
     try {
-      const result = await uploadCohortCsv(id, file);
+      setSummary(await uploadCohortCsv(id, file));
 
-      setSummary(result);
-
-      // member_count changes after ingest — refresh so the header stays truthful.
-      const refreshed = await fetchCohort(id);
-
-      hydrate(refreshed);
+      // member_count changes after ingest — refresh the record (not the form).
+      if (!(await refreshRecord())) {
+        setRefreshWarning("upload");
+      }
     } catch (err) {
-      setUploadError(
-        err instanceof Error ? err.message : intl.formatMessage(cohortMessages.csvError),
-      );
+      setUploadError(describeCohortError("upload", err));
     } finally {
       setUploading(false);
       // allow re-uploading the same filename
-      event.target.value = "";
+      input.value = "";
     }
   };
 
-  // TTXY-6199 — load the coupons using this cohort each time the dialog opens,
-  // so Confirm is only offered for a cohort no coupon references.
+  // C2 — every open and close starts from "lookup pending", so the first render
+  // after a reopen can never show the previous lookup's enabled Confirm.
+  const resetDeleteState = () => {
+    setLinkedCoupons(null);
+    setCouponLookupError(null);
+    setDeleteError(null);
+  };
+
+  const openDeleteDialog = () => {
+    resetDeleteState();
+    setDeleteOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteOpen(false);
+    resetDeleteState();
+  };
+
+  // TTXY-6199 — load the coupons using this cohort each time the dialog opens
+  // (and again after a failed delete), so Confirm is only offered for a cohort
+  // no coupon references.
   React.useEffect(() => {
     if (!deleteOpen) return;
 
@@ -147,43 +198,39 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
     setLinkedCoupons(null);
     setCouponLookupError(null);
     fetchCohortCoupons(id)
-      .then(coupons => !cancelled && setLinkedCoupons(coupons))
-      .catch(
-        err =>
-          !cancelled &&
-          setCouponLookupError(
-            err instanceof Error
-              ? err.message
-              : intl.formatMessage(cohortMessages.deleteCouponsError),
-          ),
-      );
+      .then(coupons => {
+        if (!cancelled) setLinkedCoupons(coupons);
+      })
+      .catch(err => {
+        if (!cancelled) setCouponLookupError(describeCohortError("coupons", err));
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [deleteOpen, id, intl]);
+  }, [deleteOpen, id, couponLookupRun]);
 
   const handleSync = async () => {
+    if (syncing || saving) return;
+
     setSyncing(true);
     setSyncError(null);
     setSyncResult(null);
+    setRefreshWarning(null);
 
     try {
       setSyncResult(await syncCohort(id));
     } catch (err) {
-      setSyncError(
-        err instanceof Error ? err.message : intl.formatMessage(cohortMessages.syncError),
-      );
-    } finally {
-      // The outcome (success / partial / failed) is recorded on the cohort; refresh it.
-      try {
-        hydrate(await fetchCohort(id));
-      } catch {
-        // keep the current view; the next load will catch up
-      }
-
-      setSyncing(false);
+      setSyncError(describeCohortError("sync", err));
     }
+
+    // The outcome (success / partial / failed) is recorded on the cohort; refresh
+    // the record only, so unsaved form edits survive (C1).
+    if (!(await refreshRecord())) {
+      setRefreshWarning("sync");
+    }
+
+    setSyncing(false);
   };
 
   const handleDelete = async () => {
@@ -194,10 +241,12 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
       await deleteCohort(id);
       navigate(cohortListUrl());
     } catch (err) {
-      // 409 when coupons still reference this cohort — the message lists them.
-      setDeleteError(
-        err instanceof Error ? err.message : intl.formatMessage(cohortMessages.deleteError),
-      );
+      // 409: coupons now reference the cohort; 502: untagging failed, nothing
+      // deleted. Either way re-check the coupons; Confirm stays disabled until
+      // the lookup comes back empty.
+      setDeleteError(describeCohortError("delete", err));
+      setLinkedCoupons(null);
+      setCouponLookupRun(run => run + 1);
       setDeleting(false);
     }
   };
@@ -221,7 +270,11 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
         <TopNav href={cohortListUrl()} title={intl.formatMessage(cohortMessages.sectionTitle)} />
         <DetailPageLayout.Content>
           <Box padding={6}>
-            <Text color="critical1">{error ?? intl.formatMessage(cohortMessages.notFound)}</Text>
+            {error ? (
+              <CohortErrorText error={error} />
+            ) : (
+              <Text color="critical1">{intl.formatMessage(cohortMessages.notFound)}</Text>
+            )}
           </Box>
         </DetailPageLayout.Content>
       </DetailPageLayout>
@@ -231,6 +284,12 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
   const isStatic = cohort.type === "static";
   const isExpired = !!cohort.end_date && new Date(cohort.end_date).getTime() <= Date.now();
   const canSync = cohort.status && !isExpired;
+  // C7a — activating an expired cohort would not help, so say why instead.
+  const syncBlockedHelp = isExpired
+    ? cohortMessages.syncExpiredHelp
+    : !cohort.status
+      ? cohortMessages.syncInactiveHelp
+      : null;
 
   return (
     <DetailPageLayout gridTemplateColumns={1}>
@@ -285,10 +344,10 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
                   <Text size={2} color="default2">
                     {intl.formatMessage(cohortMessages.membersSummary, {
                       count: cohort.member_count,
-                      type: cohort.type,
+                      type: intl.formatMessage(cohortTypeMessages[cohort.type]),
                     })}
                   </Text>
-                  {error && <Text color="critical1">{error}</Text>}
+                  {error && <CohortErrorText error={error} testId="cohort-save-error" />}
                 </Box>
               </DashboardCard.Content>
             </DashboardCard>
@@ -307,32 +366,36 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
                   <Button
                     variant="secondary"
                     onClick={handleSync}
-                    disabled={!canSync || syncing}
+                    disabled={!canSync || syncing || saving}
                     data-test-id="cohort-sync-now"
                   >
                     {intl.formatMessage(cohortMessages.syncNow)}
                   </Button>
-                  {!canSync && (
-                    <Text size={2} color="default2">
-                      {intl.formatMessage(cohortMessages.syncInactiveHelp)}
+                  {syncBlockedHelp && (
+                    <Text size={2} color="default2" data-test-id="cohort-sync-blocked-help">
+                      {intl.formatMessage(syncBlockedHelp)}
                     </Text>
                   )}
                 </Box>
-                {syncResult && (
-                  <Text size={2} data-test-id="cohort-sync-result">
-                    {intl.formatMessage(cohortMessages.syncDone, {
-                      added: syncResult.added,
-                      skipped: syncResult.skipped,
-                      notFound: syncResult.notFound,
-                      errors: syncResult.errors,
-                    })}
-                  </Text>
-                )}
-                {syncError && (
-                  <Text color="critical1" data-test-id="cohort-sync-error">
-                    {syncError}
-                  </Text>
-                )}
+                {/* C6 — always mounted so screen readers announce the outcome */}
+                <Box aria-live="polite" display="grid" gap={2} data-test-id="cohort-sync-status">
+                  {syncResult && (
+                    <Text size={2} data-test-id="cohort-sync-result">
+                      {intl.formatMessage(cohortMessages.syncDone, {
+                        added: syncResult.added,
+                        skipped: syncResult.skipped,
+                        notFound: syncResult.notFound,
+                        errors: syncResult.errors,
+                      })}
+                    </Text>
+                  )}
+                  {syncError && <CohortErrorText error={syncError} testId="cohort-sync-error" />}
+                  {refreshWarning === "sync" && (
+                    <Text size={2} color="warning1" data-test-id="cohort-refresh-warning">
+                      {intl.formatMessage(cohortMessages.refreshWarning)}
+                    </Text>
+                  )}
+                </Box>
               </Box>
             </DashboardCard.Content>
           </DashboardCard>
@@ -356,12 +419,17 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
                     onChange={handleUpload}
                     data-test-id="cohort-csv-input"
                   />
-                  {uploading && <Text>{intl.formatMessage(cohortMessages.uploading)}</Text>}
-                  {uploadError && (
-                    <Text color="critical1" data-test-id="cohort-csv-error">
-                      {uploadError}
-                    </Text>
-                  )}
+                  <Box aria-live="polite" display="grid" gap={2}>
+                    {uploading && <Text>{intl.formatMessage(cohortMessages.uploading)}</Text>}
+                    {uploadError && (
+                      <CohortErrorText error={uploadError} testId="cohort-csv-error" />
+                    )}
+                    {refreshWarning === "upload" && (
+                      <Text size={2} color="warning1" data-test-id="cohort-refresh-warning">
+                        {intl.formatMessage(cohortMessages.refreshWarning)}
+                      </Text>
+                    )}
+                  </Box>
                   {summary && (
                     <Box data-test-id="cohort-csv-summary">
                       <Text>
@@ -396,11 +464,7 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
           <DashboardCard>
             <DashboardCard.Content>
               <Box paddingY={4}>
-                <Button
-                  variant="secondary"
-                  onClick={() => setDeleteOpen(true)}
-                  data-test-id="cohort-delete"
-                >
+                <Button variant="secondary" onClick={openDeleteDialog} data-test-id="cohort-delete">
                   {intl.formatMessage(cohortMessages.deleteCohort)}
                 </Button>
               </Box>
@@ -428,10 +492,7 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
         lookupError={couponLookupError}
         deleteError={deleteError}
         deleting={deleting}
-        onClose={() => {
-          setDeleteOpen(false);
-          setDeleteError(null);
-        }}
+        onClose={closeDeleteDialog}
         onConfirm={handleDelete}
       />
     </DetailPageLayout>

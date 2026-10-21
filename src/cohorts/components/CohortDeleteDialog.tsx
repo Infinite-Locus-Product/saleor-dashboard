@@ -5,8 +5,10 @@ import ActionDialog from "@dashboard/components/ActionDialog";
 import { Box, Text } from "@saleor/macaw-ui-next";
 import { useIntl } from "react-intl";
 
+import { type CohortErrorView } from "../errors";
 import { cohortMessages } from "../messages";
 import { type CohortLinkedCoupon } from "../types";
+import { CohortErrorText } from "./CohortErrorText";
 
 export interface CohortDeleteDialogProps {
   open: boolean;
@@ -14,8 +16,8 @@ export interface CohortDeleteDialogProps {
   memberCount: number;
   /** null while the lookup is in flight (or after it failed). */
   coupons: CohortLinkedCoupon[] | null;
-  lookupError: string | null;
-  deleteError: string | null;
+  lookupError: CohortErrorView | null;
+  deleteError: CohortErrorView | null;
   deleting: boolean;
   onClose: () => void;
   onConfirm: () => void;
@@ -45,9 +47,12 @@ export const CohortDeleteDialog = ({
       variant="delete"
       disabled={!canDelete || deleting}
       confirmButtonState={deleting ? "loading" : "default"}
+      // Without this, ConfirmButton ignores `disabled` after a failed delete.
+      confirmButtonNoTransition
     >
-      <Box data-test-id="cohort-delete-dialog" display="grid" gap={2}>
-        {lookupError && <Text color="critical1">{lookupError}</Text>}
+      {/* polite live region: loading, results and errors are announced as they change */}
+      <Box data-test-id="cohort-delete-dialog" display="grid" gap={2} aria-live="polite">
+        {lookupError && <CohortErrorText error={lookupError} />}
 
         {!coupons && !lookupError && (
           <Text data-test-id="cohort-delete-loading">
@@ -82,11 +87,7 @@ export const CohortDeleteDialog = ({
           </Text>
         )}
 
-        {deleteError && (
-          <Text color="critical1" data-test-id="cohort-delete-error">
-            {deleteError}
-          </Text>
-        )}
+        {deleteError && <CohortErrorText error={deleteError} testId="cohort-delete-error" />}
       </Box>
     </ActionDialog>
   );

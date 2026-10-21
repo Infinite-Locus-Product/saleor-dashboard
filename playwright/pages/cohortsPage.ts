@@ -15,6 +15,11 @@ export class CohortsPage extends BasePage {
     readonly csvInput = page.getByTestId("cohort-csv-input"),
     readonly csvSummary = page.getByTestId("cohort-csv-summary"),
     readonly deleteButton = page.getByTestId("cohort-delete"),
+    readonly syncNowButton = page.getByTestId("cohort-sync-now"),
+    readonly syncBlockedHelp = page.getByTestId("cohort-sync-blocked-help"),
+    readonly deleteDialog = page.getByTestId("cohort-delete-dialog"),
+    readonly deleteBlocked = page.getByTestId("cohort-delete-blocked"),
+    readonly deleteConfirmButton = page.getByRole("dialog").getByTestId("submit"),
   ) {
     super(page);
   }
@@ -22,6 +27,11 @@ export class CohortsPage extends BasePage {
   async gotoListPage() {
     await this.page.goto(URL_LIST.cohorts);
     await this.createCohortButton.waitFor({ state: "visible" });
+  }
+
+  async gotoDetailsPage(id: number | string) {
+    await this.page.goto(`${URL_LIST.cohorts}/${id}`);
+    await this.syncNowButton.waitFor({ state: "visible" });
   }
 
   async gotoCreatePage() {

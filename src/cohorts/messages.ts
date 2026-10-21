@@ -1,4 +1,6 @@
-import { defineMessages } from "react-intl";
+import { defineMessages, type MessageDescriptor } from "react-intl";
+
+import { type CohortType } from "./types";
 
 // User-facing copy for the Cohorts section (TTXY-4705/4707/4713).
 export const cohortMessages = defineMessages({
@@ -257,4 +259,42 @@ export const cohortMessages = defineMessages({
     id: "8KUORF",
     description: "cohort delete error",
   },
+
+  // mapped backend failures (TTXY-4699 PR #5 C3)
+  syncNotAllowed: {
+    defaultMessage: "Only an active cohort that is not past its end date can be synced.",
+    id: "A6mwEG",
+    description: "manual cohort sync rejected (409): cohort inactive or past end date",
+  },
+  syncExpiredHelp: {
+    defaultMessage: "This cohort is past its end date, so it can no longer be synced",
+    id: "q0YoJj",
+    description: "sync button disabled for an active cohort past its end date",
+  },
+  refreshWarning: {
+    defaultMessage: "Could not load the latest cohort details. Reload the page to see them.",
+    id: "KXgQ28",
+    description: "cohort re-fetch after a sync or CSV upload failed",
+  },
+  deleteUsedByCoupons: {
+    defaultMessage: "This cohort is used by coupons, so it cannot be deleted.",
+    id: "JR6hy8",
+    description: "cohort delete rejected (409) because coupons reference it",
+  },
+  deleteUntagFailed: {
+    defaultMessage: "Some members could not be untagged, so nothing was deleted. Please try again.",
+    id: "2aDwkf",
+    description: "cohort delete rejected (502) because untagging members failed",
+  },
+  networkError: {
+    defaultMessage: "Could not reach the server. Check your connection and try again.",
+    id: "vmCZTf",
+    description: "cohort request failed without a response from the server",
+  },
 });
+
+/** Translated label for a cohort type (list column, detail summary). */
+export const cohortTypeMessages: Record<CohortType, MessageDescriptor> = {
+  static: cohortMessages.typeStatic,
+  dynamic: cohortMessages.typeDynamic,
+};
