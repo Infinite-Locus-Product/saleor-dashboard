@@ -12,9 +12,13 @@ import useNavigator from "@dashboard/hooks/useNavigator";
 import { Box, Button, Input, Text } from "@saleor/macaw-ui-next";
 import React from "react";
 import { useIntl } from "react-intl";
+import { Link } from "react-router-dom";
 
 import { fetchCohorts } from "../api/cohortsApi";
-import { cohortMessages } from "../messages";
+import { CohortErrorText } from "../components/CohortErrorText";
+import { CohortLastSync } from "../components/CohortLastSync";
+import { type CohortErrorView, describeCohortError } from "../errors";
+import { cohortMessages, cohortTypeMessages } from "../messages";
 import { type Cohort, type CohortListParams } from "../types";
 import { cohortAddUrl, cohortUrl } from "../urls";
 
@@ -34,7 +38,7 @@ export const CohortListView: React.FC = () => {
   const [typeFilter, setTypeFilter] = React.useState<CohortListParams["type"]>(undefined);
   const [statusFilter, setStatusFilter] = React.useState<boolean | undefined>(undefined);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<CohortErrorView | null>(null);
 
   // Debounce the search box so typing doesn't hammer the backend.
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
@@ -70,7 +74,7 @@ export const CohortListView: React.FC = () => {
       .catch(err => {
         if (cancelled) return;
 
-        setError(err instanceof Error ? err.message : intl.formatMessage(cohortMessages.loadError));
+        setError(describeCohortError("list", err));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -79,7 +83,7 @@ export const CohortListView: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [offset, debouncedSearch, typeFilter, statusFilter, intl]);
+  }, [offset, debouncedSearch, typeFilter, statusFilter]);
 
   const columns = [
     cohortMessages.colName,
@@ -143,7 +147,7 @@ export const CohortListView: React.FC = () => {
 
             {error && (
               <Box paddingY={4}>
-                <Text color="critical1">{error}</Text>
+                <CohortErrorText error={error} />
               </Box>
             )}
 
@@ -178,10 +182,18 @@ export const CohortListView: React.FC = () => {
                       data-test-id={`cohort-row-${cohort.id}`}
                     >
                       <Box as="td" paddingY={3}>
-                        <Text fontWeight="medium">{cohort.cohort_name}</Text>
+                        {/* C6 — a real link keeps the row reachable by keyboard and
+                            screen reader; the row click stays as a mouse shortcut. */}
+                        <Link
+                          to={cohortUrl(cohort.id)}
+                          onClick={event => event.stopPropagation()}
+                          data-test-id={`cohort-link-${cohort.id}`}
+                        >
+                          <Text fontWeight="medium">{cohort.cohort_name}</Text>
+                        </Link>
                       </Box>
                       <Box as="td">
-                        <Text>{cohort.type}</Text>
+                        <Text>{intl.formatMessage(cohortTypeMessages[cohort.type])}</Text>
                       </Box>
                       <Box as="td">
                         <Text color={cohort.status ? "success1" : "default2"}>
@@ -196,7 +208,7 @@ export const CohortListView: React.FC = () => {
                         <Text>{cohort.member_count}</Text>
                       </Box>
                       <Box as="td">
-                        <Text>{formatDate(cohort.last_synced_at)}</Text>
+                        <CohortLastSync cohort={cohort} />
                       </Box>
                       <Box as="td">
                         <Text>{formatDate(cohort.created_date)}</Text>

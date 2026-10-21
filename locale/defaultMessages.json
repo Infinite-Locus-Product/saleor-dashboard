@@ -408,6 +408,10 @@
     "context": "swatch attribute color picker label",
     "string": "Picker"
   },
+  "0FbVZH": {
+    "context": "time of the last fully successful cohort sync",
+    "string": "Last successful sync: {when}"
+  },
   "0FexL7": {
     "context": "min price in channel",
     "string": "Min. value"
@@ -787,6 +791,10 @@
     "context": "dialog header",
     "string": "Add postal codes"
   },
+  "2aDwkf": {
+    "context": "cohort delete rejected (502) because untagging members failed",
+    "string": "Some members could not be untagged, so nothing was deleted. Please try again."
+  },
   "2atspc": {
     "string": "Drafts"
   },
@@ -879,6 +887,10 @@
   "34F7Jk": {
     "context": "filter range separator",
     "string": "and"
+  },
+  "37VZjH": {
+    "context": "run the cohort sync now",
+    "string": "Sync now"
   },
   "38dS1A": {
     "context": "code ending with label",
@@ -1709,6 +1721,10 @@
     "context": "button",
     "string": "Delete Variant"
   },
+  "7ifD7e": {
+    "context": "result of a manual cohort sync",
+    "string": "Synced: {added} tagged, {skipped} already tagged, {notFound} not found, {errors} failed"
+  },
   "7jxSx8": {
     "context": "Installed extensions column name",
     "string": "Extension Name"
@@ -2139,6 +2155,10 @@
   "A02NDR": {
     "context": "plain text attribute value was truncated",
     "string": "Attribute value too long and truncated at {length} characters."
+  },
+  "A6mwEG": {
+    "context": "manual cohort sync rejected (409): cohort inactive or past end date",
+    "string": "Only an active cohort that is not past its end date can be synced."
   },
   "A7W4KO": {
     "string": "Catalog rule"
@@ -3097,6 +3117,10 @@
   "FiO/W/": {
     "string": "Delete categories"
   },
+  "FjijQk": {
+    "context": "cohort delete dialog when the linked-coupon lookup fails",
+    "string": "Could not check which coupons use this cohort"
+  },
   "FjrExY": {
     "context": "price based shipping methods, section header",
     "string": "Price Based Rates"
@@ -3305,6 +3329,10 @@
   "GVinbz": {
     "context": "column title",
     "string": "Value"
+  },
+  "GadgRy": {
+    "context": "latest cohort sync failed",
+    "string": "Last sync failed · {when}"
   },
   "GbBCmr": {
     "context": "window title",
@@ -3891,6 +3919,10 @@
     "context": "table header available stock label",
     "string": "Available"
   },
+  "JR6hy8": {
+    "context": "cohort delete rejected (409) because coupons reference it",
+    "string": "This cohort is used by coupons, so it cannot be deleted."
+  },
   "JRfJD9": {
     "string": "The plugin may stop working after this field is cleared. Are you sure you want to proceed?"
   },
@@ -4067,6 +4099,10 @@
     "context": "tooltip, submit form",
     "string": "You have to grant refund first."
   },
+  "KPSzFd": {
+    "context": "cohort has not been synced yet",
+    "string": "Never synced"
+  },
   "KPmk40": {
     "context": "charge status partial",
     "string": "Partial"
@@ -4080,6 +4116,10 @@
   "KWXwFo": {
     "context": "grant refund table, column header",
     "string": "Unit price"
+  },
+  "KXgQ28": {
+    "context": "cohort re-fetch after a sync or CSV upload failed",
+    "string": "Could not load the latest cohort details. Reload the page to see them."
   },
   "KYMCYg": {
     "string": "Shipping rate deleted"
@@ -5951,10 +5991,6 @@
   "Uqf8Ny": {
     "string": "Create new category"
   },
-  "Uqz8iD": {
-    "context": "cohort delete confirmation body",
-    "string": "Delete {name}? Its {count, plural, one {# member} other {# members}} will be untagged. Cohorts still referenced by a coupon cannot be deleted."
-  },
   "Ur9yW3": {
     "context": "Description explaining which permissions are needed",
     "string": "Full availability diagnostics require additional permissions: {permissions}"
@@ -6102,6 +6138,10 @@
   },
   "VkYZQ8": {
     "string": "Current Permissions"
+  },
+  "VkpHfh": {
+    "context": "cohort delete blocked because coupons reference it",
+    "string": "{name} is used by {count, plural, one {# coupon} other {# coupons}}. Remove the cohort from {count, plural, one {it} other {them}} before deleting:"
   },
   "VmMDLN": {
     "context": "permission list item description",
@@ -7022,6 +7062,10 @@
   "aPqizA": {
     "context": "ProductTypeDeleteWarningDialog multiple assigned items description",
     "string": "Are you sure you want to delete selected product types? If you remove them you won’t be able to assign them to created products."
+  },
+  "aUNBnL": {
+    "context": "sync button disabled for an inactive cohort",
+    "string": "Activate the cohort to sync it"
   },
   "aUUgUV": {
     "context": "Button with  app settings label",
@@ -8133,6 +8177,10 @@
   "gxPjIQ": {
     "string": "Are you sure you want to delete {email} from staff members?"
   },
+  "gyKEJ2": {
+    "context": "cohort delete dialog while loading linked coupons",
+    "string": "Checking which coupons use this cohort…"
+  },
   "gygOA1": {
     "context": "button",
     "string": "Deactivate"
@@ -8318,6 +8366,10 @@
   "hw9Fah": {
     "context": "button",
     "string": "Send invite"
+  },
+  "hwOU5l": {
+    "context": "a date and time shown in Indian Standard Time; dateTime is already in IST",
+    "string": "{dateTime} IST"
   },
   "hwSDOP": {
     "context": "Previous page button",
@@ -8827,6 +8879,10 @@
   "ki7Mr8": {
     "context": "product export to csv file, header",
     "string": "Export Settings"
+  },
+  "kn1II9": {
+    "context": "latest cohort sync tagged only some members",
+    "string": "Last sync incomplete · {when}"
   },
   "kn7jjd": {
     "context": "section header",
@@ -9738,6 +9794,10 @@
     "context": "dialog header",
     "string": "Publish models"
   },
+  "q0YoJj": {
+    "context": "sync button disabled for an active cohort past its end date",
+    "string": "This cohort is past its end date, so it can no longer be synced"
+  },
   "q1shey": {
     "context": "key-value field input",
     "string": "Key"
@@ -10048,6 +10108,10 @@
   "ri3kK9": {
     "context": "order placement date",
     "string": "Date"
+  },
+  "ri8hvr": {
+    "context": "manual cohort sync failed",
+    "string": "Cohort sync failed"
   },
   "rjy9/k": {
     "context": "button",
@@ -10721,6 +10785,10 @@
     "context": "Title for public API verification section",
     "string": "Public API verification"
   },
+  "vLu9qh": {
+    "context": "cohort delete confirmation body (cohort used by no coupon)",
+    "string": "Delete {name}? Its {count, plural, one {# member} other {# members}} will be untagged."
+  },
   "vMo6/3": {
     "string": "Tracking: {trackingNumber}"
   },
@@ -10846,6 +10914,10 @@
   },
   "vlVTmY": {
     "string": "Product removed"
+  },
+  "vmCZTf": {
+    "context": "cohort request failed without a response from the server",
+    "string": "Could not reach the server. Check your connection and try again."
   },
   "vof5TR": {
     "context": "button",

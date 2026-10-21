@@ -9,6 +9,8 @@ import React from "react";
 import { useIntl } from "react-intl";
 
 import { createCohort } from "../api/cohortsApi";
+import { CohortErrorText } from "../components/CohortErrorText";
+import { type CohortErrorView, describeCohortError } from "../errors";
 import { cohortMessages } from "../messages";
 import { cohortListUrl, cohortUrl } from "../urls";
 
@@ -21,10 +23,15 @@ export const CohortCreateView: React.FC = () => {
   const [syncHours, setSyncHours] = React.useState("1");
   const [endDate, setEndDate] = React.useState("");
   const [saving, setSaving] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<CohortErrorView | null>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    // C8 — the Create button is type=submit; never send a second create
+    // mid-flight, nor a blank name (the `required` attribute accepts spaces).
+    if (saving || name.trim().length === 0) return;
+
     setSaving(true);
     setError(null);
 
@@ -39,8 +46,8 @@ export const CohortCreateView: React.FC = () => {
 
       navigate(cohortUrl(created.id));
     } catch (err) {
-      // Backend maps a duplicate name to 409 — surface its message verbatim.
-      setError(err instanceof Error ? err.message : intl.formatMessage(cohortMessages.createError));
+      // A duplicate name is a 409 whose server text names the clash — kept as detail.
+      setError(describeCohortError("create", err));
     } finally {
       setSaving(false);
     }
@@ -92,11 +99,7 @@ export const CohortCreateView: React.FC = () => {
                   <Text size={2} color="default2">
                     {intl.formatMessage(cohortMessages.createdInactive)}
                   </Text>
-                  {error && (
-                    <Text color="critical1" data-test-id="cohort-create-error">
-                      {error}
-                    </Text>
-                  )}
+                  {error && <CohortErrorText error={error} testId="cohort-create-error" />}
                 </Box>
               </DashboardCard.Content>
             </DashboardCard>
@@ -111,6 +114,9 @@ export const CohortCreateView: React.FC = () => {
           form="cohort-create-form"
           type="submit"
           transitionState={saving ? "loading" : "default"}
+          // C8 — without noTransition, ConfirmButton ignores `disabled` after a
+          // loading -> default cycle.
+          noTransition
           disabled={saving || name.trim().length === 0}
         />
       </Savebar>

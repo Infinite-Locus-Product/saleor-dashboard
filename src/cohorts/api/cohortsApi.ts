@@ -7,16 +7,20 @@
  * would be readable by anyone in devtools.
  *
  * The backend responds with { success, data, error }; helpers below unwrap
- * `data` and surface `error` as a thrown Error.
+ * `data` and surface failures as a thrown ApiError (status + server text).
+ * A request that never got a response becomes ApiError status 0.
  */
 import {
   type Cohort,
   type CohortCreateInput,
   type CohortIngestSummary,
+  type CohortLinkedCoupon,
   type CohortListParams,
   type CohortListResponse,
+  type CohortSyncResult,
   type CohortUpdateInput,
 } from "../types";
+import { ApiError, NETWORK_ERROR_STATUS } from "./apiError";
 import { getTenexuBaseUrl } from "./env";
 
 function getAuthHeaders(): Record<string, string> {
@@ -53,14 +57,32 @@ async function unwrap<T>(res: Response): Promise<T> {
   }
 
   if (!res.ok || json?.success === false) {
-    throw new Error(json?.error || `Request failed: ${res.status}`);
+    throw new ApiError({
+      status: res.status,
+      serverMessage: typeof json?.error === "string" && json.error ? json.error : null,
+    });
   }
 
   return json?.data as T;
 }
 
+/** fetch, with "no response at all" (fetch's TypeError) reported as ApiError status 0. */
+async function send(path: string, init: RequestInit): Promise<Response> {
+  const url = `${getTenexuBaseUrl()}${path}`;
+
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new ApiError({ status: NETWORK_ERROR_STATUS, serverMessage: null });
+    }
+
+    throw err;
+  }
+}
+
 async function apiRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${getTenexuBaseUrl()}${path}`, {
+  const res = await send(path, {
     method,
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -75,7 +97,7 @@ async function apiUpload<T>(path: string, file: File): Promise<T> {
 
   form.append("file", file);
 
-  const res = await fetch(`${getTenexuBaseUrl()}${path}`, {
+  const res = await send(path, {
     method: "POST",
     headers: getAuthHeaders(),
     body: form,
@@ -119,3 +141,14 @@ export const deleteCohort = (id: string | number): Promise<{ deleted: boolean; i
 
 export const uploadCohortCsv = (id: string | number, file: File): Promise<CohortIngestSummary> =>
   apiUpload<CohortIngestSummary>(`/cohorts/${id}/csv`, file);
+
+/** TTXY-6196 — run the tagging pass now (409 for an inactive or expired cohort). */
+export const syncCohort = (id: string | number): Promise<CohortSyncResult> =>
+  apiRequest<CohortSyncResult>("POST", `/cohorts/${id}/sync`);
+
+/** TTXY-6199 — coupons whose restriction references this cohort. */
+export const fetchCohortCoupons = async (id: string | number): Promise<CohortLinkedCoupon[]> => {
+  const data = await apiRequest<{ coupons: CohortLinkedCoupon[] }>("GET", `/cohorts/${id}/coupons`);
+
+  return data?.coupons ?? [];
+};

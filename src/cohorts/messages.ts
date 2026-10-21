@@ -1,4 +1,6 @@
-import { defineMessages } from "react-intl";
+import { defineMessages, type MessageDescriptor } from "react-intl";
+
+import { type CohortType } from "./types";
 
 // User-facing copy for the Cohorts section (TTXY-4705/4707/4713).
 export const cohortMessages = defineMessages({
@@ -191,13 +193,113 @@ export const cohortMessages = defineMessages({
   },
   deleteConfirm: {
     defaultMessage:
-      "Delete {name}? Its {count, plural, one {# member} other {# members}} will be untagged. Cohorts still referenced by a coupon cannot be deleted.",
-    id: "Uqz8iD",
-    description: "cohort delete confirmation body",
+      "Delete {name}? Its {count, plural, one {# member} other {# members}} will be untagged.",
+    id: "vLu9qh",
+    description: "cohort delete confirmation body (cohort used by no coupon)",
+  },
+  deleteBlocked: {
+    defaultMessage:
+      "{name} is used by {count, plural, one {# coupon} other {# coupons}}. Remove the cohort from {count, plural, one {it} other {them}} before deleting:",
+    id: "VkpHfh",
+    description: "cohort delete blocked because coupons reference it",
+  },
+  deleteCouponsLoading: {
+    defaultMessage: "Checking which coupons use this cohort…",
+    id: "gyKEJ2",
+    description: "cohort delete dialog while loading linked coupons",
+  },
+  deleteCouponsError: {
+    defaultMessage: "Could not check which coupons use this cohort",
+    id: "FjijQk",
+    description: "cohort delete dialog when the linked-coupon lookup fails",
+  },
+  neverSynced: {
+    defaultMessage: "Never synced",
+    id: "KPSzFd",
+    description: "cohort has not been synced yet",
+  },
+  syncFailedAt: {
+    defaultMessage: "Last sync failed · {when}",
+    id: "GadgRy",
+    description: "latest cohort sync failed",
+  },
+  syncPartialAt: {
+    defaultMessage: "Last sync incomplete · {when}",
+    id: "kn1II9",
+    description: "latest cohort sync tagged only some members",
+  },
+  istDateTime: {
+    defaultMessage: "{dateTime} IST",
+    id: "hwOU5l",
+    description: "a date and time shown in Indian Standard Time; dateTime is already in IST",
+  },
+  lastSuccessfulSync: {
+    defaultMessage: "Last successful sync: {when}",
+    id: "0FbVZH",
+    description: "time of the last fully successful cohort sync",
+  },
+  syncNow: {
+    defaultMessage: "Sync now",
+    id: "37VZjH",
+    description: "run the cohort sync now",
+  },
+  syncInactiveHelp: {
+    defaultMessage: "Activate the cohort to sync it",
+    id: "aUNBnL",
+    description: "sync button disabled for an inactive cohort",
+  },
+  syncDone: {
+    defaultMessage:
+      "Synced: {added} tagged, {skipped} already tagged, {notFound} not found, {errors} failed",
+    id: "7ifD7e",
+    description: "result of a manual cohort sync",
+  },
+  syncError: {
+    defaultMessage: "Cohort sync failed",
+    id: "ri8hvr",
+    description: "manual cohort sync failed",
   },
   deleteError: {
     defaultMessage: "Failed to delete cohort",
     id: "8KUORF",
     description: "cohort delete error",
   },
+
+  // mapped backend failures (TTXY-4699 PR #5 C3)
+  syncNotAllowed: {
+    defaultMessage: "Only an active cohort that is not past its end date can be synced.",
+    id: "A6mwEG",
+    description: "manual cohort sync rejected (409): cohort inactive or past end date",
+  },
+  syncExpiredHelp: {
+    defaultMessage: "This cohort is past its end date, so it can no longer be synced",
+    id: "q0YoJj",
+    description: "sync button disabled for an active cohort past its end date",
+  },
+  refreshWarning: {
+    defaultMessage: "Could not load the latest cohort details. Reload the page to see them.",
+    id: "KXgQ28",
+    description: "cohort re-fetch after a sync or CSV upload failed",
+  },
+  deleteUsedByCoupons: {
+    defaultMessage: "This cohort is used by coupons, so it cannot be deleted.",
+    id: "JR6hy8",
+    description: "cohort delete rejected (409) because coupons reference it",
+  },
+  deleteUntagFailed: {
+    defaultMessage: "Some members could not be untagged, so nothing was deleted. Please try again.",
+    id: "2aDwkf",
+    description: "cohort delete rejected (502) because untagging members failed",
+  },
+  networkError: {
+    defaultMessage: "Could not reach the server. Check your connection and try again.",
+    id: "vmCZTf",
+    description: "cohort request failed without a response from the server",
+  },
 });
+
+/** Translated label for a cohort type (list column, detail summary). */
+export const cohortTypeMessages: Record<CohortType, MessageDescriptor> = {
+  static: cohortMessages.typeStatic,
+  dynamic: cohortMessages.typeDynamic,
+};

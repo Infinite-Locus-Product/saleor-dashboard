@@ -4,7 +4,16 @@
 // cannot handle.
 jest.mock("./env", () => ({ getTenexuBaseUrl: () => "http://tenexu.test" }));
 
-import { buildCohortListQuery, createCohort, fetchCohorts, uploadCohortCsv } from "./cohortsApi";
+import { ApiError } from "./apiError";
+import {
+  buildCohortListQuery,
+  createCohort,
+  deleteCohort,
+  fetchCohortCoupons,
+  fetchCohorts,
+  syncCohort,
+  uploadCohortCsv,
+} from "./cohortsApi";
 
 const okResponse = (data: unknown, headers: Record<string, string> = {}) =>
   ({
@@ -29,6 +38,7 @@ describe("buildCohortListQuery", () => {
   });
 
   it("serialises paging, filters and search", () => {
+    // Arrange — no setup needed, the params are inline
     // Act
     const qs = buildCohortListQuery({
       limit: 20,
@@ -48,6 +58,7 @@ describe("buildCohortListQuery", () => {
 
   it("keeps status=false rather than dropping it as falsy", () => {
     // Regression: `if (params.status)` would silently lose the "inactive" filter.
+    // Arrange / Act / Assert
     expect(buildCohortListQuery({ status: false })).toContain("status=false");
   });
 });
@@ -142,5 +153,103 @@ describe("cohortsApi requests", () => {
     expect(init.body).toBeInstanceOf(FormData);
     expect(init.headers["Content-Type"]).toBeUndefined();
     expect(init.headers.Authorization).toBe("Bearer auth-123");
+  });
+
+  it("U4 — syncCohort POSTs /cohorts/:id/sync and returns the run result", async () => {
+    // Arrange
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(okResponse({ cohortId: 7, added: 2, skipped: 0, notFound: 0, errors: 0 }));
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    // Act
+    const result = await syncCohort(7);
+
+    // Assert
+    const [url, init] = fetchMock.mock.calls[0];
+
+    expect(url).toBe("http://tenexu.test/cohorts/7/sync");
+    expect(init.method).toBe("POST");
+    expect(result.added).toBe(2);
+  });
+
+  it("U9 — fetchCohortCoupons GETs /cohorts/:id/coupons and returns the list", async () => {
+    // Arrange
+    const coupons = [{ voucherId: "V1", voucherCode: "FLAT100", startTime: null, endTime: null }];
+    const fetchMock = jest.fn().mockResolvedValue(okResponse({ coupons }));
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    // Act
+    const result = await fetchCohortCoupons(7);
+
+    // Assert
+    const [url, init] = fetchMock.mock.calls[0];
+
+    expect(url).toBe("http://tenexu.test/cohorts/7/coupons");
+    expect(init.method).toBe("GET");
+    expect(result).toEqual(coupons);
+  });
+
+  it("C3 — a non-2xx response rejects with an ApiError carrying status and server text", async () => {
+    // Arrange
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(errorResponse(409, "Cohort is used by 1 coupon(s): FLAT100")) as any;
+
+    // Act
+    const error = await deleteCohort(7).catch((err: unknown) => err);
+
+    // Assert
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(409);
+    expect((error as ApiError).serverMessage).toBe("Cohort is used by 1 coupon(s): FLAT100");
+  });
+
+  it("C3 — a response without a JSON body still rejects with its status", async () => {
+    // Arrange
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      headers: { get: () => null },
+      json: async () => {
+        throw new SyntaxError("Unexpected token <");
+      },
+    }) as any;
+
+    // Act
+    const error = await syncCohort(7).catch((err: unknown) => err);
+
+    // Assert
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(502);
+    expect((error as ApiError).serverMessage).toBeNull();
+  });
+
+  it("C3 — a network failure (fetch TypeError) becomes ApiError status 0", async () => {
+    // Arrange
+    global.fetch = jest.fn().mockRejectedValue(new TypeError("Failed to fetch")) as any;
+
+    // Act
+    const error = await syncCohort(7).catch((err: unknown) => err);
+
+    // Assert
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(0);
+  });
+
+  it("C3 — a failed multipart upload also maps network failures to status 0", async () => {
+    // Arrange
+    global.fetch = jest.fn().mockRejectedValue(new TypeError("Failed to fetch")) as any;
+
+    const file = new File(["phone\n"], "cohort.csv", { type: "text/csv" });
+
+    // Act
+    const error = await uploadCohortCsv(7, file).catch((err: unknown) => err);
+
+    // Assert
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).status).toBe(0);
   });
 });
