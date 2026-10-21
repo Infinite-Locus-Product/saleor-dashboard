@@ -1,4 +1,7 @@
 // TTXY-6196 — how a cohort's sync state is shown in the list and detail views.
+import { type FormatDateOptions, type IntlShape } from "react-intl";
+
+import { cohortMessages } from "./messages";
 import { type Cohort } from "./types";
 
 type SyncFields = Pick<Cohort, "last_synced_at" | "last_sync_status" | "last_sync_attempt_at">;
@@ -8,25 +11,32 @@ export type LastSyncView =
   | { kind: "success"; at: string }
   | { kind: "failed" | "partial"; attemptAt: string; lastSuccessAt: string | null };
 
-const IST_FORMAT = new Intl.DateTimeFormat("en-IN", {
+/** Options for intl.formatDate: IST wall-clock time in the dashboard's locale. */
+const IST_DATE_TIME_OPTIONS: FormatDateOptions = {
   timeZone: "Asia/Kolkata",
   dateStyle: "medium",
   timeStyle: "short",
-});
+};
 
 /**
- * Date and time in IST (the operating team's timezone), e.g. "22 Oct 2026, 11:00 am IST".
+ * Date and time in IST (the operating team's timezone), formatted through
+ * react-intl, e.g. "Oct 22, 2026, 11:00 AM IST" (en) or "22 Oct 2026, 11:00 am IST" (en-IN).
  * Never throws: an unparseable value is shown as-is (a dash when empty), since
- * Intl.DateTimeFormat#format throws a RangeError on an invalid Date.
+ * date formatting throws a RangeError on an invalid Date.
  */
-export const formatIstDateTime = (value: string): string => {
+export const formatIstDateTime = (
+  intl: Pick<IntlShape, "formatDate" | "formatMessage">,
+  value: string,
+): string => {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
     return value || "—";
   }
 
-  return `${IST_FORMAT.format(date)} IST`;
+  return intl.formatMessage(cohortMessages.istDateTime, {
+    dateTime: intl.formatDate(date, IST_DATE_TIME_OPTIONS),
+  });
 };
 
 /**

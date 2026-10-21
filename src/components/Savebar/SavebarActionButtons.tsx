@@ -23,6 +23,8 @@ export const ConfirmButton = ({
 }: {
   children?: React.ReactNode;
   transitionState: ConfirmButtonProps["transitionState"];
+  /** Keep `disabled` authoritative after a loading -> default cycle (forwarded to ConfirmButton). */
+  noTransition?: ConfirmButtonProps["noTransition"];
   tooltip?: React.ReactNode;
 } & ButtonProps) => {
   const button = (

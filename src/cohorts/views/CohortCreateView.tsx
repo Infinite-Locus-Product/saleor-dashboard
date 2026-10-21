@@ -27,6 +27,11 @@ export const CohortCreateView: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    // C8 — the Create button is type=submit; never send a second create
+    // mid-flight, nor a blank name (the `required` attribute accepts spaces).
+    if (saving || name.trim().length === 0) return;
+
     setSaving(true);
     setError(null);
 
@@ -109,6 +114,9 @@ export const CohortCreateView: React.FC = () => {
           form="cohort-create-form"
           type="submit"
           transitionState={saving ? "loading" : "default"}
+          // C8 — without noTransition, ConfirmButton ignores `disabled` after a
+          // loading -> default cycle.
+          noTransition
           disabled={saving || name.trim().length === 0}
         />
       </Savebar>

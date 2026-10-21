@@ -228,6 +228,11 @@ export const cohortMessages = defineMessages({
     id: "kn1II9",
     description: "latest cohort sync tagged only some members",
   },
+  istDateTime: {
+    defaultMessage: "{dateTime} IST",
+    id: "hwOU5l",
+    description: "a date and time shown in Indian Standard Time; dateTime is already in IST",
+  },
   lastSuccessfulSync: {
     defaultMessage: "Last successful sync: {when}",
     id: "0FbVZH",

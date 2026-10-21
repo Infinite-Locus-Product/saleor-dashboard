@@ -24,12 +24,12 @@ export const CohortLastSync = ({ cohort, detailed = false }: CohortLastSyncProps
   }
 
   if (view.kind === "success") {
-    return <Text>{formatIstDateTime(view.at)}</Text>;
+    return <Text>{formatIstDateTime(intl, view.at)}</Text>;
   }
 
   const headline = intl.formatMessage(
     view.kind === "failed" ? cohortMessages.syncFailedAt : cohortMessages.syncPartialAt,
-    { when: formatIstDateTime(view.attemptAt) },
+    { when: formatIstDateTime(intl, view.attemptAt) },
   );
 
   return (
@@ -43,7 +43,7 @@ export const CohortLastSync = ({ cohort, detailed = false }: CohortLastSyncProps
       {detailed && view.lastSuccessAt && (
         <Text size={2} color="default2">
           {intl.formatMessage(cohortMessages.lastSuccessfulSync, {
-            when: formatIstDateTime(view.lastSuccessAt),
+            when: formatIstDateTime(intl, view.lastSuccessAt),
           })}
         </Text>
       )}

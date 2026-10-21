@@ -1,6 +1,9 @@
 // TTXY-6196 — "Last synced" shown in IST, "Never synced" when empty, and a
 // failed/partial sync is never shown as if it had succeeded.
+import { type IntlShape } from "react-intl";
+
 import { describeLastSync, formatIstDateTime } from "./lastSynced";
+import { cohortMessages } from "./messages";
 import { type Cohort } from "./types";
 
 type SyncFields = Pick<Cohort, "last_synced_at" | "last_sync_status" | "last_sync_attempt_at">;
@@ -12,13 +15,20 @@ const fields = (over: Partial<SyncFields> = {}): SyncFields => ({
   ...over,
 });
 
+// jest maps "react-intl" to __mocks__/react-intl.ts (formatDate is an identity
+// there); these tests need the real formatter, which the mapper does not catch
+// when the package entry file is named explicitly.
+const { createIntl } = jest.requireActual<typeof import("react-intl")>("react-intl/index.js");
+
+const realIntl = (locale = "en-IN") => createIntl({ locale, defaultLocale: locale });
+
 describe("formatIstDateTime", () => {
   it("renders date and time in IST whatever the browser timezone is", () => {
     // Arrange
     const utc = "2026-10-22T05:30:00Z";
 
     // Act
-    const text = formatIstDateTime(utc);
+    const text = formatIstDateTime(realIntl(), utc);
 
     // Assert — 05:30 UTC is 11:00 IST
     expect(text).toContain("22 Oct 2026");
@@ -26,12 +36,46 @@ describe("formatIstDateTime", () => {
     expect(text).toMatch(/IST$/);
   });
 
+  it("C12 — follows the dashboard locale through react-intl, still in IST", () => {
+    // Arrange
+    const utc = "2026-10-22T05:30:00Z";
+
+    // Act
+    const text = formatIstDateTime(realIntl("en"), utc);
+
+    // Assert — en formatting, IST wall-clock time
+    expect(text).toContain("Oct 22, 2026");
+    expect(text).toMatch(/11:00/);
+    expect(text).toMatch(/IST$/);
+  });
+
+  it("C12 — formats through intl.formatDate with the Asia/Kolkata timezone and the IST message", () => {
+    // Arrange
+    const formatDate = jest.fn(() => "FORMATTED");
+    const formatMessage = jest.fn(() => "MESSAGE");
+    const intl: Pick<IntlShape, "formatDate" | "formatMessage"> = { formatDate, formatMessage };
+
+    // Act
+    const text = formatIstDateTime(intl, "2026-10-22T05:30:00Z");
+
+    // Assert
+    expect(formatDate).toHaveBeenCalledWith(new Date("2026-10-22T05:30:00Z"), {
+      timeZone: "Asia/Kolkata",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+    expect(formatMessage).toHaveBeenCalledWith(cohortMessages.istDateTime, {
+      dateTime: "FORMATTED",
+    });
+    expect(text).toBe("MESSAGE");
+  });
+
   it("C7b — does not throw on an invalid date string and shows the raw value", () => {
     // Arrange
     const garbage = "not-a-date";
 
     // Act
-    const text = formatIstDateTime(garbage);
+    const text = formatIstDateTime(realIntl(), garbage);
 
     // Assert
     expect(text).toBe("not-a-date");
@@ -42,7 +86,7 @@ describe("formatIstDateTime", () => {
     const empty = "";
 
     // Act
-    const text = formatIstDateTime(empty);
+    const text = formatIstDateTime(realIntl(), empty);
 
     // Assert
     expect(text).toBe("—");

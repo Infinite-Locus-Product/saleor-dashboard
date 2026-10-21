@@ -67,13 +67,13 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
   // Which card failed to re-fetch the cohort after its action succeeded (C7d).
   const [refreshWarning, setRefreshWarning] = React.useState<"sync" | "upload" | null>(null);
 
-  // Incremented whenever the form is (re)hydrated from a saved record, so a
-  // slower background refresh cannot overwrite a newer saved record.
-  const recordVersion = React.useRef(0);
+  // C9 — incremented when a save STARTS. A background refresh that started
+  // before the latest save start may carry pre-save fields, so it is dropped;
+  // one that started after it (e.g. a CSV upload during a save) is applied.
+  const saveStarts = React.useRef(0);
 
   /** Load a record into BOTH the cohort and the editable form fields. Only for load and save. */
   const hydrate = React.useCallback((next: Cohort) => {
-    recordVersion.current += 1;
     setCohort(next);
     setDescription(next.description ?? "");
     setStatus(next.status);
@@ -86,12 +86,12 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
    * Resolves false when the refresh failed.
    */
   const refreshRecord = React.useCallback(async (): Promise<boolean> => {
-    const version = recordVersion.current;
+    const savesBefore = saveStarts.current;
 
     try {
       const next = await fetchCohort(id);
 
-      if (recordVersion.current === version) {
+      if (saveStarts.current === savesBefore) {
         setCohort(next);
       }
 
@@ -124,6 +124,11 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    // C8 — the Save button is type=submit; never send a second update mid-save.
+    if (saving) return;
+
+    saveStarts.current += 1;
     setSaving(true);
     setError(null);
 
@@ -199,7 +204,17 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
     setCouponLookupError(null);
     fetchCohortCoupons(id)
       .then(coupons => {
-        if (!cancelled) setLinkedCoupons(coupons);
+        if (cancelled) return;
+
+        setLinkedCoupons(coupons);
+
+        // C11 — a 409 ("used by coupons") is out of date once no coupon uses the
+        // cohort any more. Other failures (502 untag, network) still apply.
+        if (coupons.length === 0) {
+          setDeleteError(current =>
+            current?.message === cohortMessages.deleteUsedByCoupons ? null : current,
+          );
+        }
       })
       .catch(err => {
         if (!cancelled) setCouponLookupError(describeCohortError("coupons", err));
@@ -480,6 +495,9 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
           form="cohort-details-form"
           type="submit"
           transitionState={saving ? "loading" : "default"}
+          // C8 — without noTransition, ConfirmButton ignores `disabled` after a
+          // loading -> default cycle.
+          noTransition
           disabled={saving}
         />
       </Savebar>

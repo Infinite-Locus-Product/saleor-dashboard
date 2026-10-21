@@ -1,4 +1,4 @@
-// TTXY-4699 PR #5 (C1, C2, C3, C5, C7) — view-level behaviour of the cohort
+// TTXY-4699 PR #5 (C1, C2, C3, C5, C7, C8, C9, C11) — view-level behaviour of the cohort
 // detail page with the REST client mocked: Sync now / CSV upload must not wipe
 // unsaved edits, the delete dialog never offers a stale Confirm, and backend
 // failures are shown as mapped copy.
@@ -54,8 +54,22 @@ jest.mock("@dashboard/components/Savebar", () => {
           Cancel
         </button>
       ),
-      ConfirmButton: ({ form, disabled }: { form: string; disabled: boolean }) => (
-        <button type="submit" form={form} disabled={disabled} data-test-id="cohort-save">
+      ConfirmButton: ({
+        form,
+        disabled,
+        noTransition,
+      }: {
+        form: string;
+        disabled: boolean;
+        noTransition?: boolean;
+      }) => (
+        <button
+          type="submit"
+          form={form}
+          disabled={disabled}
+          data-no-transition={noTransition ? "true" : "false"}
+          data-test-id="cohort-save"
+        >
           Save
         </button>
       ),
@@ -127,6 +141,8 @@ const syncButton = () => screen.getByTestId("cohort-sync-now");
 const descriptionInput = (): HTMLInputElement =>
   screen.getByDisplayValue(/description|edited/) as HTMLInputElement;
 const confirmButton = () => screen.getByTestId("submit");
+const detailsForm = () => document.querySelector("form#cohort-details-form") as HTMLFormElement;
+const csvFile = () => new File(["phone\n9990000001\n"], "cohort.csv", { type: "text/csv" });
 
 describe("CohortDetailsView", () => {
   beforeEach(() => {
@@ -156,7 +172,8 @@ describe("CohortDetailsView", () => {
       await waitFor(() =>
         expect(screen.queryByText(cohortMessages.neverSynced.defaultMessage)).toBeNull(),
       );
-      expect(screen.getByText(/22 Oct 2026.*IST/)).toBeInTheDocument();
+      // C12 — the time goes through the IST message (react-intl is mocked in jest)
+      expect(screen.getByText(cohortMessages.istDateTime.defaultMessage)).toBeInTheDocument();
       expect(descriptionInput().value).toBe("edited but not saved");
     });
 
@@ -275,6 +292,90 @@ describe("CohortDetailsView", () => {
     });
   });
 
+  describe("Save", () => {
+    it("C8 — the Save button opts out of the ConfirmButton transition", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(cohortFixture());
+
+      // Act
+      await renderView();
+
+      // Assert — without noTransition, ConfirmButton ignores `disabled` after a save
+      expect(screen.getByTestId("cohort-save")).toHaveAttribute("data-no-transition", "true");
+    });
+
+    it("C8 — a second submit while a save is in flight is ignored", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(cohortFixture());
+
+      const pending = deferred<Cohort>();
+
+      updateCohortMock.mockReturnValue(pending.promise);
+      await renderView();
+
+      // Act
+      fireEvent.submit(detailsForm());
+      fireEvent.submit(detailsForm());
+
+      // Assert
+      pending.resolve(cohortFixture({ description: "saved" }));
+      await waitFor(() => expect(screen.getByTestId("cohort-save")).toBeEnabled());
+      expect(updateCohortMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("C9 — a refresh that started after a save started is applied after the save lands", async () => {
+      // Arrange — empty cohort; the save is slow, a CSV upload lands meanwhile
+      const refresh = deferred<Cohort>();
+
+      fetchCohortMock
+        .mockResolvedValueOnce(cohortFixture({ member_count: 0 }))
+        .mockReturnValueOnce(refresh.promise);
+
+      const save = deferred<Cohort>();
+
+      updateCohortMock.mockReturnValue(save.promise);
+      uploadCsvMock.mockResolvedValue({ total: 40, valid: 40, invalid: 0, sample: [] });
+      await renderView();
+      expect(screen.getByText(cohortMessages.nameRenameHelp.defaultMessage)).toBeInTheDocument();
+
+      // Act — save starts, then the upload + its refresh start
+      fireEvent.submit(detailsForm());
+      fireEvent.change(screen.getByTestId("cohort-csv-input"), { target: { files: [csvFile()] } });
+      await waitFor(() => expect(fetchCohortMock).toHaveBeenCalledTimes(2));
+      save.resolve(cohortFixture({ member_count: 0, description: "saved" }));
+      await waitFor(() => expect(screen.getByTestId("cohort-save")).toBeEnabled());
+      refresh.resolve(cohortFixture({ member_count: 40, description: "saved" }));
+
+      // Assert — the newer member_count wins (name is now locked)
+      expect(
+        await screen.findByText(cohortMessages.nameLockedHelp.defaultMessage),
+      ).toBeInTheDocument();
+    });
+
+    it("C9 — a refresh that started before a save is dropped once the save starts", async () => {
+      // Arrange — the refresh is slow and carries an older inactive status
+      const refresh = deferred<Cohort>();
+
+      fetchCohortMock.mockResolvedValueOnce(cohortFixture()).mockReturnValueOnce(refresh.promise);
+      uploadCsvMock.mockResolvedValue({ total: 1, valid: 1, invalid: 0, sample: [] });
+      updateCohortMock.mockResolvedValue(cohortFixture({ description: "saved", status: true }));
+      await renderView();
+      fireEvent.change(screen.getByTestId("cohort-csv-input"), { target: { files: [csvFile()] } });
+      await waitFor(() => expect(fetchCohortMock).toHaveBeenCalledTimes(2));
+
+      // Act — save starts and lands, then the stale refresh resolves
+      fireEvent.submit(detailsForm());
+      await waitFor(() => expect(updateCohortMock).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(screen.getByTestId("cohort-save")).toBeEnabled());
+      refresh.resolve(cohortFixture({ status: false }));
+      await screen.findByTestId("cohort-csv-summary");
+
+      // Assert — the saved (active) record is kept
+      await waitFor(() => expect(syncButton()).toBeEnabled());
+      expect(screen.queryByText(cohortMessages.syncInactiveHelp.defaultMessage)).toBeNull();
+    });
+  });
+
   describe("CSV upload", () => {
     it("C1 — refreshes the member count without wiping an unsaved edit", async () => {
       // Arrange
@@ -288,10 +389,8 @@ describe("CohortDetailsView", () => {
       await renderView();
       fireEvent.change(descriptionInput(), { target: { value: "edited but not saved" } });
 
-      const file = new File(["phone\n9990000001\n"], "cohort.csv", { type: "text/csv" });
-
       // Act
-      fireEvent.change(screen.getByTestId("cohort-csv-input"), { target: { files: [file] } });
+      fireEvent.change(screen.getByTestId("cohort-csv-input"), { target: { files: [csvFile()] } });
 
       // Assert
       expect(await screen.findByTestId("cohort-csv-summary")).toBeInTheDocument();
@@ -419,6 +518,51 @@ describe("CohortDetailsView", () => {
       expect(confirmButton()).toBeDisabled();
     });
 
+    it("C11 — a delete 409 error is cleared when the re-run lookup comes back empty", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(cohortFixture());
+      fetchCouponsMock.mockResolvedValueOnce([]);
+      deleteCohortMock.mockRejectedValue(
+        new ApiError({ status: 409, serverMessage: "Cohort is used by 1 coupon(s): FLAT100" }),
+      );
+
+      const relookup = deferred<CohortLinkedCoupon[]>();
+
+      fetchCouponsMock.mockReturnValueOnce(relookup.promise);
+      await renderView();
+      openDialog();
+      await screen.findByTestId("cohort-delete-confirm-text");
+      fireEvent.click(confirmButton());
+      await screen.findByTestId("cohort-delete-error");
+
+      // Act — the coupon was unlinked in the meantime
+      relookup.resolve([]);
+
+      // Assert
+      await waitFor(() => expect(screen.queryByTestId("cohort-delete-error")).toBeNull());
+      expect(confirmButton()).toBeEnabled();
+    });
+
+    it("C11 — a delete network error is kept when the re-run lookup comes back empty", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(cohortFixture());
+      fetchCouponsMock.mockResolvedValue([]);
+      deleteCohortMock.mockRejectedValueOnce(new ApiError({ status: 0, serverMessage: null }));
+      await renderView();
+      openDialog();
+      await screen.findByTestId("cohort-delete-confirm-text");
+
+      // Act
+      fireEvent.click(confirmButton());
+
+      // Assert
+      await waitFor(() => expect(fetchCouponsMock).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(confirmButton()).toBeEnabled());
+      expect(screen.getByTestId("cohort-delete-error")).toHaveTextContent(
+        cohortMessages.networkError.defaultMessage,
+      );
+    });
+
     it("C3 — a delete 502 explains nothing was deleted and allows a retry once the lookup is empty", async () => {
       // Arrange
       fetchCohortMock.mockResolvedValue(cohortFixture());
@@ -439,6 +583,10 @@ describe("CohortDetailsView", () => {
       );
       await waitFor(() => expect(fetchCouponsMock).toHaveBeenCalledTimes(2));
       await waitFor(() => expect(confirmButton()).toBeEnabled());
+      // C11 — only a 409 is cleared by an empty lookup; the 502 explanation stays
+      expect(screen.getByTestId("cohort-delete-error")).toHaveTextContent(
+        cohortMessages.deleteUntagFailed.defaultMessage,
+      );
       expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
