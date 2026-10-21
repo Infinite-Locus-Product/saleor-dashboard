@@ -1,8 +1,7 @@
 /**
  * Cohort detail (TTXY-4705) + static CSV upload (TTXY-4707) + delete confirmation
- * showing dependencies (TTXY-4713).
+ * showing dependencies (TTXY-4713, TTXY-6199) + last sync / Sync now (TTXY-6196).
  */
-import ActionDialog from "@dashboard/components/ActionDialog";
 import { TopNav } from "@dashboard/components/AppLayout";
 import { DashboardCard } from "@dashboard/components/Card";
 import { DetailPageLayout } from "@dashboard/components/Layouts";
@@ -12,9 +11,23 @@ import { Box, Button, Input, Text } from "@saleor/macaw-ui-next";
 import React from "react";
 import { useIntl } from "react-intl";
 
-import { deleteCohort, fetchCohort, updateCohort, uploadCohortCsv } from "../api/cohortsApi";
+import {
+  deleteCohort,
+  fetchCohort,
+  fetchCohortCoupons,
+  syncCohort,
+  updateCohort,
+  uploadCohortCsv,
+} from "../api/cohortsApi";
+import { CohortDeleteDialog } from "../components/CohortDeleteDialog";
+import { CohortLastSync } from "../components/CohortLastSync";
 import { cohortMessages } from "../messages";
-import { type Cohort, type CohortIngestSummary } from "../types";
+import {
+  type Cohort,
+  type CohortIngestSummary,
+  type CohortLinkedCoupon,
+  type CohortSyncResult,
+} from "../types";
 import { cohortListUrl } from "../urls";
 
 interface CohortDetailsViewProps {
@@ -41,6 +54,12 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [linkedCoupons, setLinkedCoupons] = React.useState<CohortLinkedCoupon[] | null>(null);
+  const [couponLookupError, setCouponLookupError] = React.useState<string | null>(null);
+
+  const [syncing, setSyncing] = React.useState(false);
+  const [syncResult, setSyncResult] = React.useState<CohortSyncResult | null>(null);
+  const [syncError, setSyncError] = React.useState<string | null>(null);
 
   const hydrate = React.useCallback((next: Cohort) => {
     setCohort(next);
@@ -118,6 +137,55 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
     }
   };
 
+  // TTXY-6199 — load the coupons using this cohort each time the dialog opens,
+  // so Confirm is only offered for a cohort no coupon references.
+  React.useEffect(() => {
+    if (!deleteOpen) return;
+
+    let cancelled = false;
+
+    setLinkedCoupons(null);
+    setCouponLookupError(null);
+    fetchCohortCoupons(id)
+      .then(coupons => !cancelled && setLinkedCoupons(coupons))
+      .catch(
+        err =>
+          !cancelled &&
+          setCouponLookupError(
+            err instanceof Error
+              ? err.message
+              : intl.formatMessage(cohortMessages.deleteCouponsError),
+          ),
+      );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deleteOpen, id, intl]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncError(null);
+    setSyncResult(null);
+
+    try {
+      setSyncResult(await syncCohort(id));
+    } catch (err) {
+      setSyncError(
+        err instanceof Error ? err.message : intl.formatMessage(cohortMessages.syncError),
+      );
+    } finally {
+      // The outcome (success / partial / failed) is recorded on the cohort; refresh it.
+      try {
+        hydrate(await fetchCohort(id));
+      } catch {
+        // keep the current view; the next load will catch up
+      }
+
+      setSyncing(false);
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     setDeleteError(null);
@@ -161,6 +229,8 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
   }
 
   const isStatic = cohort.type === "static";
+  const isExpired = !!cohort.end_date && new Date(cohort.end_date).getTime() <= Date.now();
+  const canSync = cohort.status && !isExpired;
 
   return (
     <DetailPageLayout gridTemplateColumns={1}>
@@ -223,6 +293,49 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
               </DashboardCard.Content>
             </DashboardCard>
           </form>
+
+          <DashboardCard data-test-id="cohort-sync-card">
+            <DashboardCard.Header>
+              <DashboardCard.Title>
+                {intl.formatMessage(cohortMessages.colLastSynced)}
+              </DashboardCard.Title>
+            </DashboardCard.Header>
+            <DashboardCard.Content>
+              <Box display="grid" gap={3} paddingBottom={4}>
+                <CohortLastSync cohort={cohort} detailed />
+                <Box display="flex" gap={3} alignItems="center">
+                  <Button
+                    variant="secondary"
+                    onClick={handleSync}
+                    disabled={!canSync || syncing}
+                    data-test-id="cohort-sync-now"
+                  >
+                    {intl.formatMessage(cohortMessages.syncNow)}
+                  </Button>
+                  {!canSync && (
+                    <Text size={2} color="default2">
+                      {intl.formatMessage(cohortMessages.syncInactiveHelp)}
+                    </Text>
+                  )}
+                </Box>
+                {syncResult && (
+                  <Text size={2} data-test-id="cohort-sync-result">
+                    {intl.formatMessage(cohortMessages.syncDone, {
+                      added: syncResult.added,
+                      skipped: syncResult.skipped,
+                      notFound: syncResult.notFound,
+                      errors: syncResult.errors,
+                    })}
+                  </Text>
+                )}
+                {syncError && (
+                  <Text color="critical1" data-test-id="cohort-sync-error">
+                    {syncError}
+                  </Text>
+                )}
+              </Box>
+            </DashboardCard.Content>
+          </DashboardCard>
 
           {isStatic && (
             <DashboardCard>
@@ -307,31 +420,20 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
         />
       </Savebar>
 
-      <ActionDialog
+      <CohortDeleteDialog
         open={deleteOpen}
+        cohortName={cohort.cohort_name}
+        memberCount={cohort.member_count}
+        coupons={linkedCoupons}
+        lookupError={couponLookupError}
+        deleteError={deleteError}
+        deleting={deleting}
         onClose={() => {
           setDeleteOpen(false);
           setDeleteError(null);
         }}
         onConfirm={handleDelete}
-        title={intl.formatMessage(cohortMessages.deleteCohort)}
-        variant="delete"
-        confirmButtonState={deleting ? "loading" : "default"}
-      >
-        <Text>
-          {intl.formatMessage(cohortMessages.deleteConfirm, {
-            name: cohort.cohort_name,
-            count: cohort.member_count,
-          })}
-        </Text>
-        {deleteError && (
-          <Box paddingTop={3}>
-            <Text color="critical1" data-test-id="cohort-delete-error">
-              {deleteError}
-            </Text>
-          </Box>
-        )}
-      </ActionDialog>
+      />
     </DetailPageLayout>
   );
 };

@@ -16,7 +16,31 @@ export interface Cohort {
   message_batch_size: number;
   sync_frequency_hours: number;
   member_count: number;
+  /** Moves only on a fully successful sync (TTXY-6196). */
   last_synced_at: string | null;
+  last_sync_status: CohortSyncStatus | null;
+  last_sync_attempt_at: string | null;
+  last_sync_error: string | null;
+}
+
+export type CohortSyncStatus = "success" | "partial" | "failed";
+
+/** Result of POST /cohorts/:id/sync. */
+export interface CohortSyncResult {
+  cohortId: number;
+  cohortName: string;
+  added: number;
+  skipped: number;
+  notFound: number;
+  errors: number;
+}
+
+/** A coupon whose restriction references the cohort (GET /cohorts/:id/coupons). */
+export interface CohortLinkedCoupon {
+  voucherId: string;
+  voucherCode: string | null;
+  startTime: string | null;
+  endTime: string | null;
 }
 
 export interface CohortListResponse {

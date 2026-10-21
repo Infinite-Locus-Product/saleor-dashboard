@@ -4,7 +4,14 @@
 // cannot handle.
 jest.mock("./env", () => ({ getTenexuBaseUrl: () => "http://tenexu.test" }));
 
-import { buildCohortListQuery, createCohort, fetchCohorts, uploadCohortCsv } from "./cohortsApi";
+import {
+  buildCohortListQuery,
+  createCohort,
+  fetchCohortCoupons,
+  fetchCohorts,
+  syncCohort,
+  uploadCohortCsv,
+} from "./cohortsApi";
 
 const okResponse = (data: unknown, headers: Record<string, string> = {}) =>
   ({
@@ -142,5 +149,42 @@ describe("cohortsApi requests", () => {
     expect(init.body).toBeInstanceOf(FormData);
     expect(init.headers["Content-Type"]).toBeUndefined();
     expect(init.headers.Authorization).toBe("Bearer auth-123");
+  });
+
+  it("U4 — syncCohort POSTs /cohorts/:id/sync and returns the run result", async () => {
+    // Arrange
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(okResponse({ cohortId: 7, added: 2, skipped: 0, notFound: 0, errors: 0 }));
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    // Act
+    const result = await syncCohort(7);
+
+    // Assert
+    const [url, init] = fetchMock.mock.calls[0];
+
+    expect(url).toBe("http://tenexu.test/cohorts/7/sync");
+    expect(init.method).toBe("POST");
+    expect(result.added).toBe(2);
+  });
+
+  it("U9 — fetchCohortCoupons GETs /cohorts/:id/coupons and returns the list", async () => {
+    // Arrange
+    const coupons = [{ voucherId: "V1", voucherCode: "FLAT100", startTime: null, endTime: null }];
+    const fetchMock = jest.fn().mockResolvedValue(okResponse({ coupons }));
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    // Act
+    const result = await fetchCohortCoupons(7);
+
+    // Assert
+    const [url, init] = fetchMock.mock.calls[0];
+
+    expect(url).toBe("http://tenexu.test/cohorts/7/coupons");
+    expect(init.method).toBe("GET");
+    expect(result).toEqual(coupons);
   });
 });

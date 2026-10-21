@@ -191,9 +191,66 @@ export const cohortMessages = defineMessages({
   },
   deleteConfirm: {
     defaultMessage:
-      "Delete {name}? Its {count, plural, one {# member} other {# members}} will be untagged. Cohorts still referenced by a coupon cannot be deleted.",
-    id: "Uqz8iD",
-    description: "cohort delete confirmation body",
+      "Delete {name}? Its {count, plural, one {# member} other {# members}} will be untagged.",
+    id: "vLu9qh",
+    description: "cohort delete confirmation body (cohort used by no coupon)",
+  },
+  deleteBlocked: {
+    defaultMessage:
+      "{name} is used by {count, plural, one {# coupon} other {# coupons}}. Remove the cohort from {count, plural, one {it} other {them}} before deleting:",
+    id: "VkpHfh",
+    description: "cohort delete blocked because coupons reference it",
+  },
+  deleteCouponsLoading: {
+    defaultMessage: "Checking which coupons use this cohort…",
+    id: "gyKEJ2",
+    description: "cohort delete dialog while loading linked coupons",
+  },
+  deleteCouponsError: {
+    defaultMessage: "Could not check which coupons use this cohort",
+    id: "FjijQk",
+    description: "cohort delete dialog when the linked-coupon lookup fails",
+  },
+  neverSynced: {
+    defaultMessage: "Never synced",
+    id: "KPSzFd",
+    description: "cohort has not been synced yet",
+  },
+  syncFailedAt: {
+    defaultMessage: "Last sync failed · {when}",
+    id: "GadgRy",
+    description: "latest cohort sync failed",
+  },
+  syncPartialAt: {
+    defaultMessage: "Last sync incomplete · {when}",
+    id: "kn1II9",
+    description: "latest cohort sync tagged only some members",
+  },
+  lastSuccessfulSync: {
+    defaultMessage: "Last successful sync: {when}",
+    id: "0FbVZH",
+    description: "time of the last fully successful cohort sync",
+  },
+  syncNow: {
+    defaultMessage: "Sync now",
+    id: "37VZjH",
+    description: "run the cohort sync now",
+  },
+  syncInactiveHelp: {
+    defaultMessage: "Activate the cohort to sync it",
+    id: "aUNBnL",
+    description: "sync button disabled for an inactive cohort",
+  },
+  syncDone: {
+    defaultMessage:
+      "Synced: {added} tagged, {skipped} already tagged, {notFound} not found, {errors} failed",
+    id: "7ifD7e",
+    description: "result of a manual cohort sync",
+  },
+  syncError: {
+    defaultMessage: "Cohort sync failed",
+    id: "ri8hvr",
+    description: "manual cohort sync failed",
   },
   deleteError: {
     defaultMessage: "Failed to delete cohort",

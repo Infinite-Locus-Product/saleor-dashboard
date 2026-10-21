@@ -13,8 +13,10 @@ import {
   type Cohort,
   type CohortCreateInput,
   type CohortIngestSummary,
+  type CohortLinkedCoupon,
   type CohortListParams,
   type CohortListResponse,
+  type CohortSyncResult,
   type CohortUpdateInput,
 } from "../types";
 import { getTenexuBaseUrl } from "./env";
@@ -119,3 +121,14 @@ export const deleteCohort = (id: string | number): Promise<{ deleted: boolean; i
 
 export const uploadCohortCsv = (id: string | number, file: File): Promise<CohortIngestSummary> =>
   apiUpload<CohortIngestSummary>(`/cohorts/${id}/csv`, file);
+
+/** TTXY-6196 — run the tagging pass now (409 for an inactive or expired cohort). */
+export const syncCohort = (id: string | number): Promise<CohortSyncResult> =>
+  apiRequest<CohortSyncResult>("POST", `/cohorts/${id}/sync`);
+
+/** TTXY-6199 — coupons whose restriction references this cohort. */
+export const fetchCohortCoupons = async (id: string | number): Promise<CohortLinkedCoupon[]> => {
+  const data = await apiRequest<{ coupons: CohortLinkedCoupon[] }>("GET", `/cohorts/${id}/coupons`);
+
+  return data?.coupons ?? [];
+};

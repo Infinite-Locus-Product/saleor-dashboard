@@ -14,6 +14,7 @@ import React from "react";
 import { useIntl } from "react-intl";
 
 import { fetchCohorts } from "../api/cohortsApi";
+import { CohortLastSync } from "../components/CohortLastSync";
 import { cohortMessages } from "../messages";
 import { type Cohort, type CohortListParams } from "../types";
 import { cohortAddUrl, cohortUrl } from "../urls";
@@ -196,7 +197,7 @@ export const CohortListView: React.FC = () => {
                         <Text>{cohort.member_count}</Text>
                       </Box>
                       <Box as="td">
-                        <Text>{formatDate(cohort.last_synced_at)}</Text>
+                        <CohortLastSync cohort={cohort} />
                       </Box>
                       <Box as="td">
                         <Text>{formatDate(cohort.created_date)}</Text>
