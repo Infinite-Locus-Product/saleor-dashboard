@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { fetchManualRefund } from "../api/manualRefundApi";
+import { fetchManualRefund, markManualRefundRefunded } from "../api/manualRefundApi";
 import { type ManualRefundDetail } from "../types";
 import { ManualRefundDetailView } from "./ManualRefundDetailView";
 
@@ -121,5 +121,28 @@ describe("ManualRefundDetailView — Mark as Refunded", () => {
     // Assert
     expect(await screen.findByText("Paid outside the system")).toBeInTheDocument();
     expect(screen.queryByTestId("mrf-mark-refunded")).not.toBeInTheDocument();
+  });
+
+  it("reloads the refund after a failed close, so a lost response still shows Completed", async () => {
+    // Arrange
+    jest.spyOn(window, "confirm").mockReturnValue(true);
+
+    const button = await renderWith(refund());
+
+    (markManualRefundRefunded as jest.Mock).mockRejectedValue(new Error("Request failed: 504"));
+    fetchMock.mockResolvedValue(
+      refund({
+        refund_status: "REFUND_COMPLETED",
+        closed_at: "2026-10-21T10:00:00Z",
+        closed_by_name: "Agent One",
+      }),
+    );
+
+    // Act
+    fireEvent.click(button);
+
+    // Assert
+    expect(await screen.findByText("Paid outside the system")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

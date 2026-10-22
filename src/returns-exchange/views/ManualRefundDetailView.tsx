@@ -110,6 +110,14 @@ export const ManualRefundDetailView = ({ mrfId }: ManualRefundDetailViewProps) =
     };
   }, [mrfId, reloadToken]);
 
+  // After a failed action the server may still have changed (lost response, or
+  // another agent closed it): show its current state, keep what was typed.
+  const refreshQuietly = () => {
+    fetchManualRefund(mrfId)
+      .then(setMrf)
+      .catch(() => {});
+  };
+
   const saveProof = async () => {
     setBusy("saving");
     setActionError(null);
@@ -121,6 +129,7 @@ export const ManualRefundDetailView = ({ mrfId }: ManualRefundDetailViewProps) =
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err: unknown) {
       setActionError(getErrorMessage(err, "Could not save the payment proof"));
+      refreshQuietly();
     } finally {
       setBusy(null);
     }
@@ -138,6 +147,7 @@ export const ManualRefundDetailView = ({ mrfId }: ManualRefundDetailViewProps) =
       setMrf(await markManualRefundRefunded(mrfId));
     } catch (err: unknown) {
       setActionError(getErrorMessage(err, "Could not mark the refund as refunded"));
+      refreshQuietly();
     } finally {
       setBusy(null);
     }
