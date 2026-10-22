@@ -48,6 +48,7 @@ describe("useMenuStructure — Returns & Exchange (FE-NAV01)", () => {
       "returns-queue",
       "manual-exchanges",
       "manual-returns",
+      "manual-refunds",
       "cx-notification-settings",
     ]);
 

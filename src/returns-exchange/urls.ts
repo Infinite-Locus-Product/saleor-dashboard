@@ -22,4 +22,9 @@ export const manualReturnNewPath = `${returnsExchangeSection}/manual-returns/new
 export const manualReturnDetailPath = (mrId: string) =>
   `${returnsExchangeSection}/manual-returns/${mrId}`;
 
+export const manualRefundListPath = `${returnsExchangeSection}/manual-refunds`;
+export const manualRefundNewPath = `${returnsExchangeSection}/manual-refunds/new`;
+export const manualRefundDetailPath = (mrfId: string) =>
+  `${returnsExchangeSection}/manual-refunds/${mrfId}`;
+
 export const notificationSettingsPath = `${returnsExchangeSection}/settings`;
