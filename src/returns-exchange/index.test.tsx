@@ -106,6 +106,56 @@ describe("returns-exchange routes", () => {
     });
   });
 
+  describe("manual refunds for a CX user", () => {
+    beforeEach(() => {
+      (useUser as jest.Mock).mockReturnValue({ user: cxUser });
+    });
+
+    it("renders the list at /returns-exchange/manual-refunds", () => {
+      // Act
+      renderAt("/returns-exchange/manual-refunds");
+
+      // Assert
+      expect(screen.getByText("manual-refund-list-view")).toBeInTheDocument();
+    });
+
+    it("matches /new before /:mrfId", () => {
+      // Act
+      renderAt("/returns-exchange/manual-refunds/new");
+
+      // Assert
+      expect(screen.getByText("manual-refund-new-view")).toBeInTheDocument();
+      expect(screen.queryByText(/manual-refund-detail-view/)).not.toBeInTheDocument();
+    });
+
+    it("renders the detail view with the MRF id from the URL", () => {
+      // Act
+      renderAt("/returns-exchange/manual-refunds/MRF-12");
+
+      // Assert
+      expect(screen.getByText("manual-refund-detail-view:MRF-12")).toBeInTheDocument();
+    });
+  });
+
+  describe("manual refunds for a non-CX user", () => {
+    beforeEach(() => {
+      (useUser as jest.Mock).mockReturnValue({ user: nonCxUser });
+    });
+
+    it.each([
+      "/returns-exchange/manual-refunds",
+      "/returns-exchange/manual-refunds/new",
+      "/returns-exchange/manual-refunds/MRF-12",
+    ])("shows access denied on direct URL %s", path => {
+      // Act
+      renderAt(path);
+
+      // Assert
+      expect(screen.getByText("You don't have access to Manual Refunds")).toBeInTheDocument();
+      expect(screen.queryByText(/manual-refund-/)).not.toBeInTheDocument();
+    });
+  });
+
   describe("manual exchange routes are unchanged", () => {
     beforeEach(() => {
       (useUser as jest.Mock).mockReturnValue({ user: cxUser });
