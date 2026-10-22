@@ -23,30 +23,70 @@ import {
 import { ApiError, NETWORK_ERROR_STATUS } from "./apiError";
 import { getTenexuBaseUrl } from "./env";
 
-function getAuthHeaders(): Record<string, string> {
-  const token = localStorage.getItem("_saleor_auth_token") || "";
-  const refreshToken = localStorage.getItem("_saleorRefreshToken") || "";
+const AUTH_TOKEN_KEY = "_saleor_auth_token";
+const REFRESH_TOKEN_KEY = "_saleorRefreshToken";
+
+/**
+ * PR #5 C15 — the access token the backend refreshed in-flight, held ONLY in
+ * module memory and paired with the refresh token it was issued for.
+ *
+ * Never written to localStorage: Saleor logout does not clear
+ * `_saleor_auth_token`, and the other TenexuBackend clients (returnsApi,
+ * manualExchangeApi, bulkOrderApi) read it, so a stored token would outlive the
+ * session and be sent on behalf of the next staff user on the machine.
+ *
+ * Why not the dashboard's live token: @saleor/sdk 0.6.0 keeps the access token
+ * in a module-private store with no public getter (only `createFetch`, which
+ * targets the GraphQL API), so it cannot be read cheaply or supportedly here.
+ */
+let refreshedSession: { accessToken: string; refreshToken: string } | null = null;
+
+interface SessionHeaders {
+  headers: Record<string, string>;
+  /** The refresh token these headers carry; a refreshed token is paired with it. */
+  refreshToken: string;
+}
+
+/** The refreshed token, only while the same Saleor session (refresh token) is signed in. */
+function currentRefreshedToken(refreshToken: string): string | null {
+  if (refreshedSession && refreshToken && refreshedSession.refreshToken === refreshToken) {
+    return refreshedSession.accessToken;
+  }
+
+  // A different user, or logged out: the token belongs to someone else — drop it for good.
+  refreshedSession = null;
+
+  return null;
+}
+
+function getAuthHeaders(): SessionHeaders {
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY) || "";
+  const token = currentRefreshedToken(refreshToken) ?? (localStorage.getItem(AUTH_TOKEN_KEY) || "");
 
   return {
-    Authorization: `Bearer ${token}`,
-    "X-Refresh-Token": refreshToken,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "X-Refresh-Token": refreshToken,
+    },
+    refreshToken,
   };
 }
 
 /**
  * The backend refreshes an expired session in-flight and echoes the new token
- * back; persist it so the next call doesn't have to refresh again.
+ * back; remember it (in memory only) for the session the request was sent with,
+ * so the next call doesn't have to refresh again.
  */
-function absorbRefreshedToken(res: Response): void {
+function absorbRefreshedToken(res: Response, sentRefreshToken: string): void {
   const refreshed = res.headers.get("X-Refreshed-Auth-Token");
 
-  if (refreshed) {
-    localStorage.setItem("_saleor_auth_token", refreshed);
+  if (refreshed && sentRefreshToken) {
+    refreshedSession = { accessToken: refreshed, refreshToken: sentRefreshToken };
   }
 }
 
-async function unwrap<T>(res: Response): Promise<T> {
-  absorbRefreshedToken(res);
+async function unwrap<T>(res: Response, sentRefreshToken: string): Promise<T> {
+  absorbRefreshedToken(res, sentRefreshToken);
 
   let json: any = null;
 
@@ -82,13 +122,14 @@ async function send(path: string, init: RequestInit): Promise<Response> {
 }
 
 async function apiRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const auth = getAuthHeaders();
   const res = await send(path, {
     method,
-    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    headers: { "Content-Type": "application/json", ...auth.headers },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-  return unwrap<T>(res);
+  return unwrap<T>(res, auth.refreshToken);
 }
 
 /** Multipart upload — Content-Type is intentionally omitted so the browser sets the boundary. */
@@ -97,13 +138,14 @@ async function apiUpload<T>(path: string, file: File): Promise<T> {
 
   form.append("file", file);
 
+  const auth = getAuthHeaders();
   const res = await send(path, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers: auth.headers,
     body: form,
   });
 
-  return unwrap<T>(res);
+  return unwrap<T>(res, auth.refreshToken);
 }
 
 export function buildCohortListQuery(params: CohortListParams = {}): string {

@@ -115,4 +115,45 @@ describe("describeCohortError", () => {
     expect(view.message).toBe(cohortMessages.updateError);
     expect(view.detail).toBeNull();
   });
+
+  // PR #5 C16 — the menu only checks MANAGE_DISCOUNTS; the backend also needs
+  // the cohort permission group (403) and COHORT_COUPONS_ENABLED (404).
+  it.each<CohortAction>(["list", "load", "create", "update", "sync", "delete"])(
+    "C16 — 403 on %s says the user lacks cohort access",
+    action => {
+      // Arrange
+      const error = new ApiError({ status: 403, serverMessage: "Forbidden" });
+
+      // Act
+      const view = describeCohortError(action, error);
+
+      // Assert
+      expect(view.message).toBe(cohortMessages.noCohortAccess);
+      expect(view.detail).toBeNull();
+    },
+  );
+
+  it("C16 — 404 on the list says cohorts are not enabled on this environment", () => {
+    // Arrange
+    const error = new ApiError({ status: 404, serverMessage: "Not found" });
+
+    // Act
+    const view = describeCohortError("list", error);
+
+    // Assert
+    expect(view.message).toBe(cohortMessages.cohortsNotEnabled);
+    expect(view.detail).toBeNull();
+  });
+
+  it("C16 — 404 on a single cohort load says the cohort was not found", () => {
+    // Arrange
+    const error = new ApiError({ status: 404, serverMessage: "Cohort 7 not found" });
+
+    // Act
+    const view = describeCohortError("load", error);
+
+    // Assert
+    expect(view.message).toBe(cohortMessages.notFound);
+    expect(view.detail).toBeNull();
+  });
 });

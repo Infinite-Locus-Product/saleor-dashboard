@@ -590,4 +590,113 @@ describe("CohortDetailsView", () => {
       expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
+
+  // PR #5 C17 — an expired cohort can only be reactivated with a new future
+  // end_date, so the end date is shown and editable.
+  describe("end date", () => {
+    const endDateInput = (): HTMLInputElement =>
+      screen.getByTestId("cohort-end-date") as HTMLInputElement;
+
+    it("renders the current end date as its IST day, with the formatted value", async () => {
+      // Arrange — 20:00 UTC Dec 31 is Jan 1 in IST
+      fetchCohortMock.mockResolvedValue(cohortFixture({ end_date: "2099-12-31T20:00:00Z" }));
+
+      // Act
+      await renderView();
+
+      // Assert
+      expect(endDateInput().value).toBe("2100-01-01");
+      expect(endDateInput()).toHaveAttribute("type", "date");
+      expect(screen.getByTestId("cohort-end-date-current")).toBeInTheDocument();
+    });
+
+    it("says there is no end date when none is set", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(cohortFixture({ end_date: null }));
+
+      // Act
+      await renderView();
+
+      // Assert
+      expect(endDateInput().value).toBe("");
+      expect(screen.getByText(cohortMessages.endDateNone.defaultMessage)).toBeInTheDocument();
+    });
+
+    it("sends an edited end date in the Save PATCH", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(cohortFixture({ end_date: "2099-06-30T18:29:59.999Z" }));
+      updateCohortMock.mockResolvedValue(cohortFixture({ end_date: "2099-07-31T18:29:59.999Z" }));
+      await renderView();
+
+      // Act
+      fireEvent.change(endDateInput(), { target: { value: "2099-07-31" } });
+      fireEvent.submit(detailsForm());
+
+      // Assert
+      await waitFor(() => expect(updateCohortMock).toHaveBeenCalledTimes(1));
+      expect(updateCohortMock).toHaveBeenCalledWith(
+        "7",
+        expect.objectContaining({ end_date: "2099-07-31" }),
+      );
+    });
+
+    it("clearing the end date sends null", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(cohortFixture({ end_date: "2099-06-30T18:29:59.999Z" }));
+      updateCohortMock.mockResolvedValue(cohortFixture({ end_date: null }));
+      await renderView();
+
+      // Act
+      fireEvent.change(endDateInput(), { target: { value: "" } });
+      fireEvent.submit(detailsForm());
+
+      // Assert
+      await waitFor(() => expect(updateCohortMock).toHaveBeenCalledTimes(1));
+      expect(updateCohortMock.mock.calls[0][1]).toHaveProperty("end_date", null);
+    });
+
+    it("leaves end_date out of the PATCH when it was not changed", async () => {
+      // Arrange — re-sending a past date would be rejected (400) by the backend,
+      // which would block every other edit of an expired cohort.
+      fetchCohortMock.mockResolvedValue(
+        cohortFixture({ status: false, end_date: "2020-01-01T00:00:00Z" }),
+      );
+      updateCohortMock.mockResolvedValue(cohortFixture({ description: "edited" }));
+      await renderView();
+
+      // Act
+      fireEvent.change(descriptionInput(), { target: { value: "edited" } });
+      fireEvent.submit(detailsForm());
+
+      // Assert
+      await waitFor(() => expect(updateCohortMock).toHaveBeenCalledTimes(1));
+      expect(updateCohortMock.mock.calls[0][1]).not.toHaveProperty("end_date");
+    });
+
+    it("shows the reactivation hint for a cohort past its end date", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(
+        cohortFixture({ status: false, end_date: "2020-01-01T00:00:00Z" }),
+      );
+
+      // Act
+      await renderView();
+
+      // Assert
+      expect(
+        screen.getByText(cohortMessages.endDateExpiredHint.defaultMessage),
+      ).toBeInTheDocument();
+    });
+
+    it("does not show the reactivation hint for a future end date", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(cohortFixture({ end_date: "2099-12-31T18:29:59.999Z" }));
+
+      // Act
+      await renderView();
+
+      // Assert
+      expect(screen.queryByText(cohortMessages.endDateExpiredHint.defaultMessage)).toBeNull();
+    });
+  });
 });
