@@ -21,6 +21,9 @@ import {
 } from "../utils/manualReturnStatus";
 
 const PROOF_ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp";
+// Same limits as the backend upload (cxRouter), checked before uploading.
+const PROOF_TYPES = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"];
+const PROOF_MAX_BYTES = 10 * 1024 * 1024;
 
 interface ManualRefundDetailViewProps {
   mrfId: string;
@@ -305,7 +308,21 @@ export const ManualRefundDetailView = ({ mrfId }: ManualRefundDetailViewProps) =
                   ref={fileInputRef}
                   type="file"
                   accept={PROOF_ACCEPT}
-                  onChange={event => setFile(event.target.files?.[0] ?? null)}
+                  onChange={event => {
+                    const picked = event.target.files?.[0] ?? null;
+                    const problem = !picked
+                      ? null
+                      : !PROOF_TYPES.includes(picked.type)
+                        ? "Payment proof must be a PDF or a JPG, PNG or WEBP image"
+                        : picked.size > PROOF_MAX_BYTES
+                          ? "Payment proof must be 10 MB or smaller"
+                          : null;
+
+                    setActionError(problem);
+                    setFile(problem ? null : picked);
+
+                    if (problem) event.target.value = "";
+                  }}
                   data-test-id="mrf-proof-input"
                 />
               </Box>

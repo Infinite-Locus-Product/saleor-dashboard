@@ -146,3 +146,41 @@ describe("ManualRefundDetailView — Mark as Refunded", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("ManualRefundDetailView — proof file check", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const pick = (file: File) =>
+    fireEvent.change(screen.getByTestId("mrf-proof-input"), { target: { files: [file] } });
+
+  it("rejects a file over 10 MB before uploading", async () => {
+    // Arrange
+    await renderWith(refund({ txn_reference: null, proof_uploaded_at: null, proof_url: null }));
+
+    const big = new File(["x"], "proof.pdf", { type: "application/pdf" });
+
+    Object.defineProperty(big, "size", { value: 11 * 1024 * 1024 });
+
+    // Act
+    pick(big);
+
+    // Assert
+    expect(screen.getByText("Payment proof must be 10 MB or smaller")).toBeInTheDocument();
+    expect(screen.getByTestId("mrf-save-proof")).toBeDisabled();
+  });
+
+  it("rejects a file that isn't a PDF or an image", async () => {
+    // Arrange
+    await renderWith(refund({ txn_reference: null, proof_uploaded_at: null, proof_url: null }));
+
+    // Act
+    pick(new File(["x"], "proof.zip", { type: "application/zip" }));
+
+    // Assert
+    expect(
+      screen.getByText("Payment proof must be a PDF or a JPG, PNG or WEBP image"),
+    ).toBeInTheDocument();
+  });
+});
