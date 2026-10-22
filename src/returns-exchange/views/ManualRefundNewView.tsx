@@ -183,6 +183,19 @@ export const ManualRefundNewView = () => {
 
       navigate(manualRefundDetailPath(mrf.mrf_id));
     } catch (err: unknown) {
+      // The refund may exist even though the response failed (e.g. a proxy timeout):
+      // if this delivery note is now locked by an MRF, open it instead of an error.
+      const fresh = await lookupOrderForManualRefund(lookup.order_number).catch(() => null);
+      const lockedBy = fresh?.delivery_notes.find(
+        note => note.fulfillmentId === selected.fulfillmentId,
+      )?.lock?.mrfId;
+
+      if (lockedBy) {
+        navigate(manualRefundDetailPath(lockedBy));
+
+        return;
+      }
+
       // The backend lock blocks a real repeat, so retrying after an error is safe.
       setSubmitError(getErrorMessage(err, "The refund could not be created"));
       confirmingRef.current = false;

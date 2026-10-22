@@ -129,4 +129,62 @@ describe("ManualRefundNewView", () => {
       reason: "Courier missed the pickup",
     });
   });
+
+  it("opens the refund when Confirm fails but the refund was created", async () => {
+    // Arrange
+    lookupMock.mockResolvedValueOnce(lookup([note()])).mockResolvedValueOnce(
+      lookup([
+        note({
+          eligible: false,
+          lock: {
+            refundedBy: "Agent One",
+            at: "2026-10-22T10:00:00Z",
+            amount: 1000,
+            mrfId: "MRF-12",
+          },
+        }),
+      ]),
+    );
+    createMock.mockRejectedValue(new Error("Request failed: 504"));
+    render(<ManualRefundNewView />);
+    search();
+    fireEvent.click(await screen.findByTestId("mrf-dn-card"));
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    fireEvent.change(screen.getByTestId("mrf-reason"), {
+      target: { value: "Courier missed the pickup" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    // Act
+    fireEvent.click(screen.getByTestId("mrf-confirm-button"));
+
+    // Assert
+    await waitFor(() =>
+      expect(mockNavigate).toHaveBeenCalledWith(manualRefundDetailPath("MRF-12")),
+    );
+    expect(screen.queryByTestId("mrf-submit-error")).not.toBeInTheDocument();
+  });
+
+  it("shows the error when Confirm fails and nothing was created", async () => {
+    // Arrange
+    lookupMock.mockResolvedValue(lookup([note()]));
+    createMock.mockRejectedValue(new Error("Easebuzz did not accept the payout"));
+    render(<ManualRefundNewView />);
+    search();
+    fireEvent.click(await screen.findByTestId("mrf-dn-card"));
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    fireEvent.change(screen.getByTestId("mrf-reason"), {
+      target: { value: "Courier missed the pickup" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    // Act
+    fireEvent.click(screen.getByTestId("mrf-confirm-button"));
+
+    // Assert
+    expect(await screen.findByTestId("mrf-submit-error")).toHaveTextContent(
+      "Easebuzz did not accept the payout",
+    );
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
 });
