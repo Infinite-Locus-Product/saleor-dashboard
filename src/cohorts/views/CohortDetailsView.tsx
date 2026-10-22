@@ -23,6 +23,7 @@ import { CohortDeleteDialog } from "../components/CohortDeleteDialog";
 import { CohortErrorText } from "../components/CohortErrorText";
 import { CohortLastSync } from "../components/CohortLastSync";
 import { type CohortErrorView, describeCohortError } from "../errors";
+import { formatIstDateTime, toIstDateInput } from "../lastSynced";
 import { cohortMessages, cohortTypeMessages } from "../messages";
 import {
   type Cohort,
@@ -44,6 +45,8 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
   const [description, setDescription] = React.useState("");
   const [status, setStatus] = React.useState(false);
   const [syncHours, setSyncHours] = React.useState("1");
+  // C17 — YYYY-MM-DD (IST day) or "" for no end date.
+  const [endDate, setEndDate] = React.useState("");
 
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -78,6 +81,7 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
     setDescription(next.description ?? "");
     setStatus(next.status);
     setSyncHours(String(next.sync_frequency_hours ?? 1));
+    setEndDate(toIstDateInput(next.end_date));
   }, []);
 
   /**
@@ -132,11 +136,16 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
     setSaving(true);
     setError(null);
 
+    // C17 — only send end_date when it was edited: the backend rejects a past
+    // end_date, so re-sending an expired one would block every other edit.
+    const endDateChanged = cohort !== null && endDate !== toIstDateInput(cohort.end_date);
+
     try {
       const updated = await updateCohort(id, {
         description: description.trim() || null,
         status,
         sync_frequency_hours: Number(syncHours) || 1,
+        ...(endDateChanged ? { end_date: endDate || null } : {}),
       });
 
       hydrate(updated);
@@ -347,6 +356,31 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
                     value={syncHours}
                     onChange={e => setSyncHours(e.target.value)}
                   />
+                  <Box display="grid" gap={1}>
+                    <Input
+                      label={intl.formatMessage(cohortMessages.endDateLabel)}
+                      type="date"
+                      value={endDate}
+                      onChange={e => setEndDate(e.target.value)}
+                      data-test-id="cohort-end-date"
+                    />
+                    {cohort.end_date ? (
+                      <Text size={2} color="default2" data-test-id="cohort-end-date-current">
+                        {intl.formatMessage(cohortMessages.endDateCurrent, {
+                          when: formatIstDateTime(intl, cohort.end_date),
+                        })}
+                      </Text>
+                    ) : (
+                      <Text size={2} color="default2">
+                        {intl.formatMessage(cohortMessages.endDateNone)}
+                      </Text>
+                    )}
+                    {isExpired && (
+                      <Text size={2} color="warning1" data-test-id="cohort-end-date-expired">
+                        {intl.formatMessage(cohortMessages.endDateExpiredHint)}
+                      </Text>
+                    )}
+                  </Box>
                   <label>
                     <input
                       type="checkbox"

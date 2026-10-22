@@ -5,6 +5,7 @@
 jest.mock("./env", () => ({ getTenexuBaseUrl: () => "http://tenexu.test" }));
 
 import { ApiError } from "./apiError";
+import type * as CohortsApiModule from "./cohortsApi";
 import {
   buildCohortListQuery,
   createCohort,
@@ -115,21 +116,6 @@ describe("cohortsApi requests", () => {
 
     // Act / Assert
     await expect(fetchCohorts()).rejects.toThrow("nope");
-  });
-
-  it("persists a refreshed auth token echoed back by the backend", async () => {
-    // Arrange
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue(
-        okResponse({ items: [] }, { "X-Refreshed-Auth-Token": "fresh-999" }),
-      ) as any;
-
-    // Act
-    await fetchCohorts();
-
-    // Assert — otherwise every later call would re-trigger a refresh.
-    expect(localStorage.getItem("_saleor_auth_token")).toBe("fresh-999");
   });
 
   it("uploads CSV as multipart WITHOUT a Content-Type header", async () => {
@@ -251,5 +237,176 @@ describe("cohortsApi requests", () => {
     // Assert
     expect(error).toBeInstanceOf(ApiError);
     expect((error as ApiError).status).toBe(0);
+  });
+});
+
+// PR #5 C15 — the backend's refreshed access token is kept in module memory,
+// paired with the refresh token it was issued for, and NEVER written to
+// localStorage (Saleor logout does not clear `_saleor_auth_token`, so a stored
+// token would outlive the session and leak to the next staff user).
+describe("cohortsApi refreshed-token handling (C15)", () => {
+  type Api = typeof CohortsApiModule;
+
+  /** A fresh copy of the client, so in-memory token state never leaks between tests. */
+  const loadApi = (): Api => {
+    let api!: Api;
+
+    jest.isolateModules(() => {
+      api = jest.requireActual<Api>("./cohortsApi");
+    });
+
+    return api;
+  };
+
+  const authHeaderOfCall = (fetchMock: jest.Mock, call: number): string =>
+    fetchMock.mock.calls[call][1].headers.Authorization;
+
+  beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem("_saleorRefreshToken", "refresh-456");
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it("keeps the refreshed token in memory and reuses it on the next call", async () => {
+    // Arrange
+    const api = loadApi();
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(okResponse({ items: [] }, { "X-Refreshed-Auth-Token": "fresh-999" }))
+      .mockResolvedValueOnce(okResponse({ items: [] }));
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    // Act
+    await api.fetchCohorts();
+    await api.fetchCohorts();
+
+    // Assert — the second call does not need another refresh
+    expect(authHeaderOfCall(fetchMock, 0)).toBe("Bearer ");
+    expect(authHeaderOfCall(fetchMock, 1)).toBe("Bearer fresh-999");
+  });
+
+  it("never writes the refreshed token to localStorage", async () => {
+    // Arrange
+    const api = loadApi();
+
+    // jest-localstorage-mock: setItem is a jest.fn that keeps calls across tests
+    (localStorage.setItem as jest.Mock).mockClear();
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        okResponse({ items: [] }, { "X-Refreshed-Auth-Token": "fresh-999" }),
+      ) as any;
+
+    // Act
+    await api.fetchCohorts();
+
+    // Assert
+    expect(localStorage.getItem("_saleor_auth_token")).toBeNull();
+    expect(localStorage.setItem).not.toHaveBeenCalled();
+  });
+
+  it("discards the in-memory token once the refresh token changes (another user)", async () => {
+    // Arrange
+    const api = loadApi();
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(okResponse({ items: [] }, { "X-Refreshed-Auth-Token": "fresh-999" }))
+      .mockResolvedValue(okResponse({ items: [] }));
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+    await api.fetchCohorts();
+
+    // Act — a different staff user signs in on the same machine
+    localStorage.setItem("_saleorRefreshToken", "refresh-OTHER");
+    await api.fetchCohorts();
+    // ...and even if the first user's refresh token came back, the token stays gone
+    localStorage.setItem("_saleorRefreshToken", "refresh-456");
+    await api.fetchCohorts();
+
+    // Assert
+    expect(authHeaderOfCall(fetchMock, 1)).toBe("Bearer ");
+    expect(fetchMock.mock.calls[1][1].headers["X-Refresh-Token"]).toBe("refresh-OTHER");
+    expect(authHeaderOfCall(fetchMock, 2)).toBe("Bearer ");
+  });
+
+  it("discards the in-memory token after logout (no refresh token)", async () => {
+    // Arrange
+    const api = loadApi();
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(okResponse({ items: [] }, { "X-Refreshed-Auth-Token": "fresh-999" }))
+      .mockResolvedValue(okResponse({ items: [] }));
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+    await api.fetchCohorts();
+
+    // Act
+    localStorage.removeItem("_saleorRefreshToken");
+    await api.fetchCohorts();
+
+    // Assert
+    expect(authHeaderOfCall(fetchMock, 1)).toBe("Bearer ");
+  });
+
+  it("pairs the token with the refresh token the request was SENT with", async () => {
+    // Arrange — the user changes while the request that triggered the refresh is in flight
+    const api = loadApi();
+    let resolveFirst!: (res: Response) => void;
+    const fetchMock = jest
+      .fn()
+      .mockReturnValueOnce(new Promise<Response>(res => (resolveFirst = res)))
+      .mockResolvedValue(okResponse({ items: [] }));
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    // Act
+    const first = api.fetchCohorts();
+
+    localStorage.setItem("_saleorRefreshToken", "refresh-OTHER");
+    resolveFirst(okResponse({ items: [] }, { "X-Refreshed-Auth-Token": "fresh-999" }));
+    await first;
+    await api.fetchCohorts();
+
+    // Assert — the first user's token is never sent with the second user's session
+    expect(authHeaderOfCall(fetchMock, 1)).toBe("Bearer ");
+  });
+
+  it("without a refreshed token, still sends the stored token as before", async () => {
+    // Arrange
+    const api = loadApi();
+    const fetchMock = jest.fn().mockResolvedValue(okResponse({ items: [] }));
+
+    localStorage.setItem("_saleor_auth_token", "auth-123");
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    // Act
+    await api.fetchCohorts();
+
+    // Assert
+    expect(authHeaderOfCall(fetchMock, 0)).toBe("Bearer auth-123");
+    expect(fetchMock.mock.calls[0][1].headers["X-Refresh-Token"]).toBe("refresh-456");
+  });
+
+  it("uses the refreshed token for CSV uploads too", async () => {
+    // Arrange
+    const api = loadApi();
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(okResponse({ items: [] }, { "X-Refreshed-Auth-Token": "fresh-999" }))
+      .mockResolvedValueOnce(okResponse({ total: 1, valid: 1, invalid: 0, sample: [] }));
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    // Act
+    await api.fetchCohorts();
+    await api.uploadCohortCsv(7, new File(["phone\n"], "c.csv", { type: "text/csv" }));
+
+    // Assert
+    expect(authHeaderOfCall(fetchMock, 1)).toBe("Bearer fresh-999");
   });
 });

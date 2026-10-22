@@ -4,6 +4,7 @@ import Wrapper from "@test/wrapper";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
+import { ApiError } from "../api/apiError";
 import { fetchCohorts } from "../api/cohortsApi";
 import { cohortMessages } from "../messages";
 import { type Cohort, type CohortListResponse } from "../types";
@@ -108,5 +109,39 @@ describe("CohortListView", () => {
     expect(table).toHaveTextContent(cohortMessages.typeDynamic.defaultMessage);
     expect(table).not.toHaveTextContent(/\bstatic\b/);
     expect(table).not.toHaveTextContent(/\bdynamic\b/);
+  });
+
+  it("C16 — a 403 explains how to get cohort access instead of a raw error", async () => {
+    // Arrange
+    fetchCohortsMock.mockRejectedValue(new ApiError({ status: 403, serverMessage: "Forbidden" }));
+
+    // Act
+    renderList();
+
+    // Assert
+    expect(
+      await screen.findByText(cohortMessages.noCohortAccess.defaultMessage),
+    ).toBeInTheDocument();
+    expect(cohortMessages.noCohortAccess.defaultMessage).toBe(
+      "You don't have access to cohorts. Ask an admin to add you to the cohort permission group.",
+    );
+    expect(screen.queryByText("Forbidden")).toBeNull();
+  });
+
+  it("C16 — a 404 on the list says cohorts are not enabled on this environment", async () => {
+    // Arrange
+    fetchCohortsMock.mockRejectedValue(new ApiError({ status: 404, serverMessage: "Not found" }));
+
+    // Act
+    renderList();
+
+    // Assert
+    expect(
+      await screen.findByText(cohortMessages.cohortsNotEnabled.defaultMessage),
+    ).toBeInTheDocument();
+    expect(cohortMessages.cohortsNotEnabled.defaultMessage).toBe(
+      "Cohorts are not enabled on this environment yet.",
+    );
+    expect(screen.queryByText("Not found")).toBeNull();
   });
 });

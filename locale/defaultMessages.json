@@ -117,6 +117,10 @@
   "+cGU63": {
     "string": "Are you sure you want to cancel fulfillment?"
   },
+  "+dXjv9": {
+    "context": "cohort detail: current end date, when is a date and time in IST",
+    "string": "Ends {when}"
+  },
   "+djx5u": {
     "string": "You can't give this extension permissions you don't have."
   },
@@ -2970,6 +2974,10 @@
   "Ev6SEF": {
     "string": "New Password"
   },
+  "EvQPO6": {
+    "context": "cohort list request returned 404: the cohort feature flag is off on the backend",
+    "string": "Cohorts are not enabled on this environment yet."
+  },
   "EwoyVr": {
     "context": "bulk remove button label",
     "string": "Delete shipping zones"
@@ -5310,6 +5318,10 @@
   },
   "Qox+kb": {
     "string": "on field {fieldName}"
+  },
+  "QpBJOf": {
+    "context": "cohort detail: the cohort is past its end date and needs a new one to be reactivated",
+    "string": "Set a future end date to reactivate"
   },
   "QpBqa9": {
     "context": "label for radio button",
@@ -10865,6 +10877,10 @@
   "vaFjs6": {
     "string": "No warehouses available to add"
   },
+  "vavbAg": {
+    "context": "cohort request rejected (403): staff user is not in the cohort permission group",
+    "string": "You don't have access to cohorts. Ask an admin to add you to the cohort permission group."
+  },
   "vazr6V": {
     "context": "Button label to open the full problems modal for an app",
     "string": "Open app problems"
@@ -11153,6 +11169,10 @@
   "x/pIZ9": {
     "context": "button",
     "string": "Add product"
+  },
+  "x/zDW5": {
+    "context": "cohort detail: the cohort has no end date",
+    "string": "No end date — the cohort does not expire. Leave empty to keep it that way."
   },
   "x0n6YG": {
     "string": "This refund is currently being processed and cannot be edited"

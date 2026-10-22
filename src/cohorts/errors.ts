@@ -36,6 +36,14 @@ const fallbackMessages: Record<CohortAction, MessageDescriptor> = {
 const mappedMessage = (action: CohortAction, status: number): MessageDescriptor | null => {
   if (status === NETWORK_ERROR_STATUS) return cohortMessages.networkError;
 
+  // C16 — signed in with MANAGE_DISCOUNTS but not in the cohort permission group.
+  if (status === 403) return cohortMessages.noCohortAccess;
+
+  // C16 — the whole cohort API answers 404 while COHORT_COUPONS_ENABLED is off.
+  if (action === "list" && status === 404) return cohortMessages.cohortsNotEnabled;
+
+  if (action === "load" && status === 404) return cohortMessages.notFound;
+
   if (action === "sync" && status === 409) return cohortMessages.syncNotAllowed;
 
   // The dialog already lists the coupons, so the server's list is not repeated.

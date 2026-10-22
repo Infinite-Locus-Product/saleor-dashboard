@@ -2,7 +2,7 @@
 // failed/partial sync is never shown as if it had succeeded.
 import { type IntlShape } from "react-intl";
 
-import { describeLastSync, formatIstDateTime } from "./lastSynced";
+import { describeLastSync, formatIstDateTime, toIstDateInput } from "./lastSynced";
 import { cohortMessages } from "./messages";
 import { type Cohort } from "./types";
 
@@ -158,5 +158,32 @@ describe("describeLastSync", () => {
       attemptAt: "2026-10-22T05:30:00Z",
       lastSuccessAt: null,
     });
+  });
+});
+
+// PR #5 C17 — the end-date picker shows the stored instant as its IST calendar day.
+describe("toIstDateInput", () => {
+  it("returns the IST calendar day as YYYY-MM-DD (jest runs in UTC)", () => {
+    // Arrange — 20:00 UTC on Dec 31 is 01:30 IST on Jan 1
+    const utc = "2026-12-31T20:00:00Z";
+
+    // Act
+    const value = toIstDateInput(utc);
+
+    // Assert
+    expect(value).toBe("2027-01-01");
+  });
+
+  it("keeps an end-of-IST-day value on that day", () => {
+    // Arrange — what the backend stores for a picked 2026-12-31
+    const stored = "2026-12-31T18:29:59.999Z";
+
+    // Act / Assert
+    expect(toIstDateInput(stored)).toBe("2026-12-31");
+  });
+
+  it.each([null, "", "not-a-date"])("returns an empty string for %p", value => {
+    // Arrange / Act / Assert
+    expect(toIstDateInput(value)).toBe("");
   });
 });

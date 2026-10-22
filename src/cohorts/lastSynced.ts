@@ -40,6 +40,27 @@ export const formatIstDateTime = (
 };
 
 /**
+ * PR #5 C17 — the IST calendar day of a stored instant as YYYY-MM-DD, the value
+ * a native date input takes (the backend reads a picked day as the end of that
+ * day in IST). Empty for no value or an unparseable one.
+ */
+export const toIstDateInput = (value: string | null): string => {
+  const date = value ? new Date(value) : null;
+
+  if (!date || Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  // en-CA formats a date as YYYY-MM-DD.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+};
+
+/**
  * A failed or partial latest attempt wins over an older success, so a stale
  * success time is never presented as the current state.
  */

@@ -127,6 +127,22 @@ export const cohortMessages = defineMessages({
     description: "cohort sync frequency helper",
   },
   endDateLabel: { defaultMessage: "End date", id: "hNx2Ld", description: "cohort end date field" },
+  endDateCurrent: {
+    defaultMessage: "Ends {when}",
+    id: "+dXjv9",
+    description: "cohort detail: current end date, when is a date and time in IST",
+  },
+  endDateNone: {
+    defaultMessage: "No end date — the cohort does not expire. Leave empty to keep it that way.",
+    id: "x/zDW5",
+    description: "cohort detail: the cohort has no end date",
+  },
+  endDateExpiredHint: {
+    defaultMessage: "Set a future end date to reactivate",
+    id: "QpBJOf",
+    description:
+      "cohort detail: the cohort is past its end date and needs a new one to be reactivated",
+  },
   endDateHelp: {
     defaultMessage: "Optional. After this date the cohort stops being evaluated.",
     id: "2kMOsk",
@@ -290,6 +306,19 @@ export const cohortMessages = defineMessages({
     defaultMessage: "Some members could not be untagged, so nothing was deleted. Please try again.",
     id: "2aDwkf",
     description: "cohort delete rejected (502) because untagging members failed",
+  },
+  // PR #5 C16 — the menu only checks MANAGE_DISCOUNTS; the backend also needs
+  // the cohort permission group and the COHORT_COUPONS_ENABLED flag.
+  noCohortAccess: {
+    defaultMessage:
+      "You don't have access to cohorts. Ask an admin to add you to the cohort permission group.",
+    id: "vavbAg",
+    description: "cohort request rejected (403): staff user is not in the cohort permission group",
+  },
+  cohortsNotEnabled: {
+    defaultMessage: "Cohorts are not enabled on this environment yet.",
+    id: "EvQPO6",
+    description: "cohort list request returned 404: the cohort feature flag is off on the backend",
   },
   networkError: {
     defaultMessage: "Could not reach the server. Check your connection and try again.",
