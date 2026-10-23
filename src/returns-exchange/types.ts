@@ -359,3 +359,79 @@ export interface ProductVariant {
     }>;
   }>;
 }
+
+// ─── Manual Refunds (see TenexuBackend docs/cx-manual-refund/LLD.md) ─────────
+
+export type ManualRefundPaymentMode = "PREPAID" | "COD" | "PPCOD";
+export type ManualRefundStatus =
+  | "REFUND_INITIATED"
+  | "REFUND_IN_PROCESS"
+  | "REFUND_COMPLETED"
+  | "REFUND_FAILED";
+
+export interface ManualRefundItem {
+  name: string;
+  variant: string | null;
+  sku: string | null;
+  quantity: number;
+}
+
+/** One fulfillment ("delivery note") of the looked-up order. */
+export interface ManualRefundDeliveryNote {
+  fulfillmentId: string;
+  label: string;
+  isReturn: boolean;
+  items: ManualRefundItem[];
+  returnStatus: string | null;
+  refundStatus: string | null;
+  amount: number;
+  /** Masked UPI, or "Original payment method" for prepaid. */
+  destination: string;
+  lock: {
+    refundedBy: string | null;
+    at: string;
+    amount: number | null;
+    mrfId: string | null;
+  } | null;
+  eligible: boolean;
+  ineligibleReason: string | null;
+}
+
+export interface ManualRefundLookup {
+  order_id: string;
+  order_number: string;
+  customer_name: string;
+  payment_mode: ManualRefundPaymentMode;
+  delivery_notes: ManualRefundDeliveryNote[];
+}
+
+export interface ManualRefundListItem {
+  mrf_id: string;
+  order_number: string;
+  customer_name: string;
+  dn_label: string;
+  items: ManualRefundItem[];
+  raised_by_name: string;
+  created_at: string;
+  refund_status: ManualRefundStatus;
+  /** Initiated / processing for more than 48 h — shown as a yellow chip. */
+  needs_attention: boolean;
+}
+
+export interface ManualRefundDetail extends ManualRefundListItem {
+  payment_mode: ManualRefundPaymentMode;
+  destination: string;
+  amount: number;
+  reason: string;
+  /** What to search for in the gateway's dashboard, e.g. "MRF2_1792481970097" or "Order #72666". */
+  gateway_reference: string | null;
+  gateway_message: string | null;
+  txn_reference: string | null;
+  /** Signed S3 link, valid for one hour. */
+  proof_url: string | null;
+  proof_uploaded_by_name: string | null;
+  proof_uploaded_at: string | null;
+  closed_by_name: string | null;
+  closed_at: string | null;
+  status_history: Array<{ status: string; created_at: string }>;
+}
