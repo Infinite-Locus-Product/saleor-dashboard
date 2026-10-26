@@ -18,6 +18,7 @@ const statusConfig: Record<CXReturnStatus, StatusConfig> = {
   EXCHANGED: { label: "Exchanged", color: "success1" },
   APPROVED: { label: "Approved", color: "success1" },
   AUTO_APPROVED: { label: "Auto Approved", color: "success1" },
+  RETURN_REJECTED: { label: "Rejected", color: "critical1" },
 };
 
 export const StatusChip = ({ status }: StatusChipProps) => {

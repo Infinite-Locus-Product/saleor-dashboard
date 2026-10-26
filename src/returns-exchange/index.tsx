@@ -1,6 +1,7 @@
 import { Route } from "@dashboard/components/Router";
 import { Switch } from "react-router-dom";
 
+import { CXAccessGuard } from "./components/CXAccessGuard";
 import {
   logCallPath,
   manualExchangeDetailPath,
@@ -8,6 +9,9 @@ import {
   manualExchangeNewOrderPath,
   manualExchangeNewPath,
   manualExchangeNewSizePath,
+  manualReturnDetailPath,
+  manualReturnListPath,
+  manualReturnNewPath,
   notificationSettingsPath,
   requestDetailPath,
   returnsQueuePath,
@@ -17,6 +21,9 @@ import { LogCallView } from "./views/LogCallView";
 import { ManualExchangeDetailView } from "./views/ManualExchangeDetailView";
 import { ManualExchangeListView } from "./views/ManualExchangeListView";
 import { ManualExchangeNewView } from "./views/ManualExchangeNewView";
+import { ManualReturnDetailView } from "./views/ManualReturnDetailView";
+import { ManualReturnListView } from "./views/ManualReturnListView";
+import { ManualReturnNewView } from "./views/ManualReturnNewView";
 import { NotificationSettingsView } from "./views/NotificationSettingsView";
 import { RequestDetailView } from "./views/RequestDetailView";
 import { ReturnsQueueView } from "./views/ReturnsQueueView";
@@ -78,6 +85,39 @@ const ReturnsExchangeSection = () => (
 
     {/* Manual exchange list */}
     <Route exact path={manualExchangeListPath} component={ManualExchangeListView} />
+
+    {/* Manual return — new (must come before detail so "new" isn't read as an MR id) */}
+    <Route
+      exact
+      path={manualReturnNewPath}
+      render={() => (
+        <CXAccessGuard>
+          <ManualReturnNewView />
+        </CXAccessGuard>
+      )}
+    />
+
+    {/* Manual return — detail */}
+    <Route
+      exact
+      path={manualReturnDetailPath(":mrId")}
+      render={({ match }) => (
+        <CXAccessGuard>
+          <ManualReturnDetailView mrId={match.params.mrId!} />
+        </CXAccessGuard>
+      )}
+    />
+
+    {/* Manual return list */}
+    <Route
+      exact
+      path={manualReturnListPath}
+      render={() => (
+        <CXAccessGuard>
+          <ManualReturnListView />
+        </CXAccessGuard>
+      )}
+    />
 
     {/* Notification settings */}
     <Route exact path={notificationSettingsPath} component={NotificationSettingsView} />

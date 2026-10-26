@@ -330,6 +330,10 @@
     "context": "Badge shown when channel is newly added",
     "string": "new"
   },
+  "/t8Lqw": {
+    "context": "collection sort order flag label",
+    "string": "Show only tagged variants"
+  },
   "/vCXIP": {
     "string": "Translation"
   },
@@ -943,6 +947,10 @@
     "context": "bulk issue gift cards success alert title",
     "string": "Gift Cards Issued"
   },
+  "3ccZPH": {
+    "context": "collection sort order label when stock could not be read",
+    "string": "stock unknown"
+  },
   "3d1RXL": {
     "string": "This customer has no addresses yet"
   },
@@ -1553,6 +1561,10 @@
     "context": "section header",
     "string": "About this extension"
   },
+  "6mfCoR": {
+    "context": "order type radio option",
+    "string": "International (export)"
+  },
   "6orx1c": {
     "string": "Billing address"
   },
@@ -1650,6 +1662,10 @@
   },
   "7JlauX": {
     "string": "Explore"
+  },
+  "7Lo6Es": {
+    "context": "collection sort order flag help",
+    "string": "Storefront shows only the pinned variants of this collection."
   },
   "7MUx0T": {
     "string": "Discount of {value} through the {channel}"
@@ -1844,6 +1860,10 @@
     "context": "order history message",
     "string": "Payment was voided"
   },
+  "8TV3SO": {
+    "context": "collection sort order missing stock notice",
+    "string": "Stock levels couldn't be read, so quantities are hidden and sorting by inventory is unavailable."
+  },
   "8V1ozm": {
     "context": "order discount was updated automatically event title",
     "string": "Order discount was updated automatically"
@@ -1964,6 +1984,10 @@
   },
   "9DUknc": {
     "string": "Installation failed"
+  },
+  "9E66l6": {
+    "context": "collection sort order card title",
+    "string": "Storefront sort order"
   },
   "9FCrIN": {
     "string": "Model type"
@@ -2186,6 +2210,10 @@
   "AVF5T5": {
     "context": "voucher end date, switch button",
     "string": "Set end date"
+  },
+  "AVRcCR": {
+    "context": "button",
+    "string": "Clear custom order"
   },
   "AWGJnU": {
     "context": "replaced event title",
@@ -2593,6 +2621,10 @@
     "context": "window title",
     "string": "Grant refund"
   },
+  "Cmyt1W": {
+    "context": "collection sort order help text",
+    "string": "Tick the colours you want to pin, then drag to set their order on the storefront. Unticked rows aren't saved and just sort after. Each row is one colour of a product; changes are saved with the collection."
+  },
   "Cn6l5R": {
     "context": "playground shortcut",
     "string": "Playground"
@@ -2611,6 +2643,10 @@
   },
   "CrnqOK": {
     "string": "Country tax rates updated"
+  },
+  "CxbkEo": {
+    "context": "collection sort order flag help",
+    "string": "Master switch enabling variant filtering on the storefront."
   },
   "Cxkzpg": {
     "context": "page title - installing app with manifestUrl form",
@@ -3150,6 +3186,9 @@
   "FwHWUm": {
     "context": "alert",
     "string": "SKU limit reached"
+  },
+  "FweFrF": {
+    "string": "Failed to trigger manual refund"
   },
   "Fxa6xp": {
     "context": "page header",
@@ -3943,6 +3982,9 @@
     "context": "dropdown label when there are no channels assigned",
     "string": "No channels"
   },
+  "JgitMx": {
+    "string": "Refunding…"
+  },
   "JiRKgJ": {
     "context": "dialog search placeholder",
     "string": "Search by collection name, etc..."
@@ -4545,6 +4587,10 @@
     "context": "page header",
     "string": "New Product"
   },
+  "NBY3B4": {
+    "context": "accessible name for the collection sort order drag handle",
+    "string": "Reorder {product}, {color}"
+  },
   "NCp87D": {
     "context": "no warehouses info",
     "string": "There are no warehouses set up for this variant. To add stock quantity to the variant <a>configure a warehouse</a> or use existing one by clicking button below."
@@ -4614,6 +4660,9 @@
   },
   "NWxomz": {
     "string": "Fulfillment status"
+  },
+  "NXt/Hw": {
+    "string": "Trigger manual refund"
   },
   "NZtcLb": {
     "context": "gift card bulk create success dialog content",
@@ -4891,6 +4940,10 @@
   "P5HhQl": {
     "context": "catalog section name",
     "string": "Catalog"
+  },
+  "P5eKtW": {
+    "context": "radio group label for the batch order type",
+    "string": "Order type"
   },
   "P6+RQ1": {
     "context": "no products placeholder",
@@ -5177,6 +5230,10 @@
   "QOm7+P": {
     "string": "Create new order"
   },
+  "QS7cjf": {
+    "context": "collection sort order truncation notice",
+    "string": "This collection is too large to sort here — showing the first {count} products only."
+  },
   "QSnh4Y": {
     "context": "add button label",
     "string": "Add"
@@ -5355,6 +5412,10 @@
     "context": "order history message",
     "string": "Restocked {quantity, plural, one {# item} other {# items}}"
   },
+  "RUWWvd": {
+    "context": "collection sort order idle state",
+    "string": "Products aren't loaded yet. The flags above can be changed without loading them."
+  },
   "RUwHjA": {
     "string": "Bug Fix"
   },
@@ -5379,6 +5440,10 @@
   },
   "RaQzn2": {
     "string": "Rule created"
+  },
+  "RaZPbP": {
+    "context": "collection sort order empty state",
+    "string": "No products in this collection yet"
   },
   "RaycYK": {
     "context": "button",
@@ -5566,6 +5631,10 @@
   },
   "SZyphU": {
     "string": "Product type created"
+  },
+  "Sc6m2U": {
+    "context": "error notification",
+    "string": "Couldn't load this collection's products for sorting"
   },
   "SceSNp": {
     "string": "Remove following permissions:"
@@ -5922,6 +5991,10 @@
   "Uo5MoU": {
     "context": "product field",
     "string": "Variant Images"
+  },
+  "UoACX9": {
+    "context": "button, retry loading collection sort order",
+    "string": "Try again"
   },
   "UpgLo/": {
     "context": "snackbar text",
@@ -6728,6 +6801,10 @@
     "context": "card title",
     "string": "Return & Replace"
   },
+  "Z4+Ezj": {
+    "context": "order type radio option",
+    "string": "B2B (domestic)"
+  },
   "Z6QAbw": {
     "string": "This variant does not have any digital content"
   },
@@ -7208,6 +7285,10 @@
   "bT71VU": {
     "context": "total of all sent refunds",
     "string": "Result"
+  },
+  "bUqn+U": {
+    "context": "button, sort collection products by available stock",
+    "string": "Sort by inventory"
   },
   "bVY7j0": {
     "context": "Translated Name",
@@ -7872,6 +7953,10 @@
     "context": "Amount error message",
     "string": "Amount cannot be bigger than max refund"
   },
+  "fblzrM": {
+    "context": "collection sort order error state",
+    "string": "Couldn't load this collection's products, so the storefront order can't be edited right now."
+  },
   "fg8dzN": {
     "string": "Add condition"
   },
@@ -8203,6 +8288,10 @@
   "hQDWIw": {
     "context": "modal header, editable product variant metadata",
     "string": "Product variant metadata"
+  },
+  "hRDeBH": {
+    "context": "collection sort order variant availability label",
+    "string": "in stock"
   },
   "hS+ZjH": {
     "context": "delete webhook",
@@ -9108,6 +9197,9 @@
     "context": "ChannelsSection select field label",
     "string": "Channel"
   },
+  "mM0D67": {
+    "string": "Confirm refund?"
+  },
   "mMOskm": {
     "string": "Open product detail"
   },
@@ -9601,6 +9693,10 @@
   "pRYGUR": {
     "context": "section description",
     "string": "This address will be used to generate invoices and calculate shipping rates. Email address you provide here will be used as a contact address for your customers."
+  },
+  "pRd7W9": {
+    "context": "button, load collection products for sorting",
+    "string": "Load products to reorder"
   },
   "pSFOFy": {
     "context": "relative time in days",
@@ -10968,6 +11064,10 @@
     "context": "relative time",
     "string": "just now"
   },
+  "wOv3S7": {
+    "context": "helper text explaining the order type is batch-wide",
+    "string": "Applies to every order in this file. Upload twice to import both types."
+  },
   "wQdR8M": {
     "string": "Add search engine title and description to make this category easier to find"
   },
@@ -11055,6 +11155,10 @@
     "context": "WarehouseSettings private stock label",
     "string": "Private Stock"
   },
+  "wqBa9j": {
+    "context": "validation error when no order type is chosen",
+    "string": "Select an order type"
+  },
   "wsDF7X": {
     "context": "product variant attribute entity type",
     "string": "Product variants"
@@ -11092,6 +11196,9 @@
   "x79cEk": {
     "context": "dialog header",
     "string": "Delete structure"
+  },
+  "x9iS/H": {
+    "string": "Manual refund triggered for order #{orderNumber}"
   },
   "xAHOGV": {
     "context": "dialog header",
@@ -11229,6 +11336,10 @@
     "context": "seo incomplete text",
     "string": "Incomplete"
   },
+  "y9274l": {
+    "context": "collection sort order flag label",
+    "string": "Filter variants"
+  },
   "y93ihJ": {
     "context": "dialog title when opening generator with unsaved changes",
     "string": "Unsaved changes"
@@ -11261,6 +11372,10 @@
   "yJynYK": {
     "context": "discount value",
     "string": "discount"
+  },
+  "yMhDl4": {
+    "context": "collection sort order pinned count",
+    "string": "{selected} of {total} pinned"
   },
   "yOaNWB": {
     "context": "delete shipping method",
@@ -11341,6 +11456,10 @@
   "yn7Stx": {
     "context": "date group header",
     "string": "Unknown"
+  },
+  "ypU5P4": {
+    "context": "button, pin every colour row in the collection sort order",
+    "string": "Select all"
   },
   "ypW4Mi": {
     "context": "button refreshing page",

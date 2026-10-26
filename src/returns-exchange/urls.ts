@@ -17,4 +17,9 @@ export const manualExchangeNewSizePath = (orderId: string, variantSku: string) =
 export const manualExchangeDetailPath = (mxId: string) =>
   `${returnsExchangeSection}/manual/${mxId}`;
 
+export const manualReturnListPath = `${returnsExchangeSection}/manual-returns`;
+export const manualReturnNewPath = `${returnsExchangeSection}/manual-returns/new`;
+export const manualReturnDetailPath = (mrId: string) =>
+  `${returnsExchangeSection}/manual-returns/${mrId}`;
+
 export const notificationSettingsPath = `${returnsExchangeSection}/settings`;

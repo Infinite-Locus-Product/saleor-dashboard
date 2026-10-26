@@ -369,6 +369,7 @@ export const OrderNormalDetails = ({
         open={params.action === "view-fulfillment-metadata"}
         onClose={closeModal}
         fulfillment={data?.order?.fulfillments?.find(f => f.id === params.id)}
+        order={data?.order}
       />
       <OrderMarkAsPaidDialog
         confirmButtonState={orderPaymentMarkAsPaid.opts.status}

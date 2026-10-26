@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   AUTO_APPROVAL_EMAILS: [],
   EXCHANGE_ORDER_EMAILS: [],
   WEBHOOK_FAIL_EMAILS: [],
+  REFUND_FAIL_EMAILS: [],
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,6 +27,7 @@ const EMAIL_KEYS: Array<keyof NotificationSettings> = [
   "AUTO_APPROVAL_EMAILS",
   "EXCHANGE_ORDER_EMAILS",
   "WEBHOOK_FAIL_EMAILS",
+  "REFUND_FAIL_EMAILS",
 ];
 
 export const NotificationSettingsView = () => {
@@ -313,6 +315,11 @@ export const NotificationSettingsView = () => {
                   label: "Return Ingestion Failure Emails",
                   desc: "Notified when a return webhook fails to process",
                 },
+                {
+                  key: "REFUND_FAIL_EMAILS" as keyof NotificationSettings,
+                  label: "Refund Failure Emails (Manual Returns)",
+                  desc: "Notified when a manual return's refund (Easebuzz / GoKwik) fails",
+                },
               ] as const
             ).map(({ key, label, desc }) => (
               <Box key={key}>
@@ -323,6 +330,7 @@ export const NotificationSettingsView = () => {
                   {desc}
                 </Text>
                 <Input
+                  aria-label={label}
                   value={emailInputs[key] ?? ""}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEmails(key, e.target.value)

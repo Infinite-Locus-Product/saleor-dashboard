@@ -1,13 +1,16 @@
 import { useUser } from "@dashboard/auth/useUser";
 import useNavigator from "@dashboard/hooks/useNavigator";
+import { useNotifier } from "@dashboard/hooks/useNotifier";
 import { getUserName } from "@dashboard/misc";
 import { Box, Button, Skeleton, Text } from "@saleor/macaw-ui-next";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { isApprovalInProgressError, isStaleRequestError } from "../api/cxApiError";
 import { fetchProductVariants, fetchReturn, submitConvertToExchange } from "../api/returnsApi";
 import { type CXReturnDetail, type ProductVariant } from "../types";
 import { requestDetailPath } from "../urls";
+import { isClosedStatus } from "../utils/cxReturnStatus";
 
 interface SizeSelectionViewProps {
   requestId: string;
@@ -15,6 +18,7 @@ interface SizeSelectionViewProps {
 
 export const SizeSelectionView = ({ requestId }: SizeSelectionViewProps) => {
   const navigate = useNavigator();
+  const notify = useNotifier();
   const { user } = useUser();
   const [detail, setDetail] = useState<CXReturnDetail | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
@@ -36,6 +40,13 @@ export const SizeSelectionView = ({ requestId }: SizeSelectionViewProps) => {
           fetchReturn(requestId, agentId, agentName),
           fetchProductVariants(requestId),
         ]);
+
+        // A closed request can't be converted (e.g. a stale tab): show its detail page instead.
+        if (isClosedStatus(det.cx_status)) {
+          navigate(requestDetailPath(requestId), { replace: true });
+
+          return;
+        }
 
         setDetail(det);
         setVariants(vars);
@@ -74,7 +85,23 @@ export const SizeSelectionView = ({ requestId }: SizeSelectionViewProps) => {
       });
       navigate(requestDetailPath(requestId));
     } catch (err: any) {
-      setError(err.message);
+      // The request was closed / its line rejected / removed meanwhile: retrying can never
+      // succeed, so go back to the detail page, which shows the real state.
+      if (isStaleRequestError(err)) {
+        notify({ status: "error", text: err.message });
+        navigate(requestDetailPath(requestId));
+
+        return;
+      }
+
+      // Another agent's approval is in flight; the request is still open, so stay and let the
+      // agent retry.
+      if (isApprovalInProgressError(err)) {
+        notify({ status: "error", text: err.message });
+      } else {
+        setError(err.message);
+      }
+
       setSubmitting(false);
     }
   };
@@ -85,6 +112,11 @@ export const SizeSelectionView = ({ requestId }: SizeSelectionViewProps) => {
         <Skeleton __height={200} />
       </Box>
     );
+  }
+
+  // Redirecting to the detail page (closed request on load).
+  if (!detail && !error) {
+    return null;
   }
 
   if (error && !detail) {

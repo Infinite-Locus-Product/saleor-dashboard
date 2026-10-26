@@ -5427,6 +5427,86 @@ export function useCollectionDetailsLazyQuery(baseOptions?: ApolloReactHooks.Laz
 export type CollectionDetailsQueryHookResult = ReturnType<typeof useCollectionDetailsQuery>;
 export type CollectionDetailsLazyQueryHookResult = ReturnType<typeof useCollectionDetailsLazyQuery>;
 export type CollectionDetailsQueryResult = Apollo.QueryResult<Types.CollectionDetailsQuery, Types.CollectionDetailsQueryVariables>;
+export const CollectionSortableVariantsDocument = gql`
+    query CollectionSortableVariants($id: ID!, $first: Int, $after: String) {
+  collection(id: $id) {
+    id
+    products(
+      first: $first
+      after: $after
+      sortBy: {field: COLLECTION, direction: ASC}
+    ) {
+      edges {
+        node {
+          id
+          name
+          thumbnail {
+            url
+          }
+          variants {
+            id
+            name
+            sku
+            media {
+              url
+            }
+            stocks {
+              quantity
+              quantityAllocated
+            }
+            attributes {
+              attribute {
+                id
+                slug
+                name
+              }
+              values {
+                id
+                slug
+                name
+              }
+            }
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useCollectionSortableVariantsQuery__
+ *
+ * To run a query within a React component, call `useCollectionSortableVariantsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCollectionSortableVariantsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCollectionSortableVariantsQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      first: // value for 'first'
+ *      after: // value for 'after'
+ *   },
+ * });
+ */
+export function useCollectionSortableVariantsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<Types.CollectionSortableVariantsQuery, Types.CollectionSortableVariantsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<Types.CollectionSortableVariantsQuery, Types.CollectionSortableVariantsQueryVariables>(CollectionSortableVariantsDocument, options);
+      }
+export function useCollectionSortableVariantsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<Types.CollectionSortableVariantsQuery, Types.CollectionSortableVariantsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<Types.CollectionSortableVariantsQuery, Types.CollectionSortableVariantsQueryVariables>(CollectionSortableVariantsDocument, options);
+        }
+export type CollectionSortableVariantsQueryHookResult = ReturnType<typeof useCollectionSortableVariantsQuery>;
+export type CollectionSortableVariantsLazyQueryHookResult = ReturnType<typeof useCollectionSortableVariantsLazyQuery>;
+export type CollectionSortableVariantsQueryResult = Apollo.QueryResult<Types.CollectionSortableVariantsQuery, Types.CollectionSortableVariantsQueryVariables>;
 export const CollectionProductsDocument = gql`
     query CollectionProducts($id: ID!, $first: Int, $after: String, $last: Int, $before: String) {
   collection(id: $id) {
