@@ -16,6 +16,12 @@ export interface ActionDialogProps extends DialogProps {
   children?: React.ReactNode;
   confirmButtonLabel?: string;
   confirmButtonState: ConfirmButtonTransitionState;
+  /**
+   * Skip ConfirmButton's success/error transition. Needed when `disabled` must
+   * hold again right after a loading -> default cycle (e.g. a failed request):
+   * with the transition on, the button ignores `disabled` until success/error.
+   */
+  confirmButtonNoTransition?: boolean;
   disabled?: boolean;
   title: string;
   variant?: ActionDialogVariant;
@@ -31,6 +37,7 @@ const ActionDialog = ({
   onClose,
   variant,
   confirmButtonState,
+  confirmButtonNoTransition,
   backButtonText,
   disabled,
   onConfirm,
@@ -49,6 +56,7 @@ const ActionDialog = ({
           {variant !== "info" && (
             <ConfirmButton
               transitionState={confirmButtonState}
+              noTransition={confirmButtonNoTransition}
               disabled={disabled}
               onClick={onConfirm}
               variant={variant === "delete" ? "error" : "primary"}
