@@ -1,5 +1,6 @@
 import {
   type LookupClassification,
+  type ManualRefundPaymentMode,
   type ManualReturnPaymentMethod,
   type OverrideReason,
   type PickupAddress,
@@ -112,6 +113,12 @@ export const CLASSIFICATION_LABELS: Record<LookupClassification, string> = {
 export const PAYMENT_METHOD_LABELS: Record<ManualReturnPaymentMethod, string> = {
   COD: "COD",
   PREPAID: "Prepaid",
+};
+
+export const REFUND_PAYMENT_MODE_LABELS: Record<ManualRefundPaymentMode, string> = {
+  PREPAID: "Prepaid",
+  COD: "COD",
+  PPCOD: "Partially prepaid (COD)",
 };
 
 // ─── Validation ───────────────────────────────────────────────────────────────
