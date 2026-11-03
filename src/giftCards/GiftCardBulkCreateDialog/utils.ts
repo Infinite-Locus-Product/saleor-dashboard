@@ -4,6 +4,9 @@ import reduce from "lodash/reduce";
 
 import { type GiftCardBulkCreateFormData, type GiftCardBulkCreateFormErrors } from "./types";
 
+// Gift voucher codes start with this prefix: 6 uppercase letters starting with TX.
+export const GIFT_VOUCHER_PREFIX_RE = /^TX[A-Z]{4}$/;
+
 const validateField = (
   {
     expiryDate,
@@ -20,8 +23,13 @@ const validateField = (
   const expiryPeriodSelected = expirySelected && expiryType === "EXPIRY_PERIOD";
 
   switch (key) {
-    case "cardsAmount":
+    case "prefix":
+      return GIFT_VOUCHER_PREFIX_RE.test(value) ? null : error;
+
     case "tags":
+      return !value?.trim() ? error : null;
+
+    case "cardsAmount":
     case "balanceCurrency":
     case "balanceAmount":
       return !value ? error : null;

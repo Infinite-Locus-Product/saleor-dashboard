@@ -5,6 +5,7 @@ import { type Option } from "@saleor/macaw-ui-next";
 import { type GiftCardExpiryType } from "../GiftCardCreateDialog/types";
 
 type GiftCardErrorKey =
+  | "prefix"
   | "tags"
   | "expiryDate"
   | "currency"
@@ -14,6 +15,7 @@ type GiftCardErrorKey =
   | "count";
 
 export const giftCardBulkCreateErrorKeys: GiftCardErrorKey[] = [
+  "prefix",
   "tags",
   "expiryDate",
   "currency",
@@ -22,8 +24,11 @@ export const giftCardBulkCreateErrorKeys: GiftCardErrorKey[] = [
   "count",
 ];
 
-export interface GiftCardBulkCreateFormData extends GiftCardCreateCommonFormData {
+// A batch has exactly one new tag (the batch name), typed as text.
+export interface GiftCardBulkCreateFormData extends Omit<GiftCardCreateCommonFormData, "tags"> {
   cardsAmount: number;
+  prefix: string;
+  tags: string;
 }
 
 export type GiftCardBulkCreateFormError = Pick<GiftCardErrorFragment, "code" | "field">;

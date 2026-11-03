@@ -7,10 +7,15 @@ export const giftCardUpdateBalanceDialogMessages = defineMessages({
     description: "set balance dialog title label",
   },
   subtitle: {
-    id: "kFkMoG",
     defaultMessage:
-      "What would you like to set cards balance to. When you change the balance both values will be changed",
+      "Set what is left on this gift card. Its original value stays the same, and the balance cannot go above it.",
+    id: "PflCcB",
     description: "set balance dialog subtitle",
+  },
+  reasonLabel: {
+    defaultMessage: "Reason (saved in the history)",
+    id: "DeaunT",
+    description: "set balance dialog reason field label",
   },
   updatedSuccessAlertTitle: {
     id: "vG57x5",

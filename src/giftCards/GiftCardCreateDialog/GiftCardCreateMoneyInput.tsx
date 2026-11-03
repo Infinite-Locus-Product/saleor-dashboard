@@ -19,7 +19,7 @@ interface GiftCardCreateMoneyInputProps {
   change: FormChange;
   errors: GiftCardBulkCreateFormErrors;
   data: Pick<GiftCardCreateCommonFormData, "balanceCurrency" | "balanceAmount">;
-  set: (data: Partial<GiftCardCreateCommonFormData>) => void;
+  set: (data: Pick<GiftCardCreateCommonFormData, "balanceCurrency">) => void;
 }
 
 export const GiftCardCreateMoneyInput = ({

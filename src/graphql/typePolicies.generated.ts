@@ -2443,10 +2443,11 @@ export type GiftCardStatusChangedFieldPolicy = {
 	recipient?: FieldPolicy<any> | FieldReadFunction<any>,
 	version?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type GiftCardTagKeySpecifier = ('id' | 'name' | GiftCardTagKeySpecifier)[];
+export type GiftCardTagKeySpecifier = ('id' | 'name' | 'stats' | GiftCardTagKeySpecifier)[];
 export type GiftCardTagFieldPolicy = {
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
-	name?: FieldPolicy<any> | FieldReadFunction<any>
+	name?: FieldPolicy<any> | FieldReadFunction<any>,
+	stats?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type GiftCardTagCountableConnectionKeySpecifier = ('edges' | 'pageInfo' | 'totalCount' | GiftCardTagCountableConnectionKeySpecifier)[];
 export type GiftCardTagCountableConnectionFieldPolicy = {
@@ -2458,6 +2459,14 @@ export type GiftCardTagCountableEdgeKeySpecifier = ('cursor' | 'node' | GiftCard
 export type GiftCardTagCountableEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type GiftCardTagStatsKeySpecifier = ('activeBalanceAmount' | 'balanceAmount' | 'count' | 'expiredBalanceAmount' | 'issuedAmount' | GiftCardTagStatsKeySpecifier)[];
+export type GiftCardTagStatsFieldPolicy = {
+	activeBalanceAmount?: FieldPolicy<any> | FieldReadFunction<any>,
+	balanceAmount?: FieldPolicy<any> | FieldReadFunction<any>,
+	count?: FieldPolicy<any> | FieldReadFunction<any>,
+	expiredBalanceAmount?: FieldPolicy<any> | FieldReadFunction<any>,
+	issuedAmount?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type GiftCardUpdateKeySpecifier = ('errors' | 'giftCard' | 'giftCardErrors' | GiftCardUpdateKeySpecifier)[];
 export type GiftCardUpdateFieldPolicy = {
@@ -8571,6 +8580,10 @@ export type StrictTypedTypePolicies = {
 	GiftCardTagCountableEdge?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | GiftCardTagCountableEdgeKeySpecifier | (() => undefined | GiftCardTagCountableEdgeKeySpecifier),
 		fields?: GiftCardTagCountableEdgeFieldPolicy,
+	},
+	GiftCardTagStats?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | GiftCardTagStatsKeySpecifier | (() => undefined | GiftCardTagStatsKeySpecifier),
+		fields?: GiftCardTagStatsFieldPolicy,
 	},
 	GiftCardUpdate?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | GiftCardUpdateKeySpecifier | (() => undefined | GiftCardUpdateKeySpecifier),

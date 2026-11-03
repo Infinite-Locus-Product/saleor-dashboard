@@ -5,22 +5,16 @@ import {
   type ConfirmButtonTransitionState,
 } from "@dashboard/components/ConfirmButton";
 import { DashboardModal } from "@dashboard/components/Modal";
-import GiftCardTagInput from "@dashboard/giftCards/components/GiftCardTagInput";
-import {
-  GiftCardSettingsExpiryTypeEnum,
-  TimePeriodTypeEnum,
-  useGiftCardSettingsQuery,
-} from "@dashboard/graphql";
+import { TimePeriodTypeEnum } from "@dashboard/graphql";
 import useForm from "@dashboard/hooks/useForm";
-import { Divider, TextField } from "@material-ui/core";
+import { TextField } from "@material-ui/core";
 import { Text } from "@saleor/macaw-ui-next";
 import { useIntl } from "react-intl";
 
-import GiftCardCreateExpirySelect from "../GiftCardCreateDialog/GiftCardCreateExpirySelect";
 import { GiftCardCreateMoneyInput } from "../GiftCardCreateDialog/GiftCardCreateMoneyInput";
-import GiftCardCreateRequiresActivationSection from "../GiftCardCreateDialog/GiftCardCreateRequiresActivationSection";
 import { giftCardCreateMessages as messages } from "../GiftCardCreateDialog/messages";
 import { getGiftCardErrorMessage } from "../GiftCardUpdate/messages";
+import { giftCardBulkCreateDialogMessages as bulkMessages } from "./messages";
 import {
   type GiftCardBulkCreateFormCommonProps,
   type GiftCardBulkCreateFormData,
@@ -28,7 +22,7 @@ import {
 } from "./types";
 
 const initialData: GiftCardBulkCreateFormData = {
-  tags: [],
+  tags: "",
   balanceAmount: 1,
   balanceCurrency: null,
   expirySelected: false,
@@ -36,8 +30,9 @@ const initialData: GiftCardBulkCreateFormData = {
   expiryDate: "",
   expiryPeriodType: TimePeriodTypeEnum.MONTH,
   expiryPeriodAmount: 12,
-  requiresActivation: true,
+  requiresActivation: false,
   cardsAmount: 100,
+  prefix: "",
 };
 
 interface GiftCardBulkCreateDialogFormProps {
@@ -54,33 +49,14 @@ const GiftCardBulkCreateDialogForm = ({
   formErrors = {},
 }: GiftCardBulkCreateDialogFormProps) => {
   const intl = useIntl();
-  const { data: settingsData, loading: loadingSettings } = useGiftCardSettingsQuery();
-  const getInitialExpirySettingsData = (): Partial<GiftCardBulkCreateFormData> => {
-    if (loadingSettings) {
-      return {};
-    }
-
-    const { expiryType, expiryPeriod } = settingsData?.giftCardSettings ?? {};
-
-    if (expiryType === GiftCardSettingsExpiryTypeEnum.NEVER_EXPIRE) {
-      return {};
-    }
-
-    return {
-      expiryType,
-      expiryPeriodType: expiryPeriod?.type,
-      expiryPeriodAmount: expiryPeriod?.amount,
-    };
-  };
   const { submit, toggleValue, change, data, set } = useForm(
     {
       ...initialData,
-      ...getInitialExpirySettingsData(),
       balanceCurrency: "",
     },
     onSubmit,
   );
-  const { tags, requiresActivation, cardsAmount } = data;
+  const { tags, cardsAmount, prefix } = data;
   const commonFormProps: GiftCardBulkCreateFormCommonProps = {
     data,
     errors: formErrors,
@@ -102,23 +78,32 @@ const GiftCardBulkCreateDialogForm = ({
 
       <GiftCardCreateMoneyInput {...commonFormProps} set={set} />
 
-      <GiftCardTagInput
-        optional={false}
-        error={formErrors?.tags}
+      <TextField
+        error={!!formErrors?.tags}
         name="tags"
-        values={tags}
         onChange={change}
+        fullWidth
+        label={intl.formatMessage(bulkMessages.batchNameLabel)}
+        placeholder="Spinny Diwali 2026"
+        value={tags}
+        helperText={getGiftCardErrorMessage(formErrors?.tags, intl)}
       />
 
-      <Divider />
+      <TextField
+        error={!!formErrors?.prefix}
+        name="prefix"
+        onChange={event =>
+          change({ target: { name: "prefix", value: event.target.value.toUpperCase() } })
+        }
+        fullWidth
+        label={intl.formatMessage(bulkMessages.prefixLabel)}
+        placeholder="TXYSPN"
+        value={prefix}
+        inputProps={{ maxLength: 6 }}
+        helperText={intl.formatMessage(bulkMessages.prefixHelperText)}
+      />
 
-      <GiftCardCreateExpirySelect {...commonFormProps} />
-
-      <Divider />
-
-      <GiftCardCreateRequiresActivationSection onChange={change} checked={requiresActivation} />
-
-      <Text>{intl.formatMessage(messages.bulkCreateExplanation)}</Text>
+      <Text>{intl.formatMessage(bulkMessages.giftVoucherExplanation)}</Text>
 
       <DashboardModal.Actions>
         <BackButton onClick={onClose} />

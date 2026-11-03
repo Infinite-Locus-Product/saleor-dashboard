@@ -74,6 +74,10 @@
     "context": "refunded fulfillment, section header",
     "string": "Refunded"
   },
+  "+SnDlD": {
+    "context": "gift card fully used status label",
+    "string": "Exhausted"
+  },
   "+T0oJ7": {
     "context": "input label",
     "string": "Stock reservation for anonymous user (in minutes)"
@@ -177,6 +181,10 @@
   "+tIkAe": {
     "context": "status",
     "string": "Status"
+  },
+  "+uAoIY": {
+    "context": "button to open the gift card batches page",
+    "string": "Batches"
   },
   "+vzDH4": {
     "context": "error message used when manifest URL is incorrect (before any further validation)",
@@ -1288,6 +1296,10 @@
     "context": "model label",
     "string": "Hidden"
   },
+  "5NXlKx": {
+    "context": "gift voucher batch code prefix field helper text",
+    "string": "Every code = this prefix + 6 random letters and digits, e.g. TXYSPN4K7Q2M"
+  },
   "5O8EIz": {
     "context": "Authorize transactions instead of charging",
     "string": "Authorize transactions instead of charging"
@@ -2145,6 +2157,10 @@
   "9uqfGj": {
     "string": "Variant updated"
   },
+  "9vPPG8": {
+    "context": "gift card batches search placeholder",
+    "string": "Search by batch tag"
+  },
   "9vQR6c": {
     "context": "collection label",
     "string": "Visible"
@@ -2773,6 +2789,10 @@
   "Dd0Dwl": {
     "string": "Go to promotions"
   },
+  "DeaunT": {
+    "context": "set balance dialog reason field label",
+    "string": "Reason (saved in the history)"
+  },
   "Dg4Y2p": {
     "context": "set shipping method link when no shipping method selected",
     "string": "Set shipping method"
@@ -2903,6 +2923,10 @@
   "ESft7g": {
     "context": "Warning when warehouse with stock not in shipping zone",
     "string": "Stock unreachable in \"{channelName}\""
+  },
+  "EVAFWj": {
+    "context": "sum of the balances of expired gift vouchers",
+    "string": "Expired, unused"
   },
   "EXqb2l": {
     "string": "Go to Saleor Cloud"
@@ -3064,6 +3088,10 @@
   "FQc5z6": {
     "context": "customer gift cards card view all button",
     "string": "View All"
+  },
+  "FRJ35w": {
+    "context": "gift card batch code prefix",
+    "string": "Code prefix"
   },
   "FRJRmi": {
     "context": "selected customer gift card is sent to subtitle",
@@ -4463,6 +4491,10 @@
     "context": "remove country from shipping zone and save, button",
     "string": "Remove and save"
   },
+  "MZ57TX": {
+    "context": "gift card value already exists message, e.g. a batch tag",
+    "string": "This value is already used. Please use a new one."
+  },
   "MZDkkX": {
     "context": "button label",
     "string": "All"
@@ -4545,6 +4577,14 @@
   },
   "MzXzjL": {
     "string": "Warehouse deleted"
+  },
+  "Mzpxi2": {
+    "context": "gift card batch expiry date",
+    "string": "Expiry"
+  },
+  "N02Y4F": {
+    "context": "button to download all codes of a gift voucher batch as a CSV file",
+    "string": "Download codes"
   },
   "N1Z/Er": {
     "context": "Title when product is not visible in listings",
@@ -5032,6 +5072,10 @@
     "context": "back button",
     "string": "Back"
   },
+  "PSqMuS": {
+    "context": "gift voucher batch code prefix field label",
+    "string": "Code prefix (6 letters, starting with TX)"
+  },
   "PTW56s": {
     "context": "alert",
     "string": "Channel limit reached"
@@ -5081,6 +5125,10 @@
   "PeMebc": {
     "context": "search section name",
     "string": "Search"
+  },
+  "PflCcB": {
+    "context": "set balance dialog subtitle",
+    "string": "Set what is left on this gift card. Its original value stays the same, and the balance cannot go above it."
   },
   "PiSXjb": {
     "context": "check to require numeric attribute unit",
@@ -5200,6 +5248,10 @@
   "QFCUEt": {
     "string": "Slug must be unique"
   },
+  "QFRst4": {
+    "context": "sum of the gift vouchers' value already used",
+    "string": "Redeemed"
+  },
   "QGjJcT": {
     "context": "number of products",
     "string": "Products"
@@ -5229,6 +5281,10 @@
   },
   "QOm7+P": {
     "string": "Create new order"
+  },
+  "QPmTmc": {
+    "context": "sum of the gift vouchers' initial values",
+    "string": "Total issued"
   },
   "QS7cjf": {
     "context": "collection sort order truncation notice",
@@ -6751,6 +6807,10 @@
   "Yo4h/D": {
     "string": "Learn more about permissions"
   },
+  "YoOJux": {
+    "context": "empty gift card batches list",
+    "string": "No batches found"
+  },
   "YpLVVc": {
     "context": "action",
     "string": "Exclude postal codes"
@@ -6861,6 +6921,10 @@
     "context": "delete product dialog subtitle",
     "string": "Are you sure you want to delete {name}?"
   },
+  "ZIAGH9": {
+    "context": "gift card batch value of each voucher",
+    "string": "Value of each"
+  },
   "ZIc5lM": {
     "string": "Product Name"
   },
@@ -6943,6 +7007,10 @@
   "ZrdoSS": {
     "context": "customer gift cards card no cards subtitle",
     "string": "There are no gift cards used by this customer"
+  },
+  "ZuHxTZ": {
+    "context": "gift card batch creation date",
+    "string": "Created"
   },
   "ZuqkSp": {
     "context": "note input subtitle",
@@ -7624,9 +7692,6 @@
     "context": "total rows label in success state",
     "string": "Rows:"
   },
-  "d68yq7": {
-    "string": "Delete gift cards"
-  },
   "d7dT8o": {
     "context": "button, sets granted refund amount in input",
     "string": "Set max"
@@ -7957,6 +8022,10 @@
     "context": "collection sort order error state",
     "string": "Couldn't load this collection's products, so the storefront order can't be edited right now."
   },
+  "fe03Yz": {
+    "context": "sum of the balances of active, not expired gift vouchers",
+    "string": "Outstanding (active)"
+  },
   "fg8dzN": {
     "string": "Add condition"
   },
@@ -8174,6 +8243,10 @@
   "gmU4T7": {
     "context": "Warning when channel has no warehouses",
     "string": "No warehouses assigned to \"{channelName}\""
+  },
+  "go+XHt": {
+    "context": "number of gift vouchers in the batch",
+    "string": "Vouchers created"
   },
   "gr+oXW": {
     "context": "page title",
@@ -8775,10 +8848,6 @@
   "kFYlu2": {
     "string": "Saleor runs in read-only mode. Changes not saved."
   },
-  "kFkMoG": {
-    "context": "set balance dialog subtitle",
-    "string": "What would you like to set cards balance to. When you change the balance both values will be changed"
-  },
   "kFkPWB": {
     "string": "Number"
   },
@@ -9245,6 +9314,10 @@
   },
   "mmcHeH": {
     "string": "Discount Value"
+  },
+  "mqvUXb": {
+    "context": "gift card batch tag column",
+    "string": "Batch tag"
   },
   "mqwLmD": {
     "string": "Menu updated"
@@ -9994,6 +10067,10 @@
     "context": "dialog content",
     "string": "Select one of customer addresses or add a new address:"
   },
+  "qplndl": {
+    "context": "gift voucher bulk create modal bottom explanation",
+    "string": "All vouchers are active and expire 12 months from today. The tag is the batch name and must be new. After creation you can export the codes."
+  },
   "qrWOxx": {
     "string": "No members found"
   },
@@ -10246,6 +10323,10 @@
   "sOlOZB": {
     "context": "gift cards page subheader",
     "string": "Learn more about {giftCards}"
+  },
+  "sQAqn7": {
+    "context": "gift voucher batch tag field label",
+    "string": "Batch name (tag), must be new"
   },
   "sQMS4n": {
     "context": "Tooltip for the dismiss problem button",
@@ -10914,6 +10995,10 @@
     "context": "site settings section name",
     "string": "Site Settings"
   },
+  "vjg3Sx": {
+    "context": "gift card batches page title",
+    "string": "Gift card batches"
+  },
   "vjsfyn": {
     "string": "Max Value"
   },
@@ -11041,6 +11126,10 @@
   },
   "wFVOKJ": {
     "string": "Go to warehouses"
+  },
+  "wGWVPr": {
+    "context": "button to create a batch of gift vouchers",
+    "string": "Create batch"
   },
   "wJep/X": {
     "context": "refund amounts were settled",
@@ -11617,6 +11706,10 @@
   "zbJHl7": {
     "context": "attribute type",
     "string": "Content Attribute"
+  },
+  "zeM6/s": {
+    "context": "gift card batch summary card title",
+    "string": "Batch {tag}"
   },
   "zehNKT": {
     "string": "Rule has error, open rule to see details"

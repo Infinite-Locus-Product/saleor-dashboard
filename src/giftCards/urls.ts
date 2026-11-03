@@ -17,3 +17,9 @@ export const giftCardUrl = (id: string, params?: GiftCardUpdatePageUrlQueryParam
   giftCardPath(encodeURIComponent(id)) + "?" + stringifyQs(params);
 
 export const giftCardSettingsUrl = urlJoin(giftCardsListPath, "settings");
+
+export const giftCardBatchesUrl = urlJoin(giftCardsListPath, "batches");
+
+// The gift cards list filtered to one batch (its tag).
+export const giftCardBatchUrl = (tag: string): string =>
+  giftCardsListPath + "?" + stringifyQs([{ "s2.tags": [tag] }]);

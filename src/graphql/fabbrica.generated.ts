@@ -442,6 +442,7 @@ import type {
   GiftCardTagCountableConnection,
   GiftCardTagCountableEdge,
   GiftCardTagFilterInput,
+  GiftCardTagStats,
   GiftCardUpdate,
   GiftCardUpdateInput,
   GiftCardUpdated,
@@ -12645,6 +12646,8 @@ export type OptionalGiftCardBulkCreateInput = {
   expiryDate?: GiftCardBulkCreateInput['expiryDate'] | undefined;
   /** Determine if gift card is active. */
   isActive?: GiftCardBulkCreateInput['isActive'] | undefined;
+  /** Gift voucher code prefix: 6 uppercase letters starting with TX. When set, the batch needs exactly one new tag, and every card is active and expires 12 months from today (India date). */
+  prefix?: GiftCardBulkCreateInput['prefix'] | undefined;
   /** The gift card tags. */
   tags?: GiftCardBulkCreateInput['tags'] | undefined;
 };
@@ -13331,6 +13334,12 @@ export type OptionalGiftCardTag = {
   id?: GiftCardTag['id'] | undefined;
   /** Name of the tag associated with a gift card. */
   name?: GiftCardTag['name'] | undefined;
+  /**
+ * Totals of the gift cards with this tag.
+ *
+ * Requires one of the following permissions: MANAGE_GIFT_CARD.
+ */
+  stats?: OptionalGiftCardTagStats | undefined;
 };
 
 /**
@@ -13399,6 +13408,32 @@ export const defineGiftCardTagFilterInputFactory: DefineTypeFactoryInterface<
   {}
 > = defineTypeFactory;
 
+/** Totals of the gift cards with a tag (a gift voucher batch). */
+export type OptionalGiftCardTagStats = {
+  __typename?: 'GiftCardTagStats';
+  /** Sum of the current balances of active, not expired cards. */
+  activeBalanceAmount?: GiftCardTagStats['activeBalanceAmount'] | undefined;
+  /** Sum of the current balances. */
+  balanceAmount?: GiftCardTagStats['balanceAmount'] | undefined;
+  /** Number of gift cards. */
+  count?: GiftCardTagStats['count'] | undefined;
+  /** Sum of the current balances of expired cards. */
+  expiredBalanceAmount?: GiftCardTagStats['expiredBalanceAmount'] | undefined;
+  /** Sum of the initial balances. */
+  issuedAmount?: GiftCardTagStats['issuedAmount'] | undefined;
+};
+
+/**
+ * Define factory for {@link GiftCardTagStats} model.
+ *
+ * @param options
+ * @returns factory {@link GiftCardTagStatsFactoryInterface}
+ */
+export const defineGiftCardTagStatsFactory: DefineTypeFactoryInterface<
+  OptionalGiftCardTagStats,
+  {}
+> = defineTypeFactory;
+
 /**
  * Update a gift card.
  *
@@ -13431,6 +13466,8 @@ export type OptionalGiftCardUpdateInput = {
   addTags?: GiftCardUpdateInput['addTags'] | undefined;
   /** The gift card balance amount. */
   balanceAmount?: GiftCardUpdateInput['balanceAmount'] | undefined;
+  /** Set only the current balance, keeping the initial balance. It cannot be above the initial balance. */
+  currentBalanceAmount?: GiftCardUpdateInput['currentBalanceAmount'] | undefined;
   /** End date of the gift card in ISO 8601 format. */
   endDate?: GiftCardUpdateInput['endDate'] | undefined;
   /** The gift card expiry date. */

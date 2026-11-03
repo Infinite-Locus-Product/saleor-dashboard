@@ -11,6 +11,11 @@ const giftCardErrorMessages = defineMessages({
     defaultMessage: "Couldn't find gift card",
     description: "gift card not found message",
   },
+  unique: {
+    defaultMessage: "This value is already used. Please use a new one.",
+    id: "MZ57TX",
+    description: "gift card value already exists message, e.g. a batch tag",
+  },
 });
 
 export function getGiftCardErrorMessage(
@@ -23,6 +28,8 @@ export function getGiftCardErrorMessage(
         return intl.formatMessage(giftCardErrorMessages.notFound);
       case GiftCardErrorCode.INVALID:
         return intl.formatMessage(commonErrorMessages.invalid);
+      case GiftCardErrorCode.UNIQUE:
+        return intl.formatMessage(giftCardErrorMessages.unique);
     }
   }
 

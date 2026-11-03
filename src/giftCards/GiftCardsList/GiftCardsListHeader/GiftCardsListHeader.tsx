@@ -13,7 +13,8 @@ import { sectionNames } from "@dashboard/intl";
 import { Box, Button } from "@saleor/macaw-ui-next";
 import { useIntl } from "react-intl";
 
-import { giftCardSettingsUrl } from "../../urls";
+import { giftCardBatchesMessages } from "../../GiftCardBatches/messages";
+import { giftCardBatchesUrl, giftCardSettingsUrl } from "../../urls";
 import { giftCardsListHeaderMenuItemsMessages as messages } from "../messages";
 import { useGiftCardListDialogs } from "../providers/GiftCardListDialogsProvider";
 import { useGiftCardList } from "../providers/GiftCardListProvider";
@@ -23,13 +24,8 @@ const GiftCardsListHeader = () => {
   const navigate = useNavigator();
   const subtitle = useContextualLink("gift_cards");
 
-  const {
-    openCreateDialog,
-    openBulkCreateDialog,
-    openExportDialog,
-    openSearchDeleteDialog,
-    openSearchSaveDialog,
-  } = useGiftCardListDialogs();
+  const { openBulkCreateDialog, openExportDialog, openSearchDeleteDialog, openSearchSaveDialog } =
+    useGiftCardListDialogs();
   const {
     hasPresetsChanged,
     selectedPreset,
@@ -108,17 +104,21 @@ const GiftCardsListHeader = () => {
               ]}
               data-test-id="menu"
             />
+            <Button variant="secondary" onClick={() => navigate(giftCardBatchesUrl)}>
+              {intl.formatMessage(giftCardBatchesMessages.batchesButton)}
+            </Button>
+            {/* Gift vouchers are created in batches only. */}
             {extensionCreateButtonItems.length > 0 ? (
               <ButtonGroupWithDropdown
                 options={extensionCreateButtonItems}
                 data-test-id="issue-card-button"
-                onClick={openCreateDialog}
+                onClick={openBulkCreateDialog}
               >
-                {intl.formatMessage(messages.issueButtonLabel)}
+                {intl.formatMessage(giftCardBatchesMessages.createBatchButton)}
               </ButtonGroupWithDropdown>
             ) : (
-              <Button data-test-id="issue-card-button" onClick={openCreateDialog}>
-                {intl.formatMessage(messages.issueButtonLabel)}
+              <Button data-test-id="issue-card-button" onClick={openBulkCreateDialog}>
+                {intl.formatMessage(giftCardBatchesMessages.createBatchButton)}
               </Button>
             )}
           </Box>

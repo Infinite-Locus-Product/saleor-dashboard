@@ -3,7 +3,7 @@ import ActionDialog from "@dashboard/components/ActionDialog";
 import CardSpacer from "@dashboard/components/CardSpacer";
 import { type INotification } from "@dashboard/components/notifications";
 import { useGiftCardPermissions } from "@dashboard/giftCards/hooks/useGiftCardPermissions";
-import { useGiftCardUpdateMutation } from "@dashboard/graphql";
+import { useGiftCardAddNoteMutation, useGiftCardUpdateMutation } from "@dashboard/graphql";
 import useForm from "@dashboard/hooks/useForm";
 import { useNotifier } from "@dashboard/hooks/useNotifier";
 import { type DialogProps } from "@dashboard/types";
@@ -19,6 +19,7 @@ import { giftCardUpdateBalanceDialogMessages as messages } from "./messages";
 
 interface GiftCardBalanceUpdateFormData {
   balanceAmount: number;
+  reason: string;
 }
 
 const GiftCardUpdateBalanceDialog = ({ open, onClose }: DialogProps) => {
@@ -33,7 +34,9 @@ const GiftCardUpdateBalanceDialog = ({ open, onClose }: DialogProps) => {
   } = useGiftCardDetails();
   const initialFormData: GiftCardBalanceUpdateFormData = {
     balanceAmount: amount,
+    reason: "",
   };
+  const [addNote] = useGiftCardAddNoteMutation();
   const [updateGiftCardBalance, updateGiftCardBalanceOpts] = useGiftCardUpdateMutation({
     onCompleted: data => {
       const errors = data?.giftCardUpdate?.errors;
@@ -54,25 +57,36 @@ const GiftCardUpdateBalanceDialog = ({ open, onClose }: DialogProps) => {
       }
     },
   });
-  const handleSubmit = async ({ balanceAmount }: GiftCardBalanceUpdateFormData) => {
+  const handleSubmit = async ({ balanceAmount, reason }: GiftCardBalanceUpdateFormData) => {
+    // currentBalanceAmount keeps the initial balance (the voucher's value).
     const result = await updateGiftCardBalance({
       variables: {
         id,
         input: {
-          balanceAmount,
+          currentBalanceAmount: balanceAmount,
         },
         showCreatedBy: canSeeCreatedBy,
       },
     });
+    const errors = result?.data?.giftCardUpdate?.errors;
 
-    return result?.data?.giftCardUpdate?.errors;
+    if (!errors?.length) {
+      await addNote({
+        variables: {
+          id,
+          input: { message: `Balance adjusted to ${balanceAmount} ${currency}. Reason: ${reason}` },
+        },
+      });
+    }
+
+    return errors;
   };
   const { data, change, submit, reset } = useForm(initialFormData, handleSubmit);
   const { loading, status, data: submitData } = updateGiftCardBalanceOpts;
   const { formErrors } = useDialogFormReset({
     open,
     reset,
-    keys: ["initialBalanceAmount"],
+    keys: ["currentBalanceAmount"],
     apiErrors: submitData?.giftCardUpdate?.errors,
   });
 
@@ -84,13 +98,13 @@ const GiftCardUpdateBalanceDialog = ({ open, onClose }: DialogProps) => {
       onClose={onClose}
       title={intl.formatMessage(messages.title)}
       confirmButtonState={status}
-      disabled={loading}
+      disabled={loading || !data.reason.trim()}
     >
       <Text>{intl.formatMessage(messages.subtitle)}</Text>
       <CardSpacer />
       <Input
-        error={!!formErrors?.initialBalanceAmount}
-        helperText={getGiftCardErrorMessage(formErrors?.initialBalanceAmount, intl)}
+        error={!!formErrors?.currentBalanceAmount}
+        helperText={getGiftCardErrorMessage(formErrors?.currentBalanceAmount, intl)}
         name="balanceAmount"
         value={data.balanceAmount}
         onChange={change}
@@ -101,6 +115,14 @@ const GiftCardUpdateBalanceDialog = ({ open, onClose }: DialogProps) => {
             {currency}
           </Text>
         }
+        width="100%"
+      />
+      <CardSpacer />
+      <Input
+        name="reason"
+        value={data.reason}
+        onChange={change}
+        label={intl.formatMessage(messages.reasonLabel)}
         width="100%"
       />
     </ActionDialog>
