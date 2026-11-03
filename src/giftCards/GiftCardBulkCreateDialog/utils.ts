@@ -31,8 +31,11 @@ const validateField = (
 
     case "cardsAmount":
     case "balanceCurrency":
-    case "balanceAmount":
       return !value ? error : null;
+
+    // Gift vouchers are in whole rupees.
+    case "balanceAmount":
+      return !value || !Number.isInteger(Number(value)) ? error : null;
 
     case "expiryDate":
       return expiryDateSelected && !expiryDate ? error : null;

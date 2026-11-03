@@ -11667,6 +11667,9 @@ type GiftCardTagStats @doc(category: "Gift cards") {
 
   """Sum of the current balances of expired cards."""
   expiredBalanceAmount: Decimal!
+
+  """Sum spent in orders; staff balance adjustments are not counted."""
+  redeemedAmount: Decimal!
 }
 
 """Represents an item in the checkout."""

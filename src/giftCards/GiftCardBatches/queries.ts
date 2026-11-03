@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const giftCardBatches = gql`
-  query GiftCardBatches($search: String) {
-    giftCardTags(first: 100, filter: { search: $search }) {
+  query GiftCardBatches($search: String, $after: String) {
+    giftCardTags(first: 100, after: $after, filter: { search: $search }) {
       edges {
         node {
           id
@@ -10,9 +10,13 @@ export const giftCardBatches = gql`
           stats {
             count
             issuedAmount
-            balanceAmount
+            redeemedAmount
           }
         }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
       }
     }
   }
@@ -28,7 +32,7 @@ export const giftCardBatchSummary = gql`
           stats {
             count
             issuedAmount
-            balanceAmount
+            redeemedAmount
             activeBalanceAmount
             expiredBalanceAmount
           }

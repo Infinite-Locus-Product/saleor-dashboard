@@ -9352,6 +9352,8 @@ export type GiftCardTagStats = {
   expiredBalanceAmount: Scalars['Decimal'];
   /** Sum of the initial balances. */
   issuedAmount: Scalars['Decimal'];
+  /** Sum spent in orders; staff balance adjustments are not counted. */
+  redeemedAmount: Scalars['Decimal'];
 };
 
 /**

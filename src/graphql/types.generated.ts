@@ -11795,17 +11795,18 @@ export type WeightFragment = { __typename: 'Weight', unit: WeightUnitsEnum, valu
 
 export type GiftCardBatchesQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']>;
+  after?: InputMaybe<Scalars['String']>;
 }>;
 
 
-export type GiftCardBatchesQuery = { __typename: 'Query', giftCardTags: { __typename: 'GiftCardTagCountableConnection', edges: Array<{ __typename: 'GiftCardTagCountableEdge', node: { __typename: 'GiftCardTag', id: string, name: string, stats: { __typename: 'GiftCardTagStats', count: number, issuedAmount: any, balanceAmount: any } } }> } | null };
+export type GiftCardBatchesQuery = { __typename: 'Query', giftCardTags: { __typename: 'GiftCardTagCountableConnection', edges: Array<{ __typename: 'GiftCardTagCountableEdge', node: { __typename: 'GiftCardTag', id: string, name: string, stats: { __typename: 'GiftCardTagStats', count: number, issuedAmount: any, redeemedAmount: any } } }>, pageInfo: { __typename: 'PageInfo', hasNextPage: boolean, endCursor: string | null } } | null };
 
 export type GiftCardBatchSummaryQueryVariables = Exact<{
   tag: Scalars['String'];
 }>;
 
 
-export type GiftCardBatchSummaryQuery = { __typename: 'Query', giftCardTags: { __typename: 'GiftCardTagCountableConnection', edges: Array<{ __typename: 'GiftCardTagCountableEdge', node: { __typename: 'GiftCardTag', id: string, name: string, stats: { __typename: 'GiftCardTagStats', count: number, issuedAmount: any, balanceAmount: any, activeBalanceAmount: any, expiredBalanceAmount: any } } }> } | null, giftCards: { __typename: 'GiftCardCountableConnection', edges: Array<{ __typename: 'GiftCardCountableEdge', node: { __typename: 'GiftCard', id: string, code: string, created: any, expiryDate: string | null, initialBalance: { __typename: 'Money', amount: number, currency: string } } }> } | null };
+export type GiftCardBatchSummaryQuery = { __typename: 'Query', giftCardTags: { __typename: 'GiftCardTagCountableConnection', edges: Array<{ __typename: 'GiftCardTagCountableEdge', node: { __typename: 'GiftCardTag', id: string, name: string, stats: { __typename: 'GiftCardTagStats', count: number, issuedAmount: any, redeemedAmount: any, activeBalanceAmount: any, expiredBalanceAmount: any } } }> } | null, giftCards: { __typename: 'GiftCardCountableConnection', edges: Array<{ __typename: 'GiftCardCountableEdge', node: { __typename: 'GiftCard', id: string, code: string, created: any, expiryDate: string | null, initialBalance: { __typename: 'Money', amount: number, currency: string } } }> } | null };
 
 export type GiftCardBatchCodesQueryVariables = Exact<{
   tag: Scalars['String'];

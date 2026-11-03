@@ -10044,8 +10044,8 @@ export type FileUploadMutationHookResult = ReturnType<typeof useFileUploadMutati
 export type FileUploadMutationResult = Apollo.MutationResult<Types.FileUploadMutation>;
 export type FileUploadMutationOptions = Apollo.BaseMutationOptions<Types.FileUploadMutation, Types.FileUploadMutationVariables>;
 export const GiftCardBatchesDocument = gql`
-    query GiftCardBatches($search: String) {
-  giftCardTags(first: 100, filter: {search: $search}) {
+    query GiftCardBatches($search: String, $after: String) {
+  giftCardTags(first: 100, after: $after, filter: {search: $search}) {
     edges {
       node {
         id
@@ -10053,9 +10053,13 @@ export const GiftCardBatchesDocument = gql`
         stats {
           count
           issuedAmount
-          balanceAmount
+          redeemedAmount
         }
       }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
     }
   }
 }
@@ -10074,6 +10078,7 @@ export const GiftCardBatchesDocument = gql`
  * const { data, loading, error } = useGiftCardBatchesQuery({
  *   variables: {
  *      search: // value for 'search'
+ *      after: // value for 'after'
  *   },
  * });
  */
@@ -10098,7 +10103,7 @@ export const GiftCardBatchSummaryDocument = gql`
         stats {
           count
           issuedAmount
-          balanceAmount
+          redeemedAmount
           activeBalanceAmount
           expiredBalanceAmount
         }

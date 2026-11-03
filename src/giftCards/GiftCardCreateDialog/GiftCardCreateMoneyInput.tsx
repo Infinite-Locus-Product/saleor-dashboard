@@ -20,6 +20,8 @@ interface GiftCardCreateMoneyInputProps {
   errors: GiftCardBulkCreateFormErrors;
   data: Pick<GiftCardCreateCommonFormData, "balanceCurrency" | "balanceAmount">;
   set: (data: Pick<GiftCardCreateCommonFormData, "balanceCurrency">) => void;
+  // Limits the currency choice to these (gift vouchers are INR only).
+  currencies?: string[];
 }
 
 export const GiftCardCreateMoneyInput = ({
@@ -27,10 +29,13 @@ export const GiftCardCreateMoneyInput = ({
   data: { balanceAmount, balanceCurrency },
   change,
   set,
+  currencies,
 }: GiftCardCreateMoneyInputProps) => {
   const intl = useIntl();
   const [savedCurrency, setCurrency] = useLocalStorage("giftCardCreateCurrency", undefined);
-  const { loadingChannelCurrencies, channelCurrencies } = useChannelCurrenciesWithCache();
+  const { loadingChannelCurrencies, channelCurrencies: allCurrencies } =
+    useChannelCurrenciesWithCache();
+  const channelCurrencies = currencies ?? allCurrencies;
 
   const getInitialCurrency = React.useCallback(() => {
     if (

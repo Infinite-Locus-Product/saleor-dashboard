@@ -43,6 +43,17 @@ describe("GiftCardBulkCreateDialog validateForm", () => {
     expect(errors.prefix).toBeDefined();
   });
 
+  it.each([0, 100.5])("refuses the value %p", balanceAmount => {
+    // Arrange
+    const data = formData({ balanceAmount });
+
+    // Act
+    const errors = validateForm(data);
+
+    // Assert
+    expect(errors.balance).toBeDefined();
+  });
+
   it.each(["", "   "])("refuses the batch name %p", tags => {
     // Arrange
     const data = formData({ tags });

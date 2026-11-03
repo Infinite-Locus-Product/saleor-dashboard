@@ -2460,13 +2460,14 @@ export type GiftCardTagCountableEdgeFieldPolicy = {
 	cursor?: FieldPolicy<any> | FieldReadFunction<any>,
 	node?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type GiftCardTagStatsKeySpecifier = ('activeBalanceAmount' | 'balanceAmount' | 'count' | 'expiredBalanceAmount' | 'issuedAmount' | GiftCardTagStatsKeySpecifier)[];
+export type GiftCardTagStatsKeySpecifier = ('activeBalanceAmount' | 'balanceAmount' | 'count' | 'expiredBalanceAmount' | 'issuedAmount' | 'redeemedAmount' | GiftCardTagStatsKeySpecifier)[];
 export type GiftCardTagStatsFieldPolicy = {
 	activeBalanceAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	balanceAmount?: FieldPolicy<any> | FieldReadFunction<any>,
 	count?: FieldPolicy<any> | FieldReadFunction<any>,
 	expiredBalanceAmount?: FieldPolicy<any> | FieldReadFunction<any>,
-	issuedAmount?: FieldPolicy<any> | FieldReadFunction<any>
+	issuedAmount?: FieldPolicy<any> | FieldReadFunction<any>,
+	redeemedAmount?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type GiftCardUpdateKeySpecifier = ('errors' | 'giftCard' | 'giftCardErrors' | GiftCardUpdateKeySpecifier)[];
 export type GiftCardUpdateFieldPolicy = {

@@ -93,10 +93,7 @@ const GiftCardBatchSummaryCard = ({ tag }: { tag: string }): JSX.Element => {
     [intl.formatMessage(messages.expiry), firstCard?.expiryDate],
     [intl.formatMessage(messages.vouchersCreated), stats?.count],
     [intl.formatMessage(messages.totalIssued), stats && intl.formatNumber(stats.issuedAmount)],
-    [
-      intl.formatMessage(messages.redeemed),
-      stats && intl.formatNumber(stats.issuedAmount - stats.balanceAmount),
-    ],
+    [intl.formatMessage(messages.redeemed), stats && intl.formatNumber(stats.redeemedAmount)],
     [
       intl.formatMessage(messages.outstanding),
       stats && intl.formatNumber(stats.activeBalanceAmount),

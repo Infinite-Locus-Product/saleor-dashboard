@@ -13421,6 +13421,8 @@ export type OptionalGiftCardTagStats = {
   expiredBalanceAmount?: GiftCardTagStats['expiredBalanceAmount'] | undefined;
   /** Sum of the initial balances. */
   issuedAmount?: GiftCardTagStats['issuedAmount'] | undefined;
+  /** Sum spent in orders; staff balance adjustments are not counted. */
+  redeemedAmount?: GiftCardTagStats['redeemedAmount'] | undefined;
 };
 
 /**

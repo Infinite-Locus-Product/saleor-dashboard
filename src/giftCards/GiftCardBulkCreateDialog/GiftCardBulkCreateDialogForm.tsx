@@ -21,6 +21,9 @@ import {
   type GiftCardBulkCreateFormErrors,
 } from "./types";
 
+// Gift vouchers are in ₹ only.
+const GIFT_VOUCHER_CURRENCIES = ["INR"];
+
 const initialData: GiftCardBulkCreateFormData = {
   tags: "",
   balanceAmount: 1,
@@ -76,7 +79,11 @@ const GiftCardBulkCreateDialogForm = ({
         helperText={getGiftCardErrorMessage(formErrors?.count, intl)}
       />
 
-      <GiftCardCreateMoneyInput {...commonFormProps} set={set} />
+      <GiftCardCreateMoneyInput
+        {...commonFormProps}
+        set={set}
+        currencies={GIFT_VOUCHER_CURRENCIES}
+      />
 
       <TextField
         error={!!formErrors?.tags}
