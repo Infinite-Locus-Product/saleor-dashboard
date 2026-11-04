@@ -15,6 +15,7 @@ import { giftCardsListTableMessages as tableMessages } from "../../GiftCardsList
 import { useDialogFormReset } from "../GiftCardResendCodeDialog/utils";
 import { getGiftCardErrorMessage } from "../messages";
 import useGiftCardDetails from "../providers/GiftCardDetailsProvider/hooks/useGiftCardDetails";
+import { GIFT_CARD_DETAILS_QUERY } from "../queries";
 import { giftCardUpdateBalanceDialogMessages as messages } from "./messages";
 
 interface GiftCardBalanceUpdateFormData {
@@ -36,7 +37,8 @@ const GiftCardUpdateBalanceDialog = ({ open, onClose }: DialogProps) => {
     balanceAmount: amount,
     reason: "",
   };
-  const [addNote] = useGiftCardAddNoteMutation();
+  // Refetch the details so the reason shows in History at once, as the History note box does.
+  const [addNote] = useGiftCardAddNoteMutation({ refetchQueries: [GIFT_CARD_DETAILS_QUERY] });
   const [updateGiftCardBalance, updateGiftCardBalanceOpts] = useGiftCardUpdateMutation({
     onCompleted: data => {
       const errors = data?.giftCardUpdate?.errors;
@@ -70,7 +72,8 @@ const GiftCardUpdateBalanceDialog = ({ open, onClose }: DialogProps) => {
     });
     const errors = result?.data?.giftCardUpdate?.errors;
 
-    if (!errors?.length) {
+    // A failed request resolves with no data (the mutation hook handles the error), so note only a confirmed update.
+    if (result?.data?.giftCardUpdate && !errors?.length) {
       await addNote({
         variables: {
           id,
