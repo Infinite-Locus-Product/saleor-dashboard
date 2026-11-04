@@ -3191,6 +3191,10 @@
   "FpIcp9": {
     "string": "No customers found"
   },
+  "FpXjbR": {
+    "context": "set balance dialog: balance changed but the reason note failed",
+    "string": "Balance updated, but the reason note was not saved. Add it in History."
+  },
   "FsVajs": {
     "context": "pagination previous",
     "string": "Previous"

@@ -22,6 +22,11 @@ export const giftCardUpdateBalanceDialogMessages = defineMessages({
     defaultMessage: "Card balance updated",
     description: "card update success alert title",
   },
+  reasonNotSavedAlert: {
+    id: "FpXjbR",
+    defaultMessage: "Balance updated, but the reason note was not saved. Add it in History.",
+    description: "set balance dialog: balance changed but the reason note failed",
+  },
   changeButtonLabel: {
     id: "STJx8N",
     defaultMessage: "Change",

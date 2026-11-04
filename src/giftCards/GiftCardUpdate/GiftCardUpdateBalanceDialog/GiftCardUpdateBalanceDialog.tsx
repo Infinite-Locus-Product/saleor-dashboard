@@ -74,12 +74,19 @@ const GiftCardUpdateBalanceDialog = ({ open, onClose }: DialogProps) => {
 
     // A failed request resolves with no data (the mutation hook handles the error), so note only a confirmed update.
     if (result?.data?.giftCardUpdate && !errors?.length) {
-      await addNote({
+      const noteResult = await addNote({
         variables: {
           id,
           input: { message: `Balance adjusted to ${balanceAmount} ${currency}. Reason: ${reason}` },
         },
       });
+      const noteSaved =
+        !!noteResult?.data?.giftCardAddNote && !noteResult.data.giftCardAddNote.errors?.length;
+
+      // The balance is already changed: tell staff to add the reason by hand.
+      if (!noteSaved) {
+        notify({ status: "warning", text: intl.formatMessage(messages.reasonNotSavedAlert) });
+      }
     }
 
     return errors;
