@@ -2,6 +2,7 @@ import { URL_LIST } from "@data/url";
 import { DeleteDialog } from "@dialogs/deleteDialog";
 import { ExportGiftCardsDialog } from "@dialogs/exportGiftCardsDialog";
 import { IssueGiftCardDialog } from "@dialogs/issueGiftCardDialog";
+import { IssueGiftVoucherBatchDialog } from "@dialogs/issueGiftVoucherBatchDialog";
 import { ResendGiftCardCodeDialog } from "@dialogs/resendGiftCardCodeDialog";
 import { SetGiftCardsBalanceDialog } from "@dialogs/setGiftCardBalanceDialog";
 import { MetadataSeoPage } from "@pageElements/metadataSeoPage";
@@ -12,6 +13,8 @@ export class GiftCardsPage extends BasePage {
   readonly page: Page;
 
   readonly issueGiftCardDialog: IssueGiftCardDialog;
+
+  readonly issueGiftVoucherBatchDialog: IssueGiftVoucherBatchDialog;
 
   readonly resendGiftCardCodeDialog: ResendGiftCardCodeDialog;
 
@@ -50,6 +53,7 @@ export class GiftCardsPage extends BasePage {
     super(page);
     this.page = page;
     this.issueGiftCardDialog = new IssueGiftCardDialog(page);
+    this.issueGiftVoucherBatchDialog = new IssueGiftVoucherBatchDialog(page);
     this.resendGiftCardCodeDialog = new ResendGiftCardCodeDialog(page);
     this.metadataSeoPage = new MetadataSeoPage(page);
     this.deleteDialog = new DeleteDialog(page);
