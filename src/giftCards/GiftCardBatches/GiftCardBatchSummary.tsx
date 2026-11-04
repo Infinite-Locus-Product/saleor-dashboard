@@ -10,6 +10,8 @@ import {
   type GiftCardBatchCodesQueryVariables,
   useGiftCardBatchSummaryQuery,
 } from "@dashboard/graphql";
+import { useNotifier } from "@dashboard/hooks/useNotifier";
+import commonErrorMessages from "@dashboard/utils/errors/common";
 import { Box, Button, Skeleton, Text } from "@saleor/macaw-ui-next";
 import { useState } from "react";
 import { useIntl } from "react-intl";
@@ -35,6 +37,7 @@ export const GiftCardBatchSummary = (): JSX.Element | null => {
 const GiftCardBatchSummaryCard = ({ tag }: { tag: string }): JSX.Element => {
   const intl = useIntl();
   const client = useApolloClient();
+  const notify = useNotifier();
   const [downloading, setDownloading] = useState(false);
   const { data } = useGiftCardBatchSummaryQuery({ variables: { tag } });
 
@@ -63,13 +66,17 @@ const GiftCardBatchSummaryCard = ({ tag }: { tag: string }): JSX.Element => {
       }
 
       const link = document.createElement("a");
-
-      link.href = URL.createObjectURL(
+      const url = URL.createObjectURL(
         new Blob([["code", ...codes].join("\n")], { type: "text/csv" }),
       );
+
+      link.href = url;
       link.download = `${tag}.csv`;
       link.click();
-      URL.revokeObjectURL(link.href);
+      // Revoked a moment later: revoking right after the click can cancel the download (Firefox).
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      notify({ status: "error", text: intl.formatMessage(commonErrorMessages.unknownError) });
     } finally {
       setDownloading(false);
     }
