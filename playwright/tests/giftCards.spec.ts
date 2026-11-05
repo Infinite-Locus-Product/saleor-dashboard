@@ -15,18 +15,55 @@ test.beforeEach(async ({ page }) => {
 });
 // Gift vouchers are issued in batches only, so "Issue card" opens the batch dialog
 // (SALEOR_106, one card for a customer with an expiry date, no longer exists).
-test("TC: SALEOR_105 Issue gift voucher batch #e2e #gift", async () => {
+test("TC: SALEOR_105 Issue gift voucher batch, find it in Batches and download its codes #e2e #gift", async ({
+  page,
+}) => {
+  const batchName = `e2e gift vouchers ${Date.now()}`;
+
+  await giftCardsPage.clickIssueCardButton();
+  await giftCardsPage.issueGiftVoucherBatchDialog.issueBatch({
+    count: "2",
+    balance: "100",
+    batchName,
+    prefix: "TXAUTO",
+  });
+  await giftCardsPage.expectSuccessBanner({ message: "2 gift cards issued" });
+
+  // The Batches page lists the new batch with its 2 vouchers.
+  await giftCardsPage.gotoGiftCardsListView();
+  await giftCardsPage.batchesButton.click();
+  await giftCardsPage.batchSearchInput.fill(batchName);
+
+  const batchRow = page.getByRole("row").filter({ hasText: batchName });
+
+  // Columns: batch tag, vouchers created, total issued, redeemed.
+  await expect(batchRow.getByRole("cell").nth(1)).toHaveText("2");
+
+  // Its summary, then its codes as a CSV file.
+  await batchRow.click();
+  await expect(page.getByText(`Batch ${batchName}`)).toBeVisible();
+
+  const download = page.waitForEvent("download");
+
+  await giftCardsPage.downloadCodesButton.click();
+  expect((await download).suggestedFilename()).toBe(`${batchName}.csv`);
+});
+test("TC: Gift voucher batch refuses a code prefix not starting with TX #e2e #gift", async () => {
   await giftCardsPage.clickIssueCardButton();
   await giftCardsPage.issueGiftVoucherBatchDialog.issueBatch({
     count: "1",
     balance: "100",
-    batchName: `e2e gift vouchers ${Date.now()}`,
-    prefix: "TXAUTO",
+    batchName: `e2e invalid prefix ${Date.now()}`,
+    prefix: "ABCDEF",
   });
-  await giftCardsPage.expectSuccessBanner({ message: "Gift Cards Issued" });
+  await expect(giftCardsPage.issueGiftVoucherBatchDialog.prefixInput).toHaveAttribute(
+    "aria-invalid",
+    "true",
+  );
 });
 test("TC: SALEOR_107 Resend code #e2e #gift", async () => {
-  await giftCardsPage.clickListRowBasedOnContainingText(GIFT_CARDS.giftCardToResendCode.name);
+  // The list shows full codes now, so open the card directly.
+  await giftCardsPage.gotoExistingGiftCardView(GIFT_CARDS.giftCardToResendCode.id);
   await giftCardsPage.clickResendCodeButton();
   // This is a workaround for the issue with the dropdown focusing on dialog open
   // Dropdown can cover the resend button and cause test to fail
