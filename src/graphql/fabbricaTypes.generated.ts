@@ -8870,6 +8870,8 @@ export type GiftCardBulkCreateInput = {
   expiryDate: InputMaybe<Scalars['Date']>;
   /** Determine if gift card is active. */
   isActive: Scalars['Boolean'];
+  /** Gift voucher code prefix: 6 uppercase letters starting with TX. When set, the batch needs exactly one new tag, and every card is active and expires 12 months from today (India date). */
+  prefix: InputMaybe<Scalars['String']>;
   /** The gift card tags. */
   tags: InputMaybe<Array<Scalars['String']>>;
 };
@@ -9308,6 +9310,12 @@ export type GiftCardTag = Node & {
   id: Scalars['ID'];
   /** Name of the tag associated with a gift card. */
   name: Scalars['String'];
+  /**
+   * Totals of the gift cards with this tag.
+   *
+   * Requires one of the following permissions: MANAGE_GIFT_CARD.
+   */
+  stats: GiftCardTagStats;
 };
 
 export type GiftCardTagCountableConnection = {
@@ -9331,6 +9339,23 @@ export type GiftCardTagFilterInput = {
   search: InputMaybe<Scalars['String']>;
 };
 
+/** Totals of the gift cards with a tag (a gift voucher batch). */
+export type GiftCardTagStats = {
+  __typename: 'GiftCardTagStats';
+  /** Sum of the current balances of active, not expired cards. */
+  activeBalanceAmount: Scalars['Decimal'];
+  /** Sum of the current balances. */
+  balanceAmount: Scalars['Decimal'];
+  /** Number of gift cards. */
+  count: Scalars['Int'];
+  /** Sum of the current balances of expired cards. */
+  expiredBalanceAmount: Scalars['Decimal'];
+  /** Sum of the initial balances. */
+  issuedAmount: Scalars['Decimal'];
+  /** Sum spent in orders; staff balance adjustments are not counted. */
+  redeemedAmount: Scalars['Decimal'];
+};
+
 /**
  * Update a gift card.
  *
@@ -9352,6 +9377,8 @@ export type GiftCardUpdateInput = {
   addTags: InputMaybe<Array<Scalars['String']>>;
   /** The gift card balance amount. */
   balanceAmount: InputMaybe<Scalars['PositiveDecimal']>;
+  /** Set only the current balance, keeping the initial balance. It cannot be above the initial balance. */
+  currentBalanceAmount: InputMaybe<Scalars['PositiveDecimal']>;
   /**
    * End date of the gift card in ISO 8601 format.
    * @deprecated Use `expiryDate` from `expirySettings` instead.

@@ -11642,6 +11642,34 @@ type GiftCardTag implements Node @doc(category: "Gift cards") {
 
   """Name of the tag associated with a gift card."""
   name: String!
+
+  """
+  Totals of the gift cards with this tag.
+  
+  Requires one of the following permissions: MANAGE_GIFT_CARD.
+  """
+  stats: GiftCardTagStats!
+}
+
+"""Totals of the gift cards with a tag (a gift voucher batch)."""
+type GiftCardTagStats @doc(category: "Gift cards") {
+  """Number of gift cards."""
+  count: Int!
+
+  """Sum of the initial balances."""
+  issuedAmount: Decimal!
+
+  """Sum of the current balances."""
+  balanceAmount: Decimal!
+
+  """Sum of the current balances of active, not expired cards."""
+  activeBalanceAmount: Decimal!
+
+  """Sum of the current balances of expired cards."""
+  expiredBalanceAmount: Decimal!
+
+  """Sum spent in orders; staff balance adjustments are not counted."""
+  redeemedAmount: Decimal!
 }
 
 """Represents an item in the checkout."""
@@ -29037,6 +29065,11 @@ input GiftCardUpdateInput @doc(category: "Gift cards") {
 
   """The gift card balance amount."""
   balanceAmount: PositiveDecimal
+
+  """
+  Set only the current balance, keeping the initial balance. It cannot be above the initial balance.
+  """
+  currentBalanceAmount: PositiveDecimal
 }
 
 """
@@ -29119,6 +29152,11 @@ input GiftCardBulkCreateInput @doc(category: "Gift cards") {
 
   """Determine if gift card is active."""
   isActive: Boolean!
+
+  """
+  Gift voucher code prefix: 6 uppercase letters starting with TX. When set, the batch needs exactly one new tag, and every card is active and expires 12 months from today (India date).
+  """
+  prefix: String
 }
 
 """

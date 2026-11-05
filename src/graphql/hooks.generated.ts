@@ -1461,6 +1461,7 @@ export const UserBaseFragmentDoc = gql`
 export const GiftCardDataFragmentDoc = gql`
     fragment GiftCardData on GiftCard {
   ...Metadata
+  code
   last4CodeChars
   boughtInChannel
   createdBy {
@@ -10042,6 +10043,160 @@ export function useFileUploadMutation(baseOptions?: ApolloReactHooks.MutationHoo
 export type FileUploadMutationHookResult = ReturnType<typeof useFileUploadMutation>;
 export type FileUploadMutationResult = Apollo.MutationResult<Types.FileUploadMutation>;
 export type FileUploadMutationOptions = Apollo.BaseMutationOptions<Types.FileUploadMutation, Types.FileUploadMutationVariables>;
+export const GiftCardBatchesDocument = gql`
+    query GiftCardBatches($search: String, $after: String) {
+  giftCardTags(first: 100, after: $after, filter: {search: $search}) {
+    edges {
+      node {
+        id
+        name
+        stats {
+          count
+          issuedAmount
+          redeemedAmount
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    `;
+
+/**
+ * __useGiftCardBatchesQuery__
+ *
+ * To run a query within a React component, call `useGiftCardBatchesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGiftCardBatchesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGiftCardBatchesQuery({
+ *   variables: {
+ *      search: // value for 'search'
+ *      after: // value for 'after'
+ *   },
+ * });
+ */
+export function useGiftCardBatchesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<Types.GiftCardBatchesQuery, Types.GiftCardBatchesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<Types.GiftCardBatchesQuery, Types.GiftCardBatchesQueryVariables>(GiftCardBatchesDocument, options);
+      }
+export function useGiftCardBatchesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<Types.GiftCardBatchesQuery, Types.GiftCardBatchesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<Types.GiftCardBatchesQuery, Types.GiftCardBatchesQueryVariables>(GiftCardBatchesDocument, options);
+        }
+export type GiftCardBatchesQueryHookResult = ReturnType<typeof useGiftCardBatchesQuery>;
+export type GiftCardBatchesLazyQueryHookResult = ReturnType<typeof useGiftCardBatchesLazyQuery>;
+export type GiftCardBatchesQueryResult = Apollo.QueryResult<Types.GiftCardBatchesQuery, Types.GiftCardBatchesQueryVariables>;
+export const GiftCardBatchSummaryDocument = gql`
+    query GiftCardBatchSummary($tag: String!) {
+  giftCardTags(first: 20, filter: {search: $tag}) {
+    edges {
+      node {
+        id
+        name
+        stats {
+          count
+          issuedAmount
+          redeemedAmount
+          activeBalanceAmount
+          expiredBalanceAmount
+        }
+      }
+    }
+  }
+  giftCards(first: 1, filter: {tags: [$tag]}) {
+    edges {
+      node {
+        id
+        code
+        created
+        expiryDate
+        initialBalance {
+          ...Money
+        }
+      }
+    }
+  }
+}
+    ${MoneyFragmentDoc}`;
+
+/**
+ * __useGiftCardBatchSummaryQuery__
+ *
+ * To run a query within a React component, call `useGiftCardBatchSummaryQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGiftCardBatchSummaryQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGiftCardBatchSummaryQuery({
+ *   variables: {
+ *      tag: // value for 'tag'
+ *   },
+ * });
+ */
+export function useGiftCardBatchSummaryQuery(baseOptions: ApolloReactHooks.QueryHookOptions<Types.GiftCardBatchSummaryQuery, Types.GiftCardBatchSummaryQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<Types.GiftCardBatchSummaryQuery, Types.GiftCardBatchSummaryQueryVariables>(GiftCardBatchSummaryDocument, options);
+      }
+export function useGiftCardBatchSummaryLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<Types.GiftCardBatchSummaryQuery, Types.GiftCardBatchSummaryQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<Types.GiftCardBatchSummaryQuery, Types.GiftCardBatchSummaryQueryVariables>(GiftCardBatchSummaryDocument, options);
+        }
+export type GiftCardBatchSummaryQueryHookResult = ReturnType<typeof useGiftCardBatchSummaryQuery>;
+export type GiftCardBatchSummaryLazyQueryHookResult = ReturnType<typeof useGiftCardBatchSummaryLazyQuery>;
+export type GiftCardBatchSummaryQueryResult = Apollo.QueryResult<Types.GiftCardBatchSummaryQuery, Types.GiftCardBatchSummaryQueryVariables>;
+export const GiftCardBatchCodesDocument = gql`
+    query GiftCardBatchCodes($tag: String!, $after: String) {
+  giftCards(first: 100, after: $after, filter: {tags: [$tag]}) {
+    edges {
+      node {
+        code
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    `;
+
+/**
+ * __useGiftCardBatchCodesQuery__
+ *
+ * To run a query within a React component, call `useGiftCardBatchCodesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGiftCardBatchCodesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGiftCardBatchCodesQuery({
+ *   variables: {
+ *      tag: // value for 'tag'
+ *      after: // value for 'after'
+ *   },
+ * });
+ */
+export function useGiftCardBatchCodesQuery(baseOptions: ApolloReactHooks.QueryHookOptions<Types.GiftCardBatchCodesQuery, Types.GiftCardBatchCodesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<Types.GiftCardBatchCodesQuery, Types.GiftCardBatchCodesQueryVariables>(GiftCardBatchCodesDocument, options);
+      }
+export function useGiftCardBatchCodesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<Types.GiftCardBatchCodesQuery, Types.GiftCardBatchCodesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<Types.GiftCardBatchCodesQuery, Types.GiftCardBatchCodesQueryVariables>(GiftCardBatchCodesDocument, options);
+        }
+export type GiftCardBatchCodesQueryHookResult = ReturnType<typeof useGiftCardBatchCodesQuery>;
+export type GiftCardBatchCodesLazyQueryHookResult = ReturnType<typeof useGiftCardBatchCodesLazyQuery>;
+export type GiftCardBatchCodesQueryResult = Apollo.QueryResult<Types.GiftCardBatchCodesQuery, Types.GiftCardBatchCodesQueryVariables>;
 export const GiftCardBulkCreateDocument = gql`
     mutation GiftCardBulkCreate($input: GiftCardBulkCreateInput!) {
   giftCardBulkCreate(input: $input) {
@@ -10720,6 +10875,7 @@ export const GiftCardListDocument = gql`
       node {
         id
         usedByEmail
+        code
         last4CodeChars
         isActive
         expiryDate
