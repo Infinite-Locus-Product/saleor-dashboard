@@ -14,12 +14,10 @@ import GiftCardHistory from "./GiftCardHistory/GiftCardHistory";
 import GiftCardUpdateDetailsCard from "./GiftCardUpdateDetailsCard";
 import GiftCardUpdateInfoCard from "./GiftCardUpdateInfoCard";
 import GiftCardUpdatePageHeader from "./GiftCardUpdatePageHeader";
-import useGiftCardUpdateDialogs from "./providers/GiftCardUpdateDialogsProvider/hooks/useGiftCardUpdateDialogs";
 import useGiftCardUpdate from "./providers/GiftCardUpdateFormProvider/hooks/useGiftCardUpdate";
 import useGiftCardUpdateForm from "./providers/GiftCardUpdateFormProvider/hooks/useGiftCardUpdateForm";
 
 const GiftCardUpdatePage = () => {
-  const { openDeleteDialog } = useGiftCardUpdateDialogs();
   const navigate = useNavigator();
   const {
     submit,
@@ -57,7 +55,6 @@ const GiftCardUpdatePage = () => {
       </DetailPageLayout.RightSidebar>
 
       <Savebar>
-        <Savebar.DeleteButton onClick={openDeleteDialog} />
         <Savebar.Spacer />
         <Savebar.CancelButton onClick={() => navigate(giftCardsListPath)} />
         <Savebar.ConfirmButton transitionState={status} onClick={submit} disabled={loadingUpdate} />

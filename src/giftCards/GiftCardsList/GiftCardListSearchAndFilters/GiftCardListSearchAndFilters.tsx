@@ -1,10 +1,9 @@
 // @ts-strict-ignore
 import { ListFilters } from "@dashboard/components/AppLayout/ListFilters";
-import { BulkDeleteButton } from "@dashboard/components/BulkDeleteButton";
 import DeleteFilterTabDialog from "@dashboard/components/DeleteFilterTabDialog";
 import SaveFilterTabDialog from "@dashboard/components/SaveFilterTabDialog";
 import { Box } from "@saleor/macaw-ui-next";
-import { FormattedMessage, useIntl } from "react-intl";
+import { useIntl } from "react-intl";
 
 import { GiftCardListBulkActions } from "../GiftCardListBulkActions";
 import { useGiftCardListDialogs } from "../providers/GiftCardListDialogsProvider";
@@ -23,7 +22,7 @@ const GiftCardListSearchAndFilters = () => {
     getPresetNameToDelete,
     selectedRowIds,
   } = useGiftCardList();
-  const { onClose, openDeleteDialog } = useGiftCardListDialogs();
+  const { onClose } = useGiftCardListDialogs();
 
   return (
     <>
@@ -35,12 +34,8 @@ const GiftCardListSearchAndFilters = () => {
         actions={
           <Box display="flex" gap={4}>
             {selectedRowIds.length > 0 && (
-              <>
-                <GiftCardListBulkActions />
-                <BulkDeleteButton onClick={openDeleteDialog}>
-                  <FormattedMessage defaultMessage="Delete gift cards" id="d68yq7" />
-                </BulkDeleteButton>
-              </>
+              // Gift vouchers are never deleted, so their history is kept.
+              <GiftCardListBulkActions />
             )}
           </Box>
         }

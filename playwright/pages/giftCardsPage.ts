@@ -2,16 +2,19 @@ import { URL_LIST } from "@data/url";
 import { DeleteDialog } from "@dialogs/deleteDialog";
 import { ExportGiftCardsDialog } from "@dialogs/exportGiftCardsDialog";
 import { IssueGiftCardDialog } from "@dialogs/issueGiftCardDialog";
+import { IssueGiftVoucherBatchDialog } from "@dialogs/issueGiftVoucherBatchDialog";
 import { ResendGiftCardCodeDialog } from "@dialogs/resendGiftCardCodeDialog";
 import { SetGiftCardsBalanceDialog } from "@dialogs/setGiftCardBalanceDialog";
 import { MetadataSeoPage } from "@pageElements/metadataSeoPage";
 import { BasePage } from "@pages/basePage";
-import { expect, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
 
 export class GiftCardsPage extends BasePage {
   readonly page: Page;
 
   readonly issueGiftCardDialog: IssueGiftCardDialog;
+
+  readonly issueGiftVoucherBatchDialog: IssueGiftVoucherBatchDialog;
 
   readonly resendGiftCardCodeDialog: ResendGiftCardCodeDialog;
 
@@ -46,10 +49,14 @@ export class GiftCardsPage extends BasePage {
     ),
     readonly tagsInput = page.getByTestId("gift-card-tag-select-field"),
     readonly tagsInputOptions = page.locator('[data-test-id*="select-option"]'),
+    readonly batchesButton = page.getByRole("button", { name: "Batches", exact: true }),
+    readonly batchSearchInput = page.getByPlaceholder("Search by batch tag"),
+    readonly downloadCodesButton = page.getByRole("button", { name: "Download codes" }),
   ) {
     super(page);
     this.page = page;
     this.issueGiftCardDialog = new IssueGiftCardDialog(page);
+    this.issueGiftVoucherBatchDialog = new IssueGiftVoucherBatchDialog(page);
     this.resendGiftCardCodeDialog = new ResendGiftCardCodeDialog(page);
     this.metadataSeoPage = new MetadataSeoPage(page);
     this.deleteDialog = new DeleteDialog(page);
@@ -57,12 +64,11 @@ export class GiftCardsPage extends BasePage {
     this.setGiftCardsBalanceDialog = new SetGiftCardsBalanceDialog(page);
   }
 
+  /** "Issue card" opens the gift voucher batch dialog. */
   async clickIssueCardButton() {
     await this.issueCardButton.waitFor({ state: "visible" });
     await this.issueCardButton.click();
-    await this.giftCardDialog.waitFor({ state: "visible" });
-    await this.cardExpiresCheckboxOnModal.waitFor({ state: "visible" });
-    await expect(this.cardExpiresCheckboxOnModal).toBeEnabled();
+    await this.issueGiftVoucherBatchDialog.prefixInput.waitFor({ state: "visible" });
   }
 
   async clickBulkDeleteButton() {

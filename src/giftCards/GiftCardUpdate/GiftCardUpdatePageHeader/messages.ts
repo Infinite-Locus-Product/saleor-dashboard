@@ -29,4 +29,9 @@ export const giftCardUpdatePageHeaderMessages = defineMessages({
     defaultMessage: "Disabled",
     description: "disabled status label",
   },
+  exhaustedStatusLabel: {
+    defaultMessage: "Exhausted",
+    id: "+SnDlD",
+    description: "gift card fully used status label",
+  },
 });

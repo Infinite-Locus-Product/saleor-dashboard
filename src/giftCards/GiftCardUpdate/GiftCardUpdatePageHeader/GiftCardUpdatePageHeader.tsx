@@ -11,7 +11,6 @@ import { getStringOrPlaceholder } from "@dashboard/misc";
 import { Button } from "@saleor/macaw-ui-next";
 import { useIntl } from "react-intl";
 
-import { giftCardsListTableMessages as tableMessages } from "../../GiftCardsList/messages";
 import useGiftCardDetails from "../providers/GiftCardDetailsProvider/hooks/useGiftCardDetails";
 import useGiftCardUpdateDialogs from "../providers/GiftCardUpdateDialogsProvider/hooks/useGiftCardUpdateDialogs";
 import GiftCardEnableDisableSection from "./GiftCardEnableDisableSection";
@@ -38,10 +37,7 @@ const GiftCardUpdatePageHeader = () => {
     return <TopNav title={getStringOrPlaceholder(undefined)} />;
   }
 
-  const { last4CodeChars, isExpired } = giftCard;
-  const title = intl.formatMessage(tableMessages.codeEndingWithLabel, {
-    last4CodeChars,
-  });
+  const { code: title, isExpired } = giftCard;
 
   const canResendCode = !isExpired && canManageChannels;
 

@@ -1,7 +1,6 @@
 import { DashboardModal } from "@dashboard/components/Modal";
 import { type INotification } from "@dashboard/components/notifications";
 import { type GiftCardBulkCreateInput, useGiftCardBulkCreateMutation } from "@dashboard/graphql";
-import { useCurrentDate } from "@dashboard/hooks/useCurrentDate";
 import { useNotifier } from "@dashboard/hooks/useNotifier";
 import { type DialogProps } from "@dashboard/types";
 import { getFormErrors } from "@dashboard/utils/errors";
@@ -10,10 +9,6 @@ import { useIntl } from "react-intl";
 
 import ContentWithProgress from "../GiftCardCreateDialog/ContentWithProgress";
 import GiftCardBulkCreateSuccessDialog from "../GiftCardCreateDialog/GiftCardBulkCreateSuccessDialog";
-import {
-  getGiftCardCreateOnCompletedMessage,
-  getGiftCardExpiryInputData,
-} from "../GiftCardCreateDialog/utils";
 import { GIFT_CARD_LIST_QUERY } from "../GiftCardsList/queries";
 import GiftCardBulkCreateDialogForm from "./GiftCardBulkCreateDialogForm";
 import { giftCardBulkCreateDialogMessages as messages } from "./messages";
@@ -31,22 +26,21 @@ export const GiftCardBulkCreateDialog = ({ onClose, open }: DialogProps) => {
   const [issuedIds, setIssuedIds] = useState<string[] | null>(null);
   const [openIssueSuccessDialog, setOpenIssueSuccessDialog] = useState(false);
 
-  const currentDate = useCurrentDate();
-
   const getParsedSubmitInputData = (
     formData: GiftCardBulkCreateFormData,
   ): GiftCardBulkCreateInput => {
-    const { balanceAmount, balanceCurrency, tags = [], requiresActivation, cardsAmount } = formData;
+    const { balanceAmount, balanceCurrency, tags, cardsAmount, prefix } = formData;
 
+    // Saleor makes a prefixed batch active with a 12-month expiry.
     return {
       count: cardsAmount,
-      tags: tags.map(tag => tag.value),
+      tags: [tags.trim()],
       balance: {
         amount: balanceAmount,
         currency: balanceCurrency,
       },
-      expiryDate: getGiftCardExpiryInputData(formData, currentDate),
-      isActive: !requiresActivation,
+      isActive: true,
+      prefix,
     };
   };
 
@@ -62,10 +56,11 @@ export const GiftCardBulkCreateDialog = ({ onClose, open }: DialogProps) => {
         }),
       };
 
-      notify(getGiftCardCreateOnCompletedMessage(errors, intl, giftCardsBulkIssueSuccessMessage));
       setFormErrors(getFormErrors(giftCardBulkCreateErrorKeys, errors));
 
+      // Errors are already shown by the Dashboard's mutation error handler.
       if (!errors?.length) {
+        notify(giftCardsBulkIssueSuccessMessage);
         setIssuedIds(data?.giftCardBulkCreate?.giftCards?.map(giftCard => giftCard.id) ?? []);
         setOpenIssueSuccessDialog(true);
         onClose();

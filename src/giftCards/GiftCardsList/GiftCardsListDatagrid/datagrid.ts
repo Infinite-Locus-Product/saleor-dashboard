@@ -17,6 +17,7 @@ import { type GridCell, type Item } from "@glideapps/glide-data-grid";
 import { type DefaultTheme } from "@saleor/macaw-ui-next";
 import { type IntlShape } from "react-intl";
 
+import { type GiftCardWithBalance, isExhausted } from "../../components/GiftCardStatusChip/utils";
 import { giftCardUpdatePageHeaderMessages as giftCardStatusChipMessages } from "../../GiftCardUpdate/GiftCardUpdatePageHeader/messages";
 import { type GiftCardUrlSortField } from "../types";
 import { columnsMessages, messages } from "./messages";
@@ -80,11 +81,7 @@ export const createGetCellContent =
 
     switch (columnId) {
       case "giftCardCode":
-        return readonlyTextCell(
-          intl.formatMessage(messages.codeEndingWithLabel, {
-            last4CodeChars: rowData?.last4CodeChars ?? "",
-          }),
-        );
+        return readonlyTextCell(rowData?.code ?? "");
       case "status": {
         const status = getStatusText(rowData);
         const color = getStatusColor({
@@ -147,7 +144,9 @@ const getTagCellText = (tags: GiftCardDataFragment["tags"]) => {
   return PLACEHOLDER;
 };
 
-const getStatusText = (giftCard: ExtendedGiftCard<GiftCardBase & { isActive: boolean }>) => {
+const getStatusText = (
+  giftCard: ExtendedGiftCard<GiftCardBase & { isActive: boolean } & GiftCardWithBalance>,
+) => {
   const { isExpired, isActive } = giftCard;
 
   if (isExpired) {
@@ -161,6 +160,13 @@ const getStatusText = (giftCard: ExtendedGiftCard<GiftCardBase & { isActive: boo
     return {
       color: "error",
       label: giftCardStatusChipMessages.disabledStatusLabel,
+    } as const;
+  }
+
+  if (isExhausted(giftCard)) {
+    return {
+      color: "info",
+      label: giftCardStatusChipMessages.exhaustedStatusLabel,
     } as const;
   }
 

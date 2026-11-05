@@ -13,52 +13,57 @@ test.beforeEach(async ({ page }) => {
   await giftCardsPage.gotoGiftCardsListView();
   await giftCardsPage.waitForDOMToFullyLoad();
 });
-test("TC: SALEOR_105 Issue gift card #e2e #gift", async () => {
+// Gift vouchers are issued in batches only, so "Issue card" opens the batch dialog
+// (SALEOR_106, one card for a customer with an expiry date, no longer exists).
+test("TC: SALEOR_105 Issue gift voucher batch, find it in Batches and download its codes #e2e #gift", async ({
+  page,
+}) => {
+  const batchName = `e2e gift vouchers ${Date.now()}`;
+
   await giftCardsPage.clickIssueCardButton();
-  await expect(giftCardsPage.issueGiftCardDialog.amountDropdown).toBeVisible();
-  await giftCardsPage.issueGiftCardDialog.typeAmount("50");
-  await giftCardsPage.issueGiftCardDialog.typeCustomTag("super ultra automation discount");
-  await giftCardsPage.issueGiftCardDialog.tagsInputBlur();
-  await giftCardsPage.issueGiftCardDialog.clickRequiresActivationCheckbox();
-  await giftCardsPage.issueGiftCardDialog.clickIssueButton();
-  await expect(giftCardsPage.issueGiftCardDialog.cardCode).toBeVisible();
-  await giftCardsPage.expectSuccessBanner({ message: "Gift card created" });
+  await giftCardsPage.issueGiftVoucherBatchDialog.issueBatch({
+    count: "2",
+    balance: "100",
+    batchName,
+    prefix: "TXAUTO",
+  });
+  await giftCardsPage.expectSuccessBanner({ message: "2 gift cards issued" });
 
-  const code = (await giftCardsPage.issueGiftCardDialog.cardCode.innerText()).slice(-4);
-
-  await giftCardsPage.issueGiftCardDialog.clickCopyCodeButton();
-  await giftCardsPage.expectSuccessBanner({ message: "Copied to clipboard" });
-  await giftCardsPage.issueGiftCardDialog.clickOkButton();
-  await giftCardsPage.giftCardDialog.waitFor({ state: "hidden" });
+  // The Batches page lists the new batch with its 2 vouchers.
   await giftCardsPage.gotoGiftCardsListView();
-  await giftCardsPage.gridCanvas
-    .getByText(`Code ending with ${code}`)
-    .waitFor({ state: "attached", timeout: 30000 });
+  await giftCardsPage.batchesButton.click();
+  await giftCardsPage.batchSearchInput.fill(batchName);
+
+  const batchRow = page.getByRole("row").filter({ hasText: batchName });
+
+  // Columns: batch tag, vouchers created, total issued, redeemed.
+  await expect(batchRow.getByRole("cell").nth(1)).toHaveText("2");
+
+  // Its summary, then its codes as a CSV file.
+  await batchRow.click();
+  await expect(page.getByText(`Batch ${batchName}`)).toBeVisible();
+
+  const download = page.waitForEvent("download");
+
+  await giftCardsPage.downloadCodesButton.click();
+  expect((await download).suggestedFilename()).toBe(`${batchName}.csv`);
 });
-test("TC: SALEOR_106 Issue gift card with specific customer and expiry date #e2e #gift", async () => {
+test("TC: Gift voucher batch refuses a code prefix not starting with TX #e2e #gift", async () => {
   await giftCardsPage.clickIssueCardButton();
-
-  await giftCardsPage.issueGiftCardDialog.clickSendExpireDateCheckbox();
-  await giftCardsPage.issueGiftCardDialog.typeExpiryPeriodAmount("2");
-  await giftCardsPage.issueGiftCardDialog.clickSendToCustomerCheckbox();
-  await giftCardsPage.issueGiftCardDialog.selectCustomer("e2e-customer to-be-activated");
-  await giftCardsPage.issueGiftCardDialog.clickIssueButton();
-  await giftCardsPage.expectSuccessBanner({ message: "Gift card created" });
-  await expect(giftCardsPage.issueGiftCardDialog.cardCode).toBeVisible();
-
-  const fullCode = await giftCardsPage.issueGiftCardDialog.cardCode.innerText();
-
-  await giftCardsPage.issueGiftCardDialog.clickOkButton();
-  await giftCardsPage.giftCardDialog.waitFor({ state: "hidden" });
-  await giftCardsPage.gotoGiftCardsListView();
-  await giftCardsPage.searchAndFindRowIndexes(fullCode);
-  expect(
-    await giftCardsPage.gridCanvas.locator("table tbody tr").count(),
-    "There should be only one gift card visible on list",
-  ).toEqual(1);
+  await giftCardsPage.issueGiftVoucherBatchDialog.issueBatch({
+    count: "1",
+    balance: "100",
+    batchName: `e2e invalid prefix ${Date.now()}`,
+    prefix: "ABCDEF",
+  });
+  await expect(giftCardsPage.issueGiftVoucherBatchDialog.prefixInput).toHaveAttribute(
+    "aria-invalid",
+    "true",
+  );
 });
 test("TC: SALEOR_107 Resend code #e2e #gift", async () => {
-  await giftCardsPage.clickListRowBasedOnContainingText(GIFT_CARDS.giftCardToResendCode.name);
+  // The list shows full codes now, so open the card directly.
+  await giftCardsPage.gotoExistingGiftCardView(GIFT_CARDS.giftCardToResendCode.id);
   await giftCardsPage.clickResendCodeButton();
   // This is a workaround for the issue with the dropdown focusing on dialog open
   // Dropdown can cover the resend button and cause test to fail
@@ -89,21 +94,11 @@ test("TC: SALEOR_110 Edit gift card #e2e #gift", async () => {
   await giftCardsPage.clickSaveButton();
   await giftCardsPage.expectSuccessBanner();
 });
-test("TC: SALEOR_111 Bulk delete gift cards #e2e #gift", async () => {
-  await giftCardsPage.checkListRowsBasedOnContainingText(GIFT_CARDS.giftCardsToBeDeleted.names);
-  await giftCardsPage.clickBulkDeleteButton();
-  await giftCardsPage.deleteDialog.clickConfirmDeletionCheckbox();
-  await giftCardsPage.deleteDialog.clickDeleteButton();
-  await giftCardsPage.dialog.waitFor({ state: "hidden" });
-  await giftCardsPage.gotoGiftCardsListView();
-  for (const last4Code of GIFT_CARDS.giftCardsToBeDeleted.last4) {
-    await expect(giftCardsPage.gridCanvas).not.toContainText(`Code ending with ${last4Code}`);
-  }
-});
+// SALEOR_111 (bulk delete) is removed: gift vouchers are never deleted, so their history is kept.
 test("TC: SALEOR_181 Set gift card balance #e2e #gift", async () => {
   await giftCardsPage.gotoExistingGiftCardView(GIFT_CARDS.giftCardToBeEdited.id);
   await giftCardsPage.clickSetBalance();
-  await giftCardsPage.setGiftCardsBalanceDialog.setBalance("34");
+  await giftCardsPage.setGiftCardsBalanceDialog.setBalance("34", "e2e balance check");
   await giftCardsPage.expectSuccessBanner();
 });
 test("TC: SALEOR_182 Export gift card codes in XLSX file #e2e #gift", async () => {
