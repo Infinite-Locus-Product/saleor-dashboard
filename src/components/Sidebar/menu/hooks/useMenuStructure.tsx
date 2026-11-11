@@ -1,4 +1,5 @@
 import { useUser } from "@dashboard/auth/useUser";
+import { campaignListUrl } from "@dashboard/campaigns/urls";
 import { categoryListUrl } from "@dashboard/categories/urls";
 import { codHoldQueuePath, codHoldSettingsPath } from "@dashboard/cod-hold/urls";
 import { cohortListUrl } from "@dashboard/cohorts/urls";
@@ -319,6 +320,12 @@ export function useMenuStructure() {
           label: intl.formatMessage(sectionNames.cohorts),
           id: "cohorts",
           url: cohortListUrl(),
+          type: "item",
+        },
+        {
+          label: intl.formatMessage(sectionNames.campaigns),
+          id: "campaigns",
+          url: campaignListUrl(),
           type: "item",
         },
         ...mapToExtensionsItems(extensions.NAVIGATION_DISCOUNTS, appExtensionsHeaderItem),
