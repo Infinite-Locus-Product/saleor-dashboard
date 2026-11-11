@@ -28,7 +28,10 @@ export interface CohortRestrictionRow {
   start: string;
   /** "YYYY-MM-DDTHH:mm" in IST, or "" for the voucher's own end. */
   end: string;
+  /** As typed; "" = no template of its own (the default is shown as a placeholder). */
   templateEvent: string;
+  /** The value loaded from the backend (null for a new row or a stored null), PR #19 C1. */
+  storedTemplateEvent: string | null;
   holdoutPct: string;
   repeatWindowDays: string;
 }
@@ -74,6 +77,7 @@ export const newRow = (cohortId: number, cohortName: string): CohortRestrictionR
   start: "",
   end: "",
   templateEvent: "",
+  storedTemplateEvent: null,
   holdoutPct: String(DEFAULT_HOLDOUT_PCT),
   repeatWindowDays: String(DEFAULT_REPEAT_WINDOW_DAYS),
 });
@@ -125,6 +129,7 @@ export const fromRestrictionEntries = (
     start: toIstDateTimeInput(entry.start_time),
     end: toIstDateTimeInput(entry.end_time),
     templateEvent: entry.template_event ?? "",
+    storedTemplateEvent: entry.template_event ?? null,
     holdoutPct: String(entry.holdout_pct ?? DEFAULT_HOLDOUT_PCT),
     repeatWindowDays: String(entry.repeat_window_days ?? DEFAULT_REPEAT_WINDOW_DAYS),
   }));
@@ -139,6 +144,21 @@ const parseIntInRange = (raw: string, min: number, max: number): number | null =
   return value >= min && value <= max ? value : null;
 };
 
+/**
+ * PR #19 C1 — `template_event` is sent only when the user changed it: an
+ * unchanged value is left out (the backend keeps what it stored, so a stored
+ * null keeps following the default), a cleared stored value is sent as null.
+ */
+const templateEventPatch = (
+  row: CohortRestrictionRow,
+): Pick<VoucherCohortRestrictionEntryInput, "template_event"> => {
+  const typed = row.templateEvent.trim();
+
+  if (typed === (row.storedTemplateEvent ?? "")) return {};
+
+  return { template_event: typed || null };
+};
+
 /** The full list for POST /cohorts/voucher-restriction; a cohort left out is removed. */
 export const toRestrictionInputs = (
   rows: CohortRestrictionRow[],
@@ -148,7 +168,7 @@ export const toRestrictionInputs = (
     cohort_name: row.cohortName,
     start_time: row.start ? `${row.start}${IST_OFFSET}` : null,
     end_time: row.end ? `${row.end}${IST_OFFSET}` : null,
-    template_event: row.templateEvent.trim() || null,
+    ...templateEventPatch(row),
     holdout_pct: parseIntInRange(row.holdoutPct, 0, MAX_HOLDOUT_PCT) ?? DEFAULT_HOLDOUT_PCT,
     repeat_window_days:
       parseIntInRange(row.repeatWindowDays, 1, MAX_REPEAT_WINDOW_DAYS) ??

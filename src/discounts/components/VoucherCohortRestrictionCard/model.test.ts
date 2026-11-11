@@ -35,6 +35,7 @@ describe("voucher cohort restriction model", () => {
       start: "",
       end: "",
       templateEvent: "",
+      storedTemplateEvent: null,
       holdoutPct: String(DEFAULT_HOLDOUT_PCT),
       repeatWindowDays: String(DEFAULT_REPEAT_WINDOW_DAYS),
     });
@@ -66,13 +67,14 @@ describe("voucher cohort restriction model", () => {
       start: "2026-11-12T10:00",
       end: "",
       templateEvent: "cohort_coupon_wa",
+      storedTemplateEvent: "cohort_coupon_wa",
       holdoutPct: "20",
       repeatWindowDays: "45",
     });
     expect(toIstDateTimeInput("not a date")).toBe("");
   });
 
-  it("L8 — rows convert to the POST shape with an explicit IST offset and null blanks", () => {
+  it("L8 — rows convert to the POST shape with an explicit IST offset; a blank new template is left out", () => {
     // Arrange
     const rows = [
       row({ start: "2026-11-12T10:00", templateEvent: "  cohort_coupon_wa " }),
@@ -98,7 +100,6 @@ describe("voucher cohort restriction model", () => {
         cohort_name: "Lapsed",
         start_time: null,
         end_time: null,
-        template_event: null,
         holdout_pct: 0,
         repeat_window_days: 365,
       },
@@ -178,5 +179,56 @@ describe("voucher cohort restriction model", () => {
     expect(errors[4]?.repeatWindowDays).toBe("invalid_repeat");
     expect(errors[5]?.repeatWindowDays).toBe("invalid_repeat");
     expect(errors[6]?.templateEvent).toBe("invalid_template");
+  });
+
+  it("C1 — a stored null template loads blank and an unchanged one is left out of the POST", () => {
+    // Arrange
+    const entries: VoucherCohortRestrictionEntry[] = [
+      {
+        cohort_id: 3,
+        cohort_name: "Lapsed",
+        start_time: null,
+        end_time: null,
+        template_event: null,
+        holdout_pct: 10,
+        repeat_window_days: 30,
+      },
+      {
+        cohort_id: 4,
+        cohort_name: "VIP",
+        start_time: null,
+        end_time: null,
+        template_event: "vip_offer",
+        holdout_pct: 10,
+        repeat_window_days: 30,
+      },
+    ];
+
+    // Act
+    const loaded = fromRestrictionEntries(entries);
+    const inputs = toRestrictionInputs([loaded[0], { ...loaded[1], templateEvent: " vip_offer " }]);
+
+    // Assert — missing key = the backend keeps the stored value (null follows the default)
+    expect(loaded[0].templateEvent).toBe("");
+    expect(loaded[0].storedTemplateEvent).toBeNull();
+    expect(inputs[0]).not.toHaveProperty("template_event");
+    expect(inputs[1]).not.toHaveProperty("template_event");
+  });
+
+  it("C1 — a changed template is sent trimmed; clearing a stored one sends null", () => {
+    // Arrange
+    const rows = [
+      row({ cohortId: 1, storedTemplateEvent: null, templateEvent: " new_event " }),
+      row({ cohortId: 2, storedTemplateEvent: "old_event", templateEvent: "other_event" }),
+      row({ cohortId: 3, storedTemplateEvent: "old_event", templateEvent: "  " }),
+    ];
+
+    // Act
+    const inputs = toRestrictionInputs(rows);
+
+    // Assert
+    expect(inputs[0].template_event).toBe("new_event");
+    expect(inputs[1].template_event).toBe("other_event");
+    expect(inputs[2]).toHaveProperty("template_event", null);
   });
 });

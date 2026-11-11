@@ -88,12 +88,14 @@ const FieldError = ({ error, testId }: { error?: RowErrors[keyof RowErrors]; tes
 const CohortRow = ({
   row,
   errors,
+  defaultTemplateEvent,
   disabled,
   onChange,
   onRemove,
 }: {
   row: CohortRestrictionRow;
   errors: RowErrors;
+  defaultTemplateEvent: string | null;
   disabled: boolean;
   onChange: (next: CohortRestrictionRow) => void;
   onRemove: () => void;
@@ -147,10 +149,17 @@ const CohortRow = ({
           <Input
             label={intl.formatMessage(voucherCohortMessages.templateLabel)}
             value={row.templateEvent}
+            placeholder={defaultTemplateEvent ?? undefined}
             maxLength={64}
             error={!!errors.templateEvent}
             disabled={disabled}
-            helperText={intl.formatMessage(voucherCohortMessages.templateHelp)}
+            helperText={
+              defaultTemplateEvent
+                ? intl.formatMessage(voucherCohortMessages.templateHelpWithDefault, {
+                    template: defaultTemplateEvent,
+                  })
+                : intl.formatMessage(voucherCohortMessages.templateHelp)
+            }
             onChange={event => set({ templateEvent: event.target.value })}
             data-test-id="voucher-cohort-template"
           />
@@ -292,6 +301,7 @@ export const VoucherCohortRestrictionCard = ({
                     key={row.cohortId}
                     row={row}
                     errors={errors[row.cohortId] ?? {}}
+                    defaultTemplateEvent={controller.defaultTemplateEvent}
                     disabled={busy}
                     onChange={next =>
                       updateRows(rows.map(item => (item.cohortId === row.cohortId ? next : item)))

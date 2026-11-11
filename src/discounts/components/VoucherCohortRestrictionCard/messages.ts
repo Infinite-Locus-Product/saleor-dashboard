@@ -80,6 +80,12 @@ export const voucherCohortMessages = defineMessages({
     id: "NEi7yr",
     description: "voucher cohort template event helper text",
   },
+  templateHelpWithDefault: {
+    defaultMessage:
+      "Optional. Lowercase letters, digits and _; blank uses the default ({template}).",
+    id: "/n3f+v",
+    description: "voucher cohort template event helper text naming the default template",
+  },
   holdoutLabel: {
     defaultMessage: "Holdout %",
     id: "bvc5aE",

@@ -40,6 +40,37 @@ export const fulfillCsv = (route: Route, csv: string, filename: string) =>
     body: csv,
   });
 
+/** The default WhatsApp template the stubbed backend reports (PR #19 C1). */
+export const STUB_DEFAULT_TEMPLATE_EVENT = "cohort_coupon_default";
+
+/**
+ * GET /cohorts/voucher-restriction/:voucherId body. Each cohort's
+ * `template_event` is the stored value (null = follows the default), and the
+ * default is reported separately (PR #19 C1); `unreadable` flags broken
+ * restricted_cohorts metadata (C4).
+ */
+export const voucherRestrictionBody = ({
+  voucherId,
+  voucherCode = "PWVOUCHER",
+  cohorts = [],
+  unreadable,
+  defaultTemplateEvent = STUB_DEFAULT_TEMPLATE_EVENT,
+}: {
+  voucherId: string;
+  voucherCode?: string | null;
+  cohorts?: unknown[];
+  unreadable?: boolean;
+  defaultTemplateEvent?: string;
+}) => ({
+  voucherId,
+  voucherCode,
+  startDate: null,
+  endDate: null,
+  default_template_event: defaultTemplateEvent,
+  ...(unreadable ? { unreadable: true } : {}),
+  cohorts,
+});
+
 export interface RecordedCall {
   method: string;
   path: string;

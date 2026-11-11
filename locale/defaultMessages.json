@@ -326,6 +326,10 @@
     "context": "voucher details, retry loading the cohort restriction",
     "string": "Retry"
   },
+  "/n3f+v": {
+    "context": "voucher cohort template event helper text naming the default template",
+    "string": "Optional. Lowercase letters, digits and _; blank uses the default ({template})."
+  },
   "/nZy6A": {
     "context": "page subtitle",
     "string": "Issue refund"

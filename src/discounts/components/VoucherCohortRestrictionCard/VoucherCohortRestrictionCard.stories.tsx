@@ -16,6 +16,7 @@ const Controlled = ({ initial }: { initial: CohortRestrictionRow[] }) => {
     status: "ready",
     rows,
     setRows,
+    defaultTemplateEvent: "cohort_coupon_default",
     dirty: false,
     loadError: null,
     saveError: null,
@@ -42,7 +43,11 @@ export const NoRestriction: Story = { args: { initial: [] } };
 export const TwoCohorts: Story = {
   args: {
     initial: [
-      { ...newRow(3, "Lapsed buyers"), templateEvent: "cohort_coupon_wa" },
+      {
+        ...newRow(3, "Lapsed buyers"),
+        templateEvent: "cohort_coupon_wa",
+        storedTemplateEvent: "cohort_coupon_wa",
+      },
       // L7 — a start before the voucher's start shows the inline error
       { ...newRow(8, "Jaipur repeaters"), start: "2026-11-01T10:00" },
     ],

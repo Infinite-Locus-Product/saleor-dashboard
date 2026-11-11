@@ -90,6 +90,7 @@ const restriction: VoucherCohortRestriction = {
   voucherCode: "FLAT100",
   startDate: voucherWindow.start,
   endDate: voucherWindow.end,
+  default_template_event: "cohort_coupon_default",
   cohorts: [
     {
       cohort_id: 3,
@@ -347,5 +348,49 @@ describe("VoucherCohortRestrictionCard", () => {
     expect(screen.queryByTestId("cohort-picker")).not.toBeInTheDocument();
     expect(saveOutcome).toBe(true);
     expect(saveRestrictionMock).not.toHaveBeenCalled();
+  });
+
+  it("C1 — the default template is the placeholder; an untouched stored null is not pinned on save", async () => {
+    // Arrange
+    fetchRestrictionMock.mockResolvedValue({
+      ...restriction,
+      cohorts: [{ ...restriction.cohorts[0], template_event: null }],
+    });
+    await renderCard();
+    await waitFor(() => expect(rows()).toHaveLength(1));
+
+    const template = rowInput(rows()[0], "voucher-cohort-template");
+
+    // Assert — blank value, the default is the placeholder and the helper names it
+    expect(template.value).toBe("");
+    expect(template).toHaveAttribute("placeholder", "cohort_coupon_default");
+    expect(within(rows()[0]).getByText(/blank uses the default \(/)).toBeInTheDocument();
+
+    // Act — change another field only, then save
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-holdout"), { target: { value: "15" } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("harness-save"));
+    });
+
+    // Assert — template_event is left out, so the backend keeps following the default
+    const [[body]] = saveRestrictionMock.mock.calls;
+
+    expect(body.cohorts[0]).not.toHaveProperty("template_event");
+    expect(body.cohorts[0].holdout_pct).toBe(15);
+  });
+
+  it("C1 — clearing a stored template sends null; editing one sends the trimmed value", async () => {
+    // Arrange
+    await renderCard();
+    await waitFor(() => expect(rows()).toHaveLength(1));
+
+    // Act
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-template"), { target: { value: "" } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("harness-save"));
+    });
+
+    // Assert
+    expect(saveRestrictionMock.mock.calls[0][0].cohorts[0]).toHaveProperty("template_event", null);
   });
 });
