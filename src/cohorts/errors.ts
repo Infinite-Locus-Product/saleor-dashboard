@@ -76,7 +76,10 @@ const mappedMessage = (
   if (action === "funnel" && status === 404) return cohortMessages.campaignNotFound;
 
   // The whole cohort API answers 404 while COHORT_COUPONS_ENABLED is off.
-  if ((action === "campaigns" || action === "ruleFields") && status === 404) {
+  if (
+    (action === "campaigns" || action === "ruleFields" || action === "restrictionLoad") &&
+    status === 404
+  ) {
     return cohortMessages.cohortsNotEnabled;
   }
 
