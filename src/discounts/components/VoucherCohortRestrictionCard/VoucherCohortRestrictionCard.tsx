@@ -212,6 +212,8 @@ export const VoucherCohortRestrictionCard = ({
   const { options, loading, failed, search } = useCohortOptions();
   const { status, rows, setRows } = controller;
   const busy = disabled || controller.saving;
+  // C4 — an unreadable stored restriction stays locked until the overwrite is confirmed.
+  const locked = controller.unreadable && !controller.overwriteConfirmed;
   const errors = useMemo(() => validateRows(rows, voucherWindow), [rows, voucherWindow]);
 
   const updateRows = (next: CohortRestrictionRow[]) => {
@@ -278,7 +280,7 @@ export const VoucherCohortRestrictionCard = ({
                 loading={loading}
                 fetchOptions={search}
                 alwaysFetchOnFocus
-                disabled={busy}
+                disabled={busy || locked}
                 onChange={event => handlePick(event.target.value)}
                 data-test-id="voucher-cohort-picker"
               >
@@ -291,25 +293,62 @@ export const VoucherCohortRestrictionCard = ({
                   {intl.formatMessage(voucherCohortMessages.searchError)}
                 </Text>
               )}
-              {rows.length === 0 ? (
-                <Text size={2} color="default2" data-test-id="voucher-cohort-empty">
-                  {intl.formatMessage(voucherCohortMessages.empty)}
-                </Text>
-              ) : (
-                rows.map(row => (
-                  <CohortRow
-                    key={row.cohortId}
-                    row={row}
-                    errors={errors[row.cohortId] ?? {}}
-                    defaultTemplateEvent={controller.defaultTemplateEvent}
-                    disabled={busy}
-                    onChange={next =>
-                      updateRows(rows.map(item => (item.cohortId === row.cohortId ? next : item)))
-                    }
-                    onRemove={() => updateRows(rows.filter(item => item.cohortId !== row.cohortId))}
-                  />
-                ))
+              {controller.unreadable && (
+                <Box
+                  display="grid"
+                  gap={2}
+                  padding={3}
+                  borderRadius={3}
+                  backgroundColor="warning1"
+                  role="alert"
+                  data-test-id="voucher-cohort-unreadable"
+                >
+                  <Text size={2}>
+                    {intl.formatMessage(
+                      locked
+                        ? voucherCohortMessages.unreadable
+                        : voucherCohortMessages.unreadableConfirmed,
+                    )}
+                  </Text>
+                  {locked && (
+                    <Box>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={busy}
+                        onClick={() => {
+                          controller.confirmOverwrite();
+                          onChange?.();
+                        }}
+                        data-test-id="voucher-cohort-unreadable-replace"
+                      >
+                        {intl.formatMessage(voucherCohortMessages.unreadableReplace)}
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
               )}
+              {rows.length === 0
+                ? !controller.unreadable && (
+                    <Text size={2} color="default2" data-test-id="voucher-cohort-empty">
+                      {intl.formatMessage(voucherCohortMessages.empty)}
+                    </Text>
+                  )
+                : rows.map(row => (
+                    <CohortRow
+                      key={row.cohortId}
+                      row={row}
+                      errors={errors[row.cohortId] ?? {}}
+                      defaultTemplateEvent={controller.defaultTemplateEvent}
+                      disabled={busy}
+                      onChange={next =>
+                        updateRows(rows.map(item => (item.cohortId === row.cohortId ? next : item)))
+                      }
+                      onRemove={() =>
+                        updateRows(rows.filter(item => item.cohortId !== row.cohortId))
+                      }
+                    />
+                  ))}
             </>
           )}
 

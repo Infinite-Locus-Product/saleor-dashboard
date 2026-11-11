@@ -35,6 +35,25 @@ export const voucherCohortMessages = defineMessages({
     id: "9W3Occ",
     description: "voucher details, no cohort selected",
   },
+  unreadable: {
+    defaultMessage:
+      "This voucher's stored cohort restriction can't be read, so no customer can use the voucher right now. Replace it to fix this: saving overwrites the stored restriction.",
+    id: "NfmbVL",
+    description: "voucher details, stored cohort restriction metadata is unreadable",
+  },
+  unreadableReplace: {
+    defaultMessage: "Replace restriction",
+    id: "My2RGN",
+    description:
+      "voucher details, button confirming an unreadable cohort restriction will be overwritten",
+  },
+  unreadableConfirmed: {
+    defaultMessage:
+      "Saving will overwrite the unreadable restriction with the cohorts picked here. With none picked, every customer can use this voucher.",
+    id: "WJINVe",
+    description:
+      "voucher details, unreadable cohort restriction after the user confirmed the overwrite",
+  },
   loading: {
     defaultMessage: "Loading cohort restriction…",
     id: "dIISTL",

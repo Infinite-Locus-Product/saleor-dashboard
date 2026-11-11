@@ -4784,6 +4784,10 @@
   "MxhVZv": {
     "string": "Are you sure you want to delete collection's image?"
   },
+  "My2RGN": {
+    "context": "voucher details, button confirming an unreadable cohort restriction will be overwritten",
+    "string": "Replace restriction"
+  },
   "MyM2oR": {
     "context": "window title",
     "string": "Create variant"
@@ -4944,6 +4948,10 @@
   "NelCIl": {
     "context": "content section name",
     "string": "Content"
+  },
+  "NfmbVL": {
+    "context": "voucher details, stored cohort restriction metadata is unreadable",
+    "string": "This voucher's stored cohort restriction can't be read, so no customer can use the voucher right now. Replace it to fix this: saving overwrites the stored restriction."
   },
   "NhNByJ": {
     "context": "secondary action button — open CSV bulk order import",
@@ -6622,6 +6630,10 @@
   },
   "WHgdsk": {
     "string": "Out of stock"
+  },
+  "WJINVe": {
+    "context": "voucher details, unreadable cohort restriction after the user confirmed the overwrite",
+    "string": "Saving will overwrite the unreadable restriction with the cohorts picked here. With none picked, every customer can use this voucher."
   },
   "WK62MN": {
     "string": "Fulfillment"
