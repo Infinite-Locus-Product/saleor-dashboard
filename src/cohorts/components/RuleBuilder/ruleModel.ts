@@ -133,7 +133,21 @@ const conditionFromRule = (rule: RuleCondition): EditorCondition => {
     return { ...condition, min: String(value.min ?? ""), max: String(value.max ?? "") };
   }
 
-  return { ...condition, text: value === undefined || value === null ? "" : String(value) };
+  if (value === undefined || value === null) return condition;
+
+  const text = String(value);
+
+  // PR #19 C8 — the field type is unknown here, so a single string id is kept
+  // both as text and as one picker option; the field type decides which one is
+  // used (conditionToRule / validation), so product/category rules written by
+  // the API as `value: "<id>"` still open in the picker.
+  if (typeof value === "string" && rule.label !== undefined) {
+    const [label] = toArray(rule.label);
+
+    return { ...condition, text, options: [{ value: text, label: label ?? text }] };
+  }
+
+  return { ...condition, text };
 };
 
 export const fromRuleGroup = (group: RuleGroup | null | undefined): EditorGroup => {

@@ -249,4 +249,47 @@ describe("ruleModel", () => {
     expect(errors[nested.key]).toEqual(["group too deep"]);
     expect(errors[tree.key]).toEqual(["too many conditions", "unknown node"]);
   });
+
+  it.each([
+    ["a string label", "Serum"],
+    ["a one-item label list", ["Serum"]],
+  ])("C8 — a single string id with %s loads as one picker option", (_label, label) => {
+    // Arrange
+    const saved: RuleGroup = {
+      logic: "AND",
+      conditions: [
+        { field: "product_purchased", operator: "includes", value: "UHJvZHVjdDox", label },
+      ],
+    };
+
+    // Act
+    const editor = fromRuleGroup(saved);
+    const condition = child(editor, 0) as EditorCondition;
+
+    // Assert
+    expect(condition.options).toEqual([{ value: "UHJvZHVjdDox", label: "Serum" }]);
+    expect(validateRuleTree(editor, ruleFieldsFixture)).toEqual({});
+    expect(toRuleGroup(editor, ruleFieldsFixture)).toEqual({
+      logic: "AND",
+      conditions: [
+        {
+          field: "product_purchased",
+          operator: "includes",
+          value: ["UHJvZHVjdDox"],
+          label: ["Serum"],
+        },
+      ],
+    });
+  });
+
+  it("C8 — a single text value still loads as text (and round-trips unchanged)", () => {
+    // Arrange
+    const saved: RuleGroup = {
+      logic: "AND",
+      conditions: [{ field: "city", operator: "equals", value: "jaipur" }],
+    };
+
+    // Act / Assert
+    expect(toRuleGroup(fromRuleGroup(saved), ruleFieldsFixture)).toEqual(saved);
+  });
 });
