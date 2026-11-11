@@ -92,6 +92,13 @@ export const useVoucherCohortRestriction = (
   const inFlight = useRef<Promise<boolean> | null>(null);
   // PR #19 C9 — counts edits, so a save can tell whether the user changed the card while it ran.
   const edits = useRef(0);
+  // PR #19 C12 — the latest rows, so a save captured at click time still sends
+  // edits made while the voucher itself was saving.
+  const rowsRef = useRef<CohortRestrictionRow[]>([]);
+
+  useEffect(() => {
+    rowsRef.current = rows;
+  }, [rows]);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,6 +134,7 @@ export const useVoucherCohortRestriction = (
 
   const setRows = useCallback((next: CohortRestrictionRow[]) => {
     edits.current += 1;
+    rowsRef.current = next;
     setRowsState(next);
     setDirty(true);
     setSaveError(null);
@@ -155,8 +163,9 @@ export const useVoucherCohortRestriction = (
       // C5 — a second click while the POST runs must not send it again.
       if (inFlight.current) return inFlight.current;
 
-      // C9 — the rows this POST carries; the user may edit while it runs.
-      const sent = rows;
+      // C9/C12 — the rows this POST carries, read together with the edit count;
+      // the user may edit while the voucher saves or while this POST runs.
+      const sent = rowsRef.current;
       const editsAtStart = edits.current;
 
       const run = async (): Promise<boolean> => {
@@ -193,7 +202,7 @@ export const useVoucherCohortRestriction = (
 
       return inFlight.current;
     },
-    [status, dirty, unreadable, overwriteConfirmed, voucherId, voucherCode, rows],
+    [status, dirty, unreadable, overwriteConfirmed, voucherId, voucherCode],
   );
 
   return {
