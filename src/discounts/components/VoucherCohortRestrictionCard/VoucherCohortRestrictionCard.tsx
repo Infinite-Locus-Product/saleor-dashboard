@@ -27,6 +27,12 @@ import styles from "./VoucherCohortRestrictionCard.module.css";
 
 const SEARCH_PAGE_SIZE = 20;
 
+const findRow = (
+  source: CohortRestrictionRow[],
+  cohortId: unknown,
+): CohortRestrictionRow | undefined =>
+  source.find(row => String(row.cohortId) === String(cohortId));
+
 interface VoucherCohortRestrictionCardProps {
   controller: VoucherCohortRestrictionController;
   /** The voucher's dates as currently in the form (L7 validates against these). */
@@ -224,10 +230,13 @@ export const VoucherCohortRestrictionCard = ({
   const handlePick = (picked: unknown) => {
     const list: Option[] = Array.isArray(picked) ? picked : [];
 
+    // C10 — a cohort removed and picked again gets its last loaded/saved row back,
+    // so its settings match what the backend still stores; only new cohorts get defaults.
     updateRows(
       list.map(
         option =>
-          rows.find(row => String(row.cohortId) === String(option.value)) ??
+          findRow(rows, option.value) ??
+          findRow(controller.savedRows, option.value) ??
           newRow(Number(option.value), String(option.label)),
       ),
     );

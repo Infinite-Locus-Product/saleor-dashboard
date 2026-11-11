@@ -16,6 +16,7 @@ const Controlled = ({ initial }: { initial: CohortRestrictionRow[] }) => {
     status: "ready",
     rows,
     setRows,
+    savedRows: initial,
     defaultTemplateEvent: "cohort_coupon_default",
     unreadable: false,
     overwriteConfirmed: false,

@@ -38,6 +38,11 @@ export interface VoucherCohortRestrictionController {
   status: RestrictionStatus;
   rows: CohortRestrictionRow[];
   setRows: (rows: CohortRestrictionRow[]) => void;
+  /**
+   * The rows as last loaded or saved (PR #19 C10): a cohort removed and picked
+   * again in the same visit gets its row back from here instead of the defaults.
+   */
+  savedRows: CohortRestrictionRow[];
   /** The template a row with a blank template uses (shown as its placeholder), PR #19 C1. */
   defaultTemplateEvent: string | null;
   /** The stored restriction exists but could not be read (PR #19 C4); cleared by a save. */
@@ -74,6 +79,7 @@ export const useVoucherCohortRestriction = (
 ): VoucherCohortRestrictionController => {
   const [status, setStatus] = useState<RestrictionStatus>("loading");
   const [rows, setRowsState] = useState<CohortRestrictionRow[]>([]);
+  const [savedRows, setSavedRows] = useState<CohortRestrictionRow[]>([]);
   const [voucherCode, setVoucherCode] = useState<string | null>(null);
   const [defaultTemplateEvent, setDefaultTemplateEvent] = useState<string | null>(null);
   const [unreadable, setUnreadable] = useState(false);
@@ -96,7 +102,10 @@ export const useVoucherCohortRestriction = (
       .then(restriction => {
         if (cancelled) return;
 
-        setRowsState(fromRestrictionEntries(restriction?.cohorts));
+        const loaded = fromRestrictionEntries(restriction?.cohorts);
+
+        setRowsState(loaded);
+        setSavedRows(loaded);
         setVoucherCode(restriction?.voucherCode ?? null);
         setDefaultTemplateEvent(restriction?.default_template_event || null);
         setUnreadable(restriction?.unreadable === true);
@@ -164,6 +173,7 @@ export const useVoucherCohortRestriction = (
           });
           // C9 — what was sent is now stored, so the next save compares against it.
           setRowsState(current => markTemplatesSaved(current, sent));
+          setSavedRows(markTemplatesSaved(sent, sent));
           setDirty(edits.current !== editsAtStart);
           setUnreadable(false);
           setOverwriteConfirmed(false);
@@ -190,6 +200,7 @@ export const useVoucherCohortRestriction = (
     status,
     rows,
     setRows,
+    savedRows,
     defaultTemplateEvent,
     unreadable,
     overwriteConfirmed,
