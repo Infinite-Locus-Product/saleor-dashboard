@@ -9,6 +9,7 @@ export const URL_LIST = {
   channels: "channels/",
   collections: "collections/",
   configuration: "configuration/",
+  campaigns: "campaigns",
   cohorts: "cohorts/list",
   cohortsAdd: "cohorts/add",
   customers: "customers/",
