@@ -5,6 +5,7 @@ import { type VoucherCohortRestrictionController } from "@dashboard/discounts/co
 import {
   COHORT_RESTRICTION_NOT_SAVED,
   createCohortRestrictionSubmitHandler,
+  isVoucherSaveDisabled,
   voucherWindowFromForm,
 } from "./cohortRestrictionSubmit";
 
@@ -117,5 +118,13 @@ describe("createCohortRestrictionSubmitHandler", () => {
     // Assert
     expect(window.voucherStart).toMatch(/^2026-11-10T00:00:00/);
     expect(window.voucherEnd).toBeNull();
+  });
+
+  it("C5 — Save is disabled while the restriction POST is running", () => {
+    // Arrange / Act / Assert
+    expect(isVoucherSaveDisabled(false, controller({ saving: true }))).toBe(true);
+    expect(isVoucherSaveDisabled(false, controller({ saving: false }))).toBe(false);
+    expect(isVoucherSaveDisabled(true, controller({ saving: false }))).toBe(true);
+    expect(isVoucherSaveDisabled(false, undefined)).toBe(false);
   });
 });

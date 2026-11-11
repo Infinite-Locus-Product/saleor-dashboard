@@ -55,3 +55,9 @@ export function createCohortRestrictionSubmitHandler<TData extends VoucherFormDa
     return errors;
   };
 }
+
+/** PR #19 C5 — the voucher Save stays disabled while the restriction POST runs. */
+export const isVoucherSaveDisabled = (
+  disabled: boolean,
+  restriction: Pick<VoucherCohortRestrictionController, "saving"> | undefined,
+): boolean => disabled || !!restriction?.saving;
