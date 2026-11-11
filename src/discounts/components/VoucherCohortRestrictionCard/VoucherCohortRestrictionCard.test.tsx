@@ -129,10 +129,13 @@ const cohort = (id: number, name: string): Cohort => ({
 });
 
 let saveOutcome: boolean | null = null;
+let latestController: ReturnType<typeof useVoucherCohortRestriction> | null = null;
 
 /** Mirrors VoucherDetails: validate on Save, then save the restriction. */
 const Harness = () => {
   const controller = useVoucherCohortRestriction(VOUCHER_ID);
+
+  latestController = controller;
 
   return (
     <>
@@ -177,6 +180,7 @@ describe("VoucherCohortRestrictionCard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     saveOutcome = null;
+    latestController = null;
     fetchRestrictionMock.mockResolvedValue(restriction);
     fetchCohortsMock.mockResolvedValue({
       items: [cohort(3, "Lapsed"), cohort(8, "Jaipur repeaters")],
@@ -453,5 +457,38 @@ describe("VoucherCohortRestrictionCard", () => {
       expect.objectContaining({ cohort_id: 8 }),
     ]);
     expect(screen.queryByTestId("voucher-cohort-unreadable")).not.toBeInTheDocument();
+  });
+
+  it("C5 — a second save while the POST is running is not sent again", async () => {
+    // Arrange
+    let finish: (value: { voucherId: string; restricted: boolean }) => void = () => undefined;
+
+    saveRestrictionMock.mockReturnValue(
+      new Promise(resolve => {
+        finish = resolve;
+      }),
+    );
+    await renderCard();
+    await waitFor(() => expect(rows()).toHaveLength(1));
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-holdout"), { target: { value: "15" } });
+
+    // Act
+    const input = { voucherCode: null, voucherStart: null, voucherEnd: null };
+    let first: Promise<boolean> = Promise.resolve(false);
+    let second: Promise<boolean> = Promise.resolve(false);
+
+    act(() => {
+      first = latestController!.save(input);
+      second = latestController!.save(input);
+    });
+    await act(async () => {
+      finish({ voucherId: VOUCHER_ID, restricted: true });
+      await Promise.all([first, second]);
+    });
+
+    // Assert
+    expect(saveRestrictionMock).toHaveBeenCalledTimes(1);
+    await expect(first).resolves.toBe(true);
+    await expect(second).resolves.toBe(true);
   });
 });

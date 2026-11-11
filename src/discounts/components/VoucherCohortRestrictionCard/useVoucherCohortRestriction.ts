@@ -13,7 +13,7 @@
 import { isApiError } from "@dashboard/cohorts/api/apiError";
 import { fetchVoucherRestriction, saveVoucherRestriction } from "@dashboard/cohorts/api/cohortsApi";
 import { type CohortErrorView, describeCohortError } from "@dashboard/cohorts/errors";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   type CohortRestrictionRow,
@@ -57,7 +57,10 @@ export interface VoucherCohortRestrictionController {
    * stored cohort window outside the voucher.
    */
   validate: (window: VoucherWindow) => boolean;
-  /** Resolves true when there was nothing to send or the save succeeded. */
+  /**
+   * Resolves true when there was nothing to send or the save succeeded. A call
+   * made while a save is running gets that save's result (PR #19 C5).
+   */
   save: (input: VoucherRestrictionSaveInput) => Promise<boolean>;
 }
 
@@ -79,6 +82,7 @@ export const useVoucherCohortRestriction = (
   const [saveError, setSaveError] = useState<CohortErrorView | null>(null);
   const [saving, setSaving] = useState(false);
   const [loadRun, setLoadRun] = useState(0);
+  const inFlight = useRef<Promise<boolean> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,29 +139,39 @@ export const useVoucherCohortRestriction = (
       // C4 — never overwrite an unreadable restriction without the user's say-so.
       if (unreadable && !overwriteConfirmed) return true;
 
-      setSaving(true);
-      setSaveError(null);
+      // C5 — a second click while the POST runs must not send it again.
+      if (inFlight.current) return inFlight.current;
 
-      try {
-        await saveVoucherRestriction({
-          voucherId,
-          voucherCode: input.voucherCode ?? voucherCode,
-          voucherStart: input.voucherStart,
-          voucherEnd: input.voucherEnd,
-          cohorts: toRestrictionInputs(rows),
-        });
-        setDirty(false);
-        setUnreadable(false);
-        setOverwriteConfirmed(false);
+      const run = async (): Promise<boolean> => {
+        setSaving(true);
+        setSaveError(null);
 
-        return true;
-      } catch (err) {
-        setSaveError(describeCohortError("restrictionSave", err));
+        try {
+          await saveVoucherRestriction({
+            voucherId,
+            voucherCode: input.voucherCode ?? voucherCode,
+            voucherStart: input.voucherStart,
+            voucherEnd: input.voucherEnd,
+            cohorts: toRestrictionInputs(rows),
+          });
+          setDirty(false);
+          setUnreadable(false);
+          setOverwriteConfirmed(false);
 
-        return false;
-      } finally {
-        setSaving(false);
-      }
+          return true;
+        } catch (err) {
+          setSaveError(describeCohortError("restrictionSave", err));
+
+          return false;
+        } finally {
+          inFlight.current = null;
+          setSaving(false);
+        }
+      };
+
+      inFlight.current = run();
+
+      return inFlight.current;
     },
     [status, dirty, unreadable, overwriteConfirmed, voucherId, voucherCode, rows],
   );

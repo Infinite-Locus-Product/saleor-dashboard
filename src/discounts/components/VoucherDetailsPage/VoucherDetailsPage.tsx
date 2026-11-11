@@ -48,6 +48,7 @@ import { FormattedMessage, useIntl } from "react-intl";
 
 import { splitDateTime } from "../../../misc";
 import { type ChannelProps, type ListProps, type TabListActions } from "../../../types";
+import { isVoucherSaveDisabled } from "../../views/VoucherDetails/cohortRestrictionSubmit";
 import DiscountCategories from "../DiscountCategories";
 import DiscountCollections from "../DiscountCollections";
 import DiscountDates from "../DiscountDates";
@@ -521,7 +522,7 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
 
                   handleSubmit(data);
                 }}
-                disabled={disabled}
+                disabled={isVoucherSaveDisabled(disabled, cohortRestriction)}
               />
             </Savebar>
           </DetailPageLayout>
