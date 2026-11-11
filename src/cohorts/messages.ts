@@ -325,6 +325,93 @@ export const cohortMessages = defineMessages({
     id: "vmCZTf",
     description: "cohort request failed without a response from the server",
   },
+  // --- Phases 2–4 (TTXY-4841) ---
+  typeLabel: {
+    defaultMessage: "Cohort type",
+    id: "KLBcCV",
+    description: "cohort create, static/dynamic choice legend",
+  },
+  typeStaticOption: {
+    defaultMessage: "Static — members come from an uploaded CSV",
+    id: "rbj5AQ",
+    description: "cohort create, static type option",
+  },
+  typeDynamicOption: {
+    defaultMessage: "Dynamic — members are the customers who match rules",
+    id: "gXQ7qj",
+    description: "cohort create, dynamic type option",
+  },
+  csvAfterCreate: {
+    defaultMessage: "You can upload the member CSV once the cohort is created.",
+    id: "HeHIGC",
+    description: "cohort create, static cohort hint about the CSV upload",
+  },
+  typeReadonlyHelp: {
+    defaultMessage: "The type can't be changed after the cohort is created.",
+    id: "nN8Drx",
+    description: "cohort details, read-only type field helper text",
+  },
+  dynamicDisabled: {
+    defaultMessage: "Dynamic cohorts are not enabled yet. Create a static cohort for now.",
+    id: "kp16ZO",
+    description: "cohort save rejected (dynamic_disabled): the dynamic cohort flag is off",
+  },
+  invalidRules: {
+    defaultMessage: "Some rules are invalid. Fix the highlighted conditions and save again.",
+    id: "vZSCGb",
+    description: "cohort save rejected (invalid_rule)",
+  },
+  rulesRequired: {
+    defaultMessage: "Add at least one rule",
+    id: "IFb5hY",
+    description: "cohort save rejected (rules_required): a dynamic cohort needs rules",
+  },
+  rulesNotAllowed: {
+    defaultMessage: "Static cohorts can't have rules.",
+    id: "0SJYIR",
+    description: "cohort save rejected (rules_not_allowed)",
+  },
+  ruleFieldsError: {
+    defaultMessage: "Couldn't load the rule fields. Reload the page to try again.",
+    id: "WgcRMb",
+    description: "loading the cohort rule field catalog failed",
+  },
+  restrictionLoadError: {
+    defaultMessage: "Couldn't load this voucher's cohort restriction.",
+    id: "t04In7",
+    description: "loading a voucher's cohort restriction failed",
+  },
+  restrictionSaveError: {
+    defaultMessage:
+      "The voucher was saved, but its cohort restriction was not. Save again to retry.",
+    id: "9hs5YJ",
+    description: "saving a voucher's cohort restriction failed after the voucher saved",
+  },
+  invalidRestriction: {
+    defaultMessage: "The cohort restriction was rejected. Check each cohort's window and settings.",
+    id: "IG9YI+",
+    description: "voucher cohort restriction save rejected (400 invalid_restriction)",
+  },
+  campaignsError: {
+    defaultMessage: "Couldn't load campaigns.",
+    id: "y8MnzZ",
+    description: "loading the campaign list failed",
+  },
+  funnelError: {
+    defaultMessage: "Couldn't load this campaign's funnel.",
+    id: "3+Ukx4",
+    description: "loading a campaign funnel failed",
+  },
+  campaignNotFound: {
+    defaultMessage: "Campaign not found.",
+    id: "c73gPL",
+    description: "campaign funnel request returned 404",
+  },
+  csvExportError: {
+    defaultMessage: "Couldn't export the CSV. Try again.",
+    id: "GuNRY6",
+    description: "downloading a campaign funnel CSV failed",
+  },
 });
 
 /** Translated label for a cohort type (list column, detail summary). */

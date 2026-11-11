@@ -14,7 +14,13 @@ export type CohortAction =
   | "upload"
   | "sync"
   | "coupons"
-  | "delete";
+  | "delete"
+  | "ruleFields"
+  | "restrictionLoad"
+  | "restrictionSave"
+  | "campaigns"
+  | "funnel"
+  | "csv";
 
 export interface CohortErrorView {
   message: MessageDescriptor;
@@ -31,10 +37,33 @@ const fallbackMessages: Record<CohortAction, MessageDescriptor> = {
   sync: cohortMessages.syncError,
   coupons: cohortMessages.deleteCouponsError,
   delete: cohortMessages.deleteError,
+  ruleFields: cohortMessages.ruleFieldsError,
+  restrictionLoad: cohortMessages.restrictionLoadError,
+  restrictionSave: cohortMessages.restrictionSaveError,
+  campaigns: cohortMessages.campaignsError,
+  funnel: cohortMessages.funnelError,
+  csv: cohortMessages.csvExportError,
 };
 
-const mappedMessage = (action: CohortAction, status: number): MessageDescriptor | null => {
+/** TTXY-4841 — machine-readable 400 codes from the cohort / restriction routes (LLD §4.1, §7). */
+const codeMessages: Partial<Record<string, MessageDescriptor>> = {
+  dynamic_disabled: cohortMessages.dynamicDisabled,
+  invalid_rule: cohortMessages.invalidRules,
+  rules_required: cohortMessages.rulesRequired,
+  rules_not_allowed: cohortMessages.rulesNotAllowed,
+  invalid_restriction: cohortMessages.invalidRestriction,
+};
+
+const mappedMessage = (
+  action: CohortAction,
+  status: number,
+  code: string | null,
+): MessageDescriptor | null => {
   if (status === NETWORK_ERROR_STATUS) return cohortMessages.networkError;
+
+  const byCode = code ? codeMessages[code] : undefined;
+
+  if (byCode) return byCode;
 
   // C16 — signed in with MANAGE_DISCOUNTS but not in the cohort permission group.
   if (status === 403) return cohortMessages.noCohortAccess;
@@ -43,6 +72,13 @@ const mappedMessage = (action: CohortAction, status: number): MessageDescriptor 
   if (action === "list" && status === 404) return cohortMessages.cohortsNotEnabled;
 
   if (action === "load" && status === 404) return cohortMessages.notFound;
+
+  if (action === "funnel" && status === 404) return cohortMessages.campaignNotFound;
+
+  // The whole cohort API answers 404 while COHORT_COUPONS_ENABLED is off.
+  if ((action === "campaigns" || action === "ruleFields") && status === 404) {
+    return cohortMessages.cohortsNotEnabled;
+  }
 
   if (action === "sync" && status === 409) return cohortMessages.syncNotAllowed;
 
@@ -56,7 +92,7 @@ const mappedMessage = (action: CohortAction, status: number): MessageDescriptor 
 
 export const describeCohortError = (action: CohortAction, error: unknown): CohortErrorView => {
   if (isApiError(error)) {
-    const mapped = mappedMessage(action, error.status);
+    const mapped = mappedMessage(action, error.status, error.code);
 
     if (mapped) return { message: mapped, detail: null };
 
