@@ -3,6 +3,7 @@
 import { type VoucherCohortRestrictionController } from "@dashboard/discounts/components/VoucherCohortRestrictionCard/useVoucherCohortRestriction";
 
 import {
+  COHORT_RESTRICTION_NOT_SAVED,
   createCohortRestrictionSubmitHandler,
   voucherWindowFromForm,
 } from "./cohortRestrictionSubmit";
@@ -79,19 +80,34 @@ describe("createCohortRestrictionSubmitHandler", () => {
     expect(unavailable.save).not.toHaveBeenCalled();
   });
 
-  it("L6 — a failed restriction save does not turn the voucher save into a failure", async () => {
+  it("C2 — a failed restriction save after a clean voucher save keeps the form dirty", async () => {
     // Arrange
+    const notSaved = jest.fn();
     const restriction = controller({ save: jest.fn().mockResolvedValue(false) });
     const handler = createCohortRestrictionSubmitHandler(
       jest.fn().mockResolvedValue([]),
       restriction,
+      notSaved,
     );
 
     // Act
     const errors = await handler(formData as never);
 
-    // Assert — the card shows its own error; the voucher form result stays clean
-    expect(errors).toEqual([]);
+    // Assert — a non-empty result keeps the unsaved-changes guard on; the voucher
+    // itself saved, so the only entry is the restriction marker.
+    expect(errors).toEqual([COHORT_RESTRICTION_NOT_SAVED]);
+    expect(notSaved).toHaveBeenCalledTimes(1);
+  });
+
+  it("C2 — a successful restriction save returns no errors (the form is marked clean)", async () => {
+    // Arrange
+    const handler = createCohortRestrictionSubmitHandler(
+      jest.fn().mockResolvedValue([]),
+      controller(),
+    );
+
+    // Act / Assert
+    await expect(handler(formData as never)).resolves.toEqual([]);
   });
 
   it("L7 — the voucher window comes from the form; no end date means an open end", () => {
