@@ -156,4 +156,27 @@ describe("describeCohortError", () => {
     expect(view.message).toBe(cohortMessages.notFound);
     expect(view.detail).toBeNull();
   });
+
+  it.each([
+    ["restrictionSave", "invalid_restriction", "invalidRestriction"],
+    ["create", "invalid_rule", "invalidRules"],
+    ["create", "dynamic_disabled", "dynamicDisabled"],
+  ] as Array<[CohortAction, string, keyof typeof cohortMessages]>)(
+    "C7 — %s 400 %s keeps its own message and the server text as detail",
+    (action, code, key) => {
+      // Arrange
+      const error = new ApiError({
+        status: 400,
+        serverMessage: "Cohort 7 (Lapsed): start_time is after the voucher end",
+        code,
+      });
+
+      // Act
+      const view = describeCohortError(action, error);
+
+      // Assert
+      expect(view.message).toBe(cohortMessages[key]);
+      expect(view.detail).toBe("Cohort 7 (Lapsed): start_time is after the voucher end");
+    },
+  );
 });

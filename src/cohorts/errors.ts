@@ -54,16 +54,8 @@ const codeMessages: Partial<Record<string, MessageDescriptor>> = {
   invalid_restriction: cohortMessages.invalidRestriction,
 };
 
-const mappedMessage = (
-  action: CohortAction,
-  status: number,
-  code: string | null,
-): MessageDescriptor | null => {
+const mappedMessage = (action: CohortAction, status: number): MessageDescriptor | null => {
   if (status === NETWORK_ERROR_STATUS) return cohortMessages.networkError;
-
-  const byCode = code ? codeMessages[code] : undefined;
-
-  if (byCode) return byCode;
 
   // C16 — signed in with MANAGE_DISCOUNTS but not in the cohort permission group.
   if (status === 403) return cohortMessages.noCohortAccess;
@@ -95,7 +87,14 @@ const mappedMessage = (
 
 export const describeCohortError = (action: CohortAction, error: unknown): CohortErrorView => {
   if (isApiError(error)) {
-    const mapped = mappedMessage(action, error.status, error.code);
+    const byCode =
+      error.status !== NETWORK_ERROR_STATUS && error.code ? codeMessages[error.code] : undefined;
+
+    // PR #19 C7 — a code-mapped 400 keeps the server text (e.g. which cohort and
+    // field invalid_restriction is about) as detail under the translated message.
+    if (byCode) return { message: byCode, detail: error.serverMessage };
+
+    const mapped = mappedMessage(action, error.status);
 
     if (mapped) return { message: mapped, detail: null };
 
