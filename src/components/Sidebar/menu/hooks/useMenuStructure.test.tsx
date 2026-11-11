@@ -73,3 +73,52 @@ describe("useMenuStructure — Returns & Exchange (FE-NAV01)", () => {
     expect(findReturnsGroup(result.current)).toBeUndefined();
   });
 });
+
+describe("useMenuStructure — Campaigns (TTXY-4841)", () => {
+  beforeEach(() => {
+    (useCXPermission as jest.Mock).mockReturnValue(false);
+  });
+
+  it("L11 — with MANAGE_DISCOUNTS, Campaigns sits under Discounts right after Cohorts", () => {
+    // Arrange
+    (useUser as jest.Mock).mockReturnValue({
+      user: { userPermissions: [{ code: "MANAGE_DISCOUNTS" }] },
+    });
+
+    // Act
+    const { result } = renderHook(() => useMenuStructure());
+
+    // Assert
+    const discounts = result.current.find(item => item.id === "discounts");
+    const childIds = (discounts?.children ?? []).map(child => child.id);
+
+    expect(childIds.slice(childIds.indexOf("cohorts"), childIds.indexOf("cohorts") + 2)).toEqual([
+      "cohorts",
+      "campaigns",
+    ]);
+    expect(discounts?.children?.find(child => child.id === "campaigns")).toMatchObject({
+      label: "Campaigns",
+      url: "/campaigns",
+      type: "item",
+    });
+  });
+
+  it("L11 — without MANAGE_DISCOUNTS there is no Campaigns menu item", () => {
+    // Arrange
+    (useUser as jest.Mock).mockReturnValue({
+      user: { userPermissions: [{ code: "MANAGE_ORDERS" }] },
+    });
+
+    // Act
+    const { result } = renderHook(() => useMenuStructure());
+
+    // Assert
+    const allIds = result.current.flatMap(item => [
+      item.id,
+      ...(item.children ?? []).map(child => child.id),
+    ]);
+
+    expect(allIds).not.toContain("campaigns");
+    expect(allIds).not.toContain("discounts");
+  });
+});
