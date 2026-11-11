@@ -139,6 +139,7 @@ export interface VoucherCohortRestrictionEntry {
   cohort_name: string;
   start_time: string | null;
   end_time: string | null;
+  /** The stored value; null = follow the environment default (`default_template_event`). */
   template_event: string | null;
   holdout_pct: number;
   repeat_window_days: number;
@@ -150,6 +151,8 @@ export interface VoucherCohortRestriction {
   voucherCode: string | null;
   startDate: string | null;
   endDate: string | null;
+  /** The WhatsApp template a cohort with no `template_event` of its own uses (PR #19 C1). */
+  default_template_event?: string | null;
   cohorts: VoucherCohortRestrictionEntry[];
 }
 

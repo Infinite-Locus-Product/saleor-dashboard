@@ -8,7 +8,13 @@ import { VOUCHERS } from "@data/e2eTestData";
 import { VouchersPage } from "@pages/vouchersPage";
 import { expect, type Page } from "@playwright/test";
 import { AXE_MISSING_REASON, loadAxeBuilder, seriousViolations } from "utils/axe";
-import { fulfillJson, stubTenexu, TENEXU_API_URL_MISSING_REASON } from "utils/tenexuStubs";
+import {
+  fulfillJson,
+  STUB_DEFAULT_TEMPLATE_EVENT,
+  stubTenexu,
+  TENEXU_API_URL_MISSING_REASON,
+  voucherRestrictionBody,
+} from "utils/tenexuStubs";
 import { test } from "utils/testWithPermission";
 
 test.use({ permissionName: "admin" });
@@ -34,19 +40,20 @@ const cohortListItem = (id: number, name: string) => ({
   last_sync_error: null,
 });
 
-const stubRestriction = (page: Page, cohorts: unknown[]) =>
+const stubRestriction = (
+  page: Page,
+  cohorts: unknown[],
+  extra: Pick<Parameters<typeof voucherRestrictionBody>[0], "unreadable"> = {},
+) =>
   stubTenexu(page, [
     [
       "GET",
       /\/cohorts\/voucher-restriction\/.+$/,
       route =>
-        fulfillJson(route, {
-          voucherId: decodeURIComponent(VOUCHER.id),
-          voucherCode: "PWVOUCHER",
-          startDate: null,
-          endDate: null,
-          cohorts,
-        }),
+        fulfillJson(
+          route,
+          voucherRestrictionBody({ voucherId: decodeURIComponent(VOUCHER.id), cohorts, ...extra }),
+        ),
     ],
     [
       "POST",
@@ -178,6 +185,35 @@ test("TC: TTXY-4841 L8 removing a cohort removes it on save #e2e", async ({ page
 
   expect(post.body).toMatchObject({ voucherCode: "PWVOUCHER", cohorts: [] });
   expect(post.headers.authorization).toMatch(/^Bearer /);
+});
+
+test("TC: TTXY-4841 PR19-C1 a cohort on the default template shows it as a placeholder and save does not pin it #e2e", async ({
+  page,
+}) => {
+  // Arrange — stored template_event null = follows the default
+  const api = await stubRestriction(page, [{ ...LAPSED, template_event: null }]);
+
+  await vouchersPage.gotoExistingVoucherPage(VOUCHER.id);
+  await expect(rows(page)).toHaveCount(1, { timeout: 30000 });
+
+  const template = rows(page).getByTestId("voucher-cohort-template");
+
+  // Assert
+  await expect(template).toHaveValue("");
+  await expect(template).toHaveAttribute("placeholder", STUB_DEFAULT_TEMPLATE_EVENT);
+
+  // Act — change another field only
+  await rows(page).getByTestId("voucher-cohort-holdout").fill("15");
+  await vouchersPage.saveButton.click();
+
+  // Assert — template_event is left out, so the backend keeps following the default
+  await expect.poll(() => api.find("POST", "/cohorts/voucher-restriction").length).toBe(1);
+
+  const [post] = api.find("POST", "/cohorts/voucher-restriction");
+  const [sent] = (post.body as { cohorts: Array<Record<string, unknown>> }).cohorts;
+
+  expect(sent).not.toHaveProperty("template_event");
+  expect(sent.holdout_pct).toBe(15);
 });
 
 test("TC: TTXY-4841 L12 the voucher cohort card has no serious axe violations #e2e", async ({

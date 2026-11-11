@@ -34,6 +34,8 @@ export interface VoucherCohortRestrictionController {
   status: RestrictionStatus;
   rows: CohortRestrictionRow[];
   setRows: (rows: CohortRestrictionRow[]) => void;
+  /** The template a row with a blank template uses (shown as its placeholder), PR #19 C1. */
+  defaultTemplateEvent: string | null;
   /** True once the user changed the list or a row since the last load/save. */
   dirty: boolean;
   loadError: CohortErrorView | null;
@@ -56,6 +58,7 @@ export const useVoucherCohortRestriction = (
   const [status, setStatus] = useState<RestrictionStatus>("loading");
   const [rows, setRowsState] = useState<CohortRestrictionRow[]>([]);
   const [voucherCode, setVoucherCode] = useState<string | null>(null);
+  const [defaultTemplateEvent, setDefaultTemplateEvent] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [loadError, setLoadError] = useState<CohortErrorView | null>(null);
   const [saveError, setSaveError] = useState<CohortErrorView | null>(null);
@@ -73,6 +76,7 @@ export const useVoucherCohortRestriction = (
 
         setRowsState(fromRestrictionEntries(restriction?.cohorts));
         setVoucherCode(restriction?.voucherCode ?? null);
+        setDefaultTemplateEvent(restriction?.default_template_event || null);
         setDirty(false);
         setStatus("ready");
       })
@@ -135,6 +139,7 @@ export const useVoucherCohortRestriction = (
     status,
     rows,
     setRows,
+    defaultTemplateEvent,
     dirty,
     loadError,
     saveError,
