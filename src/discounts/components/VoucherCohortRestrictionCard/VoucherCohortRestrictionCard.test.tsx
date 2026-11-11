@@ -603,4 +603,85 @@ describe("VoucherCohortRestrictionCard", () => {
       "typed_later",
     );
   });
+
+  const repick = async (name: string): Promise<void> => {
+    fireEvent.click(screen.getByText(`unpick ${name}`));
+    fireEvent.change(screen.getByTestId("cohort-picker-search"), { target: { value: "a" } });
+    fireEvent.click(await screen.findByText(`pick ${name}`));
+  };
+
+  it("C10 — removing and re-adding a loaded cohort restores its loaded settings and template", async () => {
+    // Arrange
+    await renderCard();
+    await waitFor(() => expect(rows()).toHaveLength(1));
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-holdout"), { target: { value: "5" } });
+
+    // Act
+    await repick("Lapsed");
+
+    // Assert — the loaded row is back, not the defaults and not the unsaved edit
+    expect(rows()).toHaveLength(1);
+    expect(rowInput(rows()[0], "voucher-cohort-template").value).toBe("cohort_coupon_wa");
+    expect(rowInput(rows()[0], "voucher-cohort-holdout").value).toBe("20");
+    expect(rowInput(rows()[0], "voucher-cohort-repeat").value).toBe("45");
+
+    // Act
+    await clickSave();
+
+    // Assert — the stored template is unchanged, so it is not sent
+    expect(saveRestrictionMock).toHaveBeenCalledTimes(1);
+    expect(saveRestrictionMock.mock.calls[0][0].cohorts).toEqual([
+      expect.not.objectContaining({ template_event: expect.anything() }),
+    ]);
+    expect(saveRestrictionMock.mock.calls[0][0].cohorts[0]).toMatchObject({
+      cohort_id: 3,
+      holdout_pct: 20,
+      repeat_window_days: 45,
+    });
+  });
+
+  it("C10 — after a save, removing and re-adding a cohort restores what was saved", async () => {
+    // Arrange
+    await renderCard();
+    await waitFor(() => expect(rows()).toHaveLength(1));
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-template"), {
+      target: { value: "promo_y" },
+    });
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-holdout"), { target: { value: "25" } });
+    await clickSave();
+
+    // Act
+    await repick("Lapsed");
+
+    // Assert
+    expect(rowInput(rows()[0], "voucher-cohort-template").value).toBe("promo_y");
+    expect(rowInput(rows()[0], "voucher-cohort-holdout").value).toBe("25");
+    expect(current().rows[0].storedTemplateEvent).toBe("promo_y");
+
+    // Act
+    await clickSave();
+
+    // Assert
+    expect(saveRestrictionMock).toHaveBeenCalledTimes(2);
+    expect(saveRestrictionMock.mock.calls[1][0].cohorts[0]).not.toHaveProperty("template_event");
+    expect(saveRestrictionMock.mock.calls[1][0].cohorts[0].holdout_pct).toBe(25);
+  });
+
+  it("C10 — a cohort that was never loaded or saved is re-added with the defaults", async () => {
+    // Arrange
+    await renderCard();
+    await waitFor(() => expect(rows()).toHaveLength(1));
+    fireEvent.change(screen.getByTestId("cohort-picker-search"), { target: { value: "jai" } });
+    fireEvent.click(await screen.findByText("pick Jaipur repeaters"));
+    fireEvent.change(rowInput(rows()[1], "voucher-cohort-holdout"), { target: { value: "33" } });
+
+    // Act
+    await repick("Jaipur repeaters");
+
+    // Assert
+    expect(rows()).toHaveLength(2);
+    expect(rowInput(rows()[1], "voucher-cohort-holdout").value).toBe("10");
+    expect(rowInput(rows()[1], "voucher-cohort-repeat").value).toBe("30");
+    expect(rowInput(rows()[1], "voucher-cohort-template").value).toBe("");
+  });
 });
