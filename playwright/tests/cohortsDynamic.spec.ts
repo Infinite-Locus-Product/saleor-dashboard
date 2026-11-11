@@ -142,6 +142,38 @@ test("TC: TTXY-4841 L1 Create shows Static/Dynamic; Dynamic hides the CSV hint a
   expect(api.find("GET", "/cohorts/rule-fields")).toHaveLength(1);
 });
 
+test("TC: TTXY-4841 PR19-C6 a failed rule-field catalog load can be retried #e2e", async ({
+  page,
+}) => {
+  // Arrange — the first catalog request fails, the next one succeeds
+  let catalogRequests = 0;
+  const api = await stubTenexu(page, [
+    [
+      "GET",
+      /\/cohorts\/rule-fields$/,
+      route => {
+        catalogRequests += 1;
+
+        return catalogRequests === 1
+          ? fulfillError(route, 500, { error: "catalog unavailable" })
+          : fulfillJson(route, RULE_FIELDS);
+      },
+    ],
+  ]);
+
+  await cohortsPage.gotoCreatePage();
+  await page.getByTestId("cohort-type-dynamic").check();
+  await expect(page.getByTestId("rule-fields-error")).toBeVisible();
+
+  // Act
+  await page.getByTestId("rule-fields-retry").click();
+
+  // Assert
+  await expect(page.getByTestId("rule-builder")).toBeVisible();
+  await expect(page.getByTestId("rule-fields-error")).toHaveCount(0);
+  expect(api.find("GET", "/cohorts/rule-fields")).toHaveLength(2);
+});
+
 test("TC: TTXY-4841 L2 add/edit/remove conditions, nested group, AND/OR per group #e2e", async ({
   page,
 }) => {

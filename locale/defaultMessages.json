@@ -9663,6 +9663,10 @@
     "context": "order refund amount, input label",
     "string": "Amount"
   },
+  "lt3Xup": {
+    "context": "rule builder, retry loading the field catalog",
+    "string": "Retry"
+  },
   "ltSmln": {
     "string": "Shipping zone deleted"
   },
