@@ -93,4 +93,32 @@ describe("useVoucherCohortRestriction", () => {
     ]);
     expect(result.current.unreadable).toBe(false);
   });
+
+  it("C12 — an edit made after Save was clicked (while the voucher saves) is the one sent", async () => {
+    // Arrange: a readable, empty restriction
+    fetchRestrictionMock.mockResolvedValue({ ...unreadableRestriction, unreadable: false });
+
+    const { result } = await renderLoaded();
+
+    act(() => {
+      result.current.setRows([newRow(8, "Jaipur repeaters")]);
+    });
+
+    // The submit handler keeps the controller from the click, then awaits voucherUpdate…
+    const clickedController = result.current;
+
+    // …while the user edits the card again.
+    act(() => {
+      result.current.setRows([newRow(8, "Jaipur repeaters"), newRow(9, "Delhi VIP")]);
+    });
+
+    // Act
+    await act(async () => {
+      await clickedController.save(saveInput);
+    });
+
+    // Assert
+    expect(saveRestrictionMock).toHaveBeenCalledTimes(1);
+    expect(saveRestrictionMock.mock.calls[0][0].cohorts.map(c => c.cohort_id)).toEqual([8, 9]);
+  });
 });
