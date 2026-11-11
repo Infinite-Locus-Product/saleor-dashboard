@@ -1,0 +1,146 @@
+/**
+ * State of the voucher "Restrict to cohort(s)" card (TTXY-4841, L6–L8).
+ *
+ * Loads GET /cohorts/voucher-restriction/:voucherId and, when the voucher form
+ * is saved, POSTs the whole list (a removed cohort is left out, which removes
+ * it). It never blocks the voucher save when cohorts are unavailable (flag off,
+ * no cohort access, backend URL not configured): the card then only explains
+ * why, and nothing is sent.
+ */
+import { isApiError } from "@dashboard/cohorts/api/apiError";
+import { fetchVoucherRestriction, saveVoucherRestriction } from "@dashboard/cohorts/api/cohortsApi";
+import { type CohortErrorView, describeCohortError } from "@dashboard/cohorts/errors";
+import { useCallback, useEffect, useState } from "react";
+
+import {
+  type CohortRestrictionRow,
+  fromRestrictionEntries,
+  hasRowErrors,
+  toRestrictionInputs,
+  validateRows,
+  type VoucherWindow,
+} from "./model";
+
+export type RestrictionStatus = "loading" | "ready" | "unavailable" | "error";
+
+export interface VoucherRestrictionSaveInput {
+  /** Defaults to the code the backend returned on load. */
+  voucherCode?: string | null;
+  voucherStart: string | null;
+  voucherEnd: string | null;
+}
+
+export interface VoucherCohortRestrictionController {
+  status: RestrictionStatus;
+  rows: CohortRestrictionRow[];
+  setRows: (rows: CohortRestrictionRow[]) => void;
+  /** True once the user changed the list or a row since the last load/save. */
+  dirty: boolean;
+  loadError: CohortErrorView | null;
+  saveError: CohortErrorView | null;
+  saving: boolean;
+  reload: () => void;
+  /** False when a changed card has a row that must be fixed first (L7). */
+  validate: (window: VoucherWindow) => boolean;
+  /** Resolves true when there was nothing to send or the save succeeded. */
+  save: (input: VoucherRestrictionSaveInput) => Promise<boolean>;
+}
+
+/** 403 / 404 / no backend URL: cohorts are not usable here, which is not an error to fix. */
+const isUnavailable = (error: unknown): boolean =>
+  !isApiError(error) || error.status === 403 || error.status === 404;
+
+export const useVoucherCohortRestriction = (
+  voucherId: string,
+): VoucherCohortRestrictionController => {
+  const [status, setStatus] = useState<RestrictionStatus>("loading");
+  const [rows, setRowsState] = useState<CohortRestrictionRow[]>([]);
+  const [voucherCode, setVoucherCode] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [loadError, setLoadError] = useState<CohortErrorView | null>(null);
+  const [saveError, setSaveError] = useState<CohortErrorView | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [loadRun, setLoadRun] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setStatus("loading");
+    setLoadError(null);
+    fetchVoucherRestriction(voucherId)
+      .then(restriction => {
+        if (cancelled) return;
+
+        setRowsState(fromRestrictionEntries(restriction?.cohorts));
+        setVoucherCode(restriction?.voucherCode ?? null);
+        setDirty(false);
+        setStatus("ready");
+      })
+      .catch(err => {
+        if (cancelled) return;
+
+        setLoadError(describeCohortError("restrictionLoad", err));
+        setStatus(isUnavailable(err) ? "unavailable" : "error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [voucherId, loadRun]);
+
+  const setRows = useCallback((next: CohortRestrictionRow[]) => {
+    setRowsState(next);
+    setDirty(true);
+    setSaveError(null);
+  }, []);
+
+  const reload = useCallback(() => setLoadRun(run => run + 1), []);
+
+  const validate = useCallback(
+    (window: VoucherWindow) =>
+      status !== "ready" || !dirty || !hasRowErrors(validateRows(rows, window)),
+    [status, dirty, rows],
+  );
+
+  const save = useCallback(
+    async (input: VoucherRestrictionSaveInput): Promise<boolean> => {
+      if (status !== "ready" || !dirty) return true;
+
+      setSaving(true);
+      setSaveError(null);
+
+      try {
+        await saveVoucherRestriction({
+          voucherId,
+          voucherCode: input.voucherCode ?? voucherCode,
+          voucherStart: input.voucherStart,
+          voucherEnd: input.voucherEnd,
+          cohorts: toRestrictionInputs(rows),
+        });
+        setDirty(false);
+
+        return true;
+      } catch (err) {
+        setSaveError(describeCohortError("restrictionSave", err));
+
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [status, dirty, voucherId, voucherCode, rows],
+  );
+
+  return {
+    status,
+    rows,
+    setRows,
+    dirty,
+    loadError,
+    saveError,
+    saving,
+    reload,
+    validate,
+    save,
+  };
+};
