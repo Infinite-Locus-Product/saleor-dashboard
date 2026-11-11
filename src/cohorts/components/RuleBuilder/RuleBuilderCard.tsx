@@ -1,6 +1,6 @@
 // TTXY-4841 — the "Rules" card shared by cohort create and details (L1, L5).
 import { DashboardCard } from "@dashboard/components/Card";
-import { Box, Text } from "@saleor/macaw-ui-next";
+import { Box, Button, Text } from "@saleor/macaw-ui-next";
 import { useIntl } from "react-intl";
 
 import { CohortErrorText } from "../CohortErrorText";
@@ -28,7 +28,20 @@ export const RuleBuilderCard = ({ ruleFields, ...builderProps }: RuleBuilderCard
             {intl.formatMessage(ruleBuilderMessages.cardHelp)}
           </Text>
           {ruleFields.error ? (
-            <CohortErrorText error={ruleFields.error} testId="rule-fields-error" />
+            <Box display="grid" gap={2}>
+              <CohortErrorText error={ruleFields.error} testId="rule-fields-error" />
+              <Box>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={ruleFields.loading}
+                  onClick={ruleFields.retry}
+                  data-test-id="rule-fields-retry"
+                >
+                  {intl.formatMessage(ruleBuilderMessages.fieldsRetry)}
+                </Button>
+              </Box>
+            </Box>
           ) : ruleFields.ready ? (
             <RuleBuilder {...builderProps} fields={ruleFields.fields} />
           ) : (

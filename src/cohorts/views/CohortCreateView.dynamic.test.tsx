@@ -248,4 +248,20 @@ describe("CohortCreateView — dynamic cohorts", () => {
     expect(await screen.findByTestId("rule-fields-error")).toBeInTheDocument();
     expect(screen.getByTestId("button-bar-confirm")).toBeDisabled();
   });
+
+  it("C6 — Retry reloads the rule-field catalog after a failed load", async () => {
+    // Arrange
+    fetchRuleFieldsMock.mockRejectedValueOnce(new ApiError({ status: 500, serverMessage: null }));
+    renderView();
+    fireEvent.click(screen.getByTestId("cohort-type-dynamic"));
+    await screen.findByTestId("rule-fields-error");
+
+    // Act
+    fireEvent.click(screen.getByTestId("rule-fields-retry"));
+
+    // Assert
+    expect(await screen.findByTestId("rule-add-condition")).toBeInTheDocument();
+    expect(screen.queryByTestId("rule-fields-error")).not.toBeInTheDocument();
+    expect(fetchRuleFieldsMock).toHaveBeenCalledTimes(2);
+  });
 });

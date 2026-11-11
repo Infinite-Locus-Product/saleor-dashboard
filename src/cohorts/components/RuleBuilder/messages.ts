@@ -95,6 +95,11 @@ export const ruleBuilderMessages = defineMessages({
     id: "uWoS/U",
     description: "rule builder size and depth limits",
   },
+  fieldsRetry: {
+    defaultMessage: "Retry",
+    id: "lt3Xup",
+    description: "rule builder, retry loading the field catalog",
+  },
   fieldsLoading: {
     defaultMessage: "Loading rule fields…",
     id: "ku1J8I",
