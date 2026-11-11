@@ -204,7 +204,9 @@ describe("VoucherCohortRestrictionCard", () => {
 
     // Assert
     await waitFor(() =>
-      expect(fetchCohortsMock).toHaveBeenCalledWith(expect.objectContaining({ q: "jai" })),
+      expect(fetchCohortsMock).toHaveBeenCalledWith(
+        expect.objectContaining({ q: "jai", status: true }),
+      ),
     );
     expect(screen.getByTestId("cohort-picker")).toHaveAttribute("data-allow-custom", "false");
 
