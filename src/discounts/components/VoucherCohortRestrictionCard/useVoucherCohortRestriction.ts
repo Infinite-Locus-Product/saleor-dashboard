@@ -42,7 +42,11 @@ export interface VoucherCohortRestrictionController {
   saveError: CohortErrorView | null;
   saving: boolean;
   reload: () => void;
-  /** False when a changed card has a row that must be fixed first (L7). */
+  /**
+   * False when a loaded card has a row that must be fixed first (L7). Checked
+   * even when the card is unchanged (PR #19 C3): new voucher dates can put a
+   * stored cohort window outside the voucher.
+   */
   validate: (window: VoucherWindow) => boolean;
   /** Resolves true when there was nothing to send or the save succeeded. */
   save: (input: VoucherRestrictionSaveInput) => Promise<boolean>;
@@ -101,9 +105,8 @@ export const useVoucherCohortRestriction = (
   const reload = useCallback(() => setLoadRun(run => run + 1), []);
 
   const validate = useCallback(
-    (window: VoucherWindow) =>
-      status !== "ready" || !dirty || !hasRowErrors(validateRows(rows, window)),
-    [status, dirty, rows],
+    (window: VoucherWindow) => status !== "ready" || !hasRowErrors(validateRows(rows, window)),
+    [status, rows],
   );
 
   const save = useCallback(

@@ -393,4 +393,24 @@ describe("VoucherCohortRestrictionCard", () => {
     // Assert
     expect(saveRestrictionMock.mock.calls[0][0].cohorts[0]).toHaveProperty("template_event", null);
   });
+
+  it("C3 — an unchanged card with a stored window outside the current voucher dates blocks the save", async () => {
+    // Arrange — stored start is before the voucher's (shortened) start
+    fetchRestrictionMock.mockResolvedValue({
+      ...restriction,
+      cohorts: [{ ...restriction.cohorts[0], start_time: "2026-11-01T04:30:00Z" }],
+    });
+    await renderCard();
+    await waitFor(() => expect(rows()).toHaveLength(1));
+
+    // Act
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("harness-save"));
+    });
+
+    // Assert
+    expect(within(rows()[0]).getByTestId("voucher-cohort-start-error")).toBeInTheDocument();
+    expect(saveOutcome).toBe(false);
+    expect(saveRestrictionMock).not.toHaveBeenCalled();
+  });
 });
