@@ -50,7 +50,8 @@ const useCohortOptions = () => {
 
     setLoading(true);
     setFailed(false);
-    fetchCohorts({ q: query.trim() || undefined, limit: SEARCH_PAGE_SIZE })
+    // Only active cohorts can gate a coupon; inactive ones would never let anyone redeem it.
+    fetchCohorts({ q: query.trim() || undefined, status: true, limit: SEARCH_PAGE_SIZE })
       .then(result => {
         if (request !== latest.current) return;
 
