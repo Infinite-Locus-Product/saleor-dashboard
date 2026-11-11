@@ -29,14 +29,20 @@ jest.mock("@dashboard/components/Combobox", () => ({
       value,
       fetchOptions,
       allowCustomValues,
+      disabled,
     }: {
       options: Array<{ value: string; label: string }>;
       onChange: (event: { target: { value: unknown; name: string } }) => void;
       value: Array<{ value: string; label: string }>;
       fetchOptions: (query: string) => void;
       allowCustomValues?: boolean;
+      disabled?: boolean;
     }) => (
-      <div data-test-id="cohort-picker" data-allow-custom={String(!!allowCustomValues)}>
+      <div
+        data-test-id="cohort-picker"
+        data-allow-custom={String(!!allowCustomValues)}
+        data-disabled={String(!!disabled)}
+      >
         <input
           aria-label="search cohorts"
           data-test-id="cohort-picker-search"
@@ -412,5 +418,40 @@ describe("VoucherCohortRestrictionCard", () => {
     expect(within(rows()[0]).getByTestId("voucher-cohort-start-error")).toBeInTheDocument();
     expect(saveOutcome).toBe(false);
     expect(saveRestrictionMock).not.toHaveBeenCalled();
+  });
+
+  it("C4 — an unreadable stored restriction shows a warning, not the empty state, and needs confirmation", async () => {
+    // Arrange
+    fetchRestrictionMock.mockResolvedValue({ ...restriction, cohorts: [], unreadable: true });
+    await renderCard();
+
+    // Assert — warned, not told the voucher is open to everyone; picker locked
+    expect(await screen.findByTestId("voucher-cohort-unreadable")).toBeInTheDocument();
+    expect(screen.queryByTestId("voucher-cohort-empty")).not.toBeInTheDocument();
+    expect(screen.getByTestId("cohort-picker")).toHaveAttribute("data-disabled", "true");
+
+    // Act — save without confirming sends nothing
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("harness-save"));
+    });
+
+    // Assert
+    expect(saveRestrictionMock).not.toHaveBeenCalled();
+
+    // Act — confirm the overwrite, pick a cohort, save
+    fireEvent.click(screen.getByTestId("voucher-cohort-unreadable-replace"));
+    fireEvent.change(screen.getByTestId("cohort-picker-search"), { target: { value: "jai" } });
+    fireEvent.click(await screen.findByText("pick Jaipur repeaters"));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("harness-save"));
+    });
+
+    // Assert
+    expect(screen.getByTestId("cohort-picker")).toHaveAttribute("data-disabled", "false");
+    expect(saveRestrictionMock).toHaveBeenCalledTimes(1);
+    expect(saveRestrictionMock.mock.calls[0][0].cohorts).toEqual([
+      expect.objectContaining({ cohort_id: 8 }),
+    ]);
+    expect(screen.queryByTestId("voucher-cohort-unreadable")).not.toBeInTheDocument();
   });
 });

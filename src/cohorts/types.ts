@@ -153,6 +153,11 @@ export interface VoucherCohortRestriction {
   endDate: string | null;
   /** The WhatsApp template a cohort with no `template_event` of its own uses (PR #19 C1). */
   default_template_event?: string | null;
+  /**
+   * True when the voucher's restricted_cohorts metadata exists but cannot be
+   * read; `cohorts` is then empty, and Saleor refuses the voucher for everyone (C4).
+   */
+  unreadable?: boolean;
   cohorts: VoucherCohortRestrictionEntry[];
 }
 

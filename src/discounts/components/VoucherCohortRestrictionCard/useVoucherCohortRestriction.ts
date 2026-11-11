@@ -6,6 +6,9 @@
  * it). It never blocks the voucher save when cohorts are unavailable (flag off,
  * no cohort access, backend URL not configured): the card then only explains
  * why, and nothing is sent.
+ *
+ * PR #19 C4 — when the backend says the stored restriction is `unreadable`,
+ * nothing can be edited or sent until the user confirms the overwrite.
  */
 import { isApiError } from "@dashboard/cohorts/api/apiError";
 import { fetchVoucherRestriction, saveVoucherRestriction } from "@dashboard/cohorts/api/cohortsApi";
@@ -36,6 +39,12 @@ export interface VoucherCohortRestrictionController {
   setRows: (rows: CohortRestrictionRow[]) => void;
   /** The template a row with a blank template uses (shown as its placeholder), PR #19 C1. */
   defaultTemplateEvent: string | null;
+  /** The stored restriction exists but could not be read (PR #19 C4); cleared by a save. */
+  unreadable: boolean;
+  /** True once the user agreed to overwrite an unreadable restriction. */
+  overwriteConfirmed: boolean;
+  /** Unlocks an unreadable restriction for editing and marks the card changed. */
+  confirmOverwrite: () => void;
   /** True once the user changed the list or a row since the last load/save. */
   dirty: boolean;
   loadError: CohortErrorView | null;
@@ -63,6 +72,8 @@ export const useVoucherCohortRestriction = (
   const [rows, setRowsState] = useState<CohortRestrictionRow[]>([]);
   const [voucherCode, setVoucherCode] = useState<string | null>(null);
   const [defaultTemplateEvent, setDefaultTemplateEvent] = useState<string | null>(null);
+  const [unreadable, setUnreadable] = useState(false);
+  const [overwriteConfirmed, setOverwriteConfirmed] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [loadError, setLoadError] = useState<CohortErrorView | null>(null);
   const [saveError, setSaveError] = useState<CohortErrorView | null>(null);
@@ -81,6 +92,8 @@ export const useVoucherCohortRestriction = (
         setRowsState(fromRestrictionEntries(restriction?.cohorts));
         setVoucherCode(restriction?.voucherCode ?? null);
         setDefaultTemplateEvent(restriction?.default_template_event || null);
+        setUnreadable(restriction?.unreadable === true);
+        setOverwriteConfirmed(false);
         setDirty(false);
         setStatus("ready");
       })
@@ -102,6 +115,12 @@ export const useVoucherCohortRestriction = (
     setSaveError(null);
   }, []);
 
+  const confirmOverwrite = useCallback(() => {
+    setOverwriteConfirmed(true);
+    setDirty(true);
+    setSaveError(null);
+  }, []);
+
   const reload = useCallback(() => setLoadRun(run => run + 1), []);
 
   const validate = useCallback(
@@ -112,6 +131,9 @@ export const useVoucherCohortRestriction = (
   const save = useCallback(
     async (input: VoucherRestrictionSaveInput): Promise<boolean> => {
       if (status !== "ready" || !dirty) return true;
+
+      // C4 — never overwrite an unreadable restriction without the user's say-so.
+      if (unreadable && !overwriteConfirmed) return true;
 
       setSaving(true);
       setSaveError(null);
@@ -125,6 +147,8 @@ export const useVoucherCohortRestriction = (
           cohorts: toRestrictionInputs(rows),
         });
         setDirty(false);
+        setUnreadable(false);
+        setOverwriteConfirmed(false);
 
         return true;
       } catch (err) {
@@ -135,7 +159,7 @@ export const useVoucherCohortRestriction = (
         setSaving(false);
       }
     },
-    [status, dirty, voucherId, voucherCode, rows],
+    [status, dirty, unreadable, overwriteConfirmed, voucherId, voucherCode, rows],
   );
 
   return {
@@ -143,6 +167,9 @@ export const useVoucherCohortRestriction = (
     rows,
     setRows,
     defaultTemplateEvent,
+    unreadable,
+    overwriteConfirmed,
+    confirmOverwrite,
     dirty,
     loadError,
     saveError,

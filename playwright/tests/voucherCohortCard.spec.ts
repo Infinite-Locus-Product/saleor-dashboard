@@ -235,6 +235,32 @@ test("TC: TTXY-4841 PR19-C1 a cohort on the default template shows it as a place
   expect(sent.holdout_pct).toBe(15);
 });
 
+test("TC: TTXY-4841 PR19-C4 an unreadable stored restriction is flagged and only overwritten after confirmation #e2e", async ({
+  page,
+}) => {
+  // Arrange
+  const api = await stubRestriction(page, [], { unreadable: true });
+
+  await vouchersPage.gotoExistingVoucherPage(VOUCHER.id);
+
+  const warning = card(page).getByTestId("voucher-cohort-unreadable");
+
+  // Assert — a warning, not "every customer can use this voucher"
+  await expect(warning).toBeVisible({ timeout: 30000 });
+  await expect(card(page).getByTestId("voucher-cohort-empty")).toHaveCount(0);
+
+  // Act — confirm the overwrite, then save with no cohorts picked
+  await warning.getByTestId("voucher-cohort-unreadable-replace").click();
+  await vouchersPage.saveButton.click();
+
+  // Assert — the broken restriction is replaced by an empty list
+  await expect.poll(() => api.find("POST", "/cohorts/voucher-restriction").length).toBe(1);
+
+  const [post] = api.find("POST", "/cohorts/voucher-restriction");
+
+  expect(post.body).toMatchObject({ cohorts: [] });
+});
+
 test("TC: TTXY-4841 L12 the voucher cohort card has no serious axe violations #e2e", async ({
   page,
 }) => {
