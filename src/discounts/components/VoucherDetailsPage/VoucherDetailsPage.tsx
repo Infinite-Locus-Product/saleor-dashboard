@@ -506,7 +506,7 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
               <Savebar.ConfirmButton
                 transitionState={saveButtonBarState}
                 onClick={() => {
-                  // L7 — a changed cohort restriction with an invalid row blocks the save.
+                  // L7 / PR #19 C3 — an invalid cohort row blocks the save, changed or not.
                   if (
                     cohortRestriction &&
                     !cohortRestriction.validate(voucherWindowFromDates(data))

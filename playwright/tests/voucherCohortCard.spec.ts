@@ -167,6 +167,25 @@ test("TC: TTXY-4841 L7 a cohort window outside the voucher dates blocks the save
   expect(api.find("POST", "/cohorts/voucher-restriction")).toHaveLength(0);
 });
 
+test("TC: TTXY-4841 PR19-C3 an unchanged stored window outside the voucher dates still blocks the save #e2e", async ({
+  page,
+}) => {
+  // Arrange — a stored start years before any seeded voucher's start date
+  const api = await stubRestriction(page, [{ ...LAPSED, start_time: "2000-01-01T04:30:00Z" }]);
+
+  await vouchersPage.gotoExistingVoucherPage(VOUCHER.id);
+  await expect(rows(page)).toHaveCount(1, { timeout: 30000 });
+
+  // Act — save without touching the card
+  await vouchersPage.saveButton.click();
+
+  // Assert
+  await expect(rows(page).getByTestId("voucher-cohort-start-error")).toContainText(
+    "inside the voucher's dates",
+  );
+  expect(api.find("POST", "/cohorts/voucher-restriction")).toHaveLength(0);
+});
+
 test("TC: TTXY-4841 L8 removing a cohort removes it on save #e2e", async ({ page }) => {
   // Arrange
   const api = await stubRestriction(page, [LAPSED]);
