@@ -7,6 +7,7 @@ import {
   DEFAULT_REPEAT_WINDOW_DAYS,
   fromRestrictionEntries,
   hasRowErrors,
+  markTemplatesSaved,
   newRow,
   toIstDateTimeInput,
   toRestrictionInputs,
@@ -230,5 +231,42 @@ describe("voucher cohort restriction model", () => {
     expect(inputs[0].template_event).toBe("new_event");
     expect(inputs[1].template_event).toBe("other_event");
     expect(inputs[2]).toHaveProperty("template_event", null);
+  });
+
+  it("C9 — after a save each sent row stores what was sent (trimmed, or null when blank)", () => {
+    // Arrange
+    const sent = [
+      row({ cohortId: 1, storedTemplateEvent: null, templateEvent: " promo_x " }),
+      row({ cohortId: 2, storedTemplateEvent: "old_event", templateEvent: "  " }),
+      row({ cohortId: 3, storedTemplateEvent: "a", templateEvent: "a" }),
+    ];
+
+    // Act
+    const saved = markTemplatesSaved(sent, sent);
+
+    // Assert
+    expect(saved.map(item => item.storedTemplateEvent)).toEqual(["promo_x", null, "a"]);
+    expect(toRestrictionInputs(saved).map(input => "template_event" in input)).toEqual([
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  it("C9 — the stored value comes from the sent rows, not edits made while the POST ran", () => {
+    // Arrange
+    const sent = [row({ cohortId: 1, storedTemplateEvent: null, templateEvent: "sent_x" })];
+    const current = [
+      row({ cohortId: 1, storedTemplateEvent: null, templateEvent: "typed_later" }),
+      row({ cohortId: 9, storedTemplateEvent: null, templateEvent: "added_later" }),
+    ];
+
+    // Act
+    const saved = markTemplatesSaved(current, sent);
+
+    // Assert — edits are kept; only what was sent becomes "stored"; an unsent row is untouched
+    expect(saved[0]).toMatchObject({ templateEvent: "typed_later", storedTemplateEvent: "sent_x" });
+    expect(saved[1]).toEqual(current[1]);
+    expect(toRestrictionInputs(saved)[0].template_event).toBe("typed_later");
   });
 });

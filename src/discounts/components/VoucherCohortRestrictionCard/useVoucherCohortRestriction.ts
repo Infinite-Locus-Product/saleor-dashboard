@@ -19,6 +19,7 @@ import {
   type CohortRestrictionRow,
   fromRestrictionEntries,
   hasRowErrors,
+  markTemplatesSaved,
   toRestrictionInputs,
   validateRows,
   type VoucherWindow,
@@ -83,6 +84,8 @@ export const useVoucherCohortRestriction = (
   const [saving, setSaving] = useState(false);
   const [loadRun, setLoadRun] = useState(0);
   const inFlight = useRef<Promise<boolean> | null>(null);
+  // PR #19 C9 — counts edits, so a save can tell whether the user changed the card while it ran.
+  const edits = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,6 +117,7 @@ export const useVoucherCohortRestriction = (
   }, [voucherId, loadRun]);
 
   const setRows = useCallback((next: CohortRestrictionRow[]) => {
+    edits.current += 1;
     setRowsState(next);
     setDirty(true);
     setSaveError(null);
@@ -142,6 +146,10 @@ export const useVoucherCohortRestriction = (
       // C5 — a second click while the POST runs must not send it again.
       if (inFlight.current) return inFlight.current;
 
+      // C9 — the rows this POST carries; the user may edit while it runs.
+      const sent = rows;
+      const editsAtStart = edits.current;
+
       const run = async (): Promise<boolean> => {
         setSaving(true);
         setSaveError(null);
@@ -152,9 +160,11 @@ export const useVoucherCohortRestriction = (
             voucherCode: input.voucherCode ?? voucherCode,
             voucherStart: input.voucherStart,
             voucherEnd: input.voucherEnd,
-            cohorts: toRestrictionInputs(rows),
+            cohorts: toRestrictionInputs(sent),
           });
-          setDirty(false);
+          // C9 — what was sent is now stored, so the next save compares against it.
+          setRowsState(current => markTemplatesSaved(current, sent));
+          setDirty(edits.current !== editsAtStart);
           setUnreadable(false);
           setOverwriteConfirmed(false);
 

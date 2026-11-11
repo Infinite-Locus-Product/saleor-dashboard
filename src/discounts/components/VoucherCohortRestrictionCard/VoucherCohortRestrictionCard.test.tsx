@@ -172,6 +172,13 @@ const renderCard = async () => {
   await screen.findByTestId("voucher-cohort-card");
 };
 
+/** The hook state the harness last rendered with. */
+const current = (): ReturnType<typeof useVoucherCohortRestriction> => {
+  if (!latestController) throw new Error("the harness has not rendered yet");
+
+  return latestController;
+};
+
 const rows = () => screen.queryAllByTestId("voucher-cohort-row");
 const rowInput = (row: HTMLElement, testId: string) =>
   within(row).getByTestId(testId) as HTMLInputElement;
@@ -490,5 +497,110 @@ describe("VoucherCohortRestrictionCard", () => {
     expect(saveRestrictionMock).toHaveBeenCalledTimes(1);
     await expect(first).resolves.toBe(true);
     await expect(second).resolves.toBe(true);
+  });
+
+  const clickSave = async (): Promise<void> => {
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("harness-save"));
+    });
+  };
+
+  it("C9 — a stored null set to 'promo_x', saved, then cleared and saved again sends null the second time", async () => {
+    // Arrange
+    fetchRestrictionMock.mockResolvedValue({
+      ...restriction,
+      cohorts: [{ ...restriction.cohorts[0], template_event: null }],
+    });
+    await renderCard();
+    await waitFor(() => expect(rows()).toHaveLength(1));
+
+    // Act — first save
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-template"), {
+      target: { value: "promo_x" },
+    });
+    await clickSave();
+
+    // Act — second save in the same visit
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-template"), { target: { value: "" } });
+    await clickSave();
+
+    // Assert
+    expect(saveRestrictionMock).toHaveBeenCalledTimes(2);
+    expect(saveRestrictionMock.mock.calls[0][0].cohorts[0]).toHaveProperty(
+      "template_event",
+      "promo_x",
+    );
+    expect(saveRestrictionMock.mock.calls[1][0].cohorts[0]).toHaveProperty("template_event", null);
+  });
+
+  it("C9 — stored 'a' changed to 'b', saved, then back to 'a' and saved sends 'a' the second time", async () => {
+    // Arrange
+    fetchRestrictionMock.mockResolvedValue({
+      ...restriction,
+      cohorts: [{ ...restriction.cohorts[0], template_event: "a" }],
+    });
+    await renderCard();
+    await waitFor(() => expect(rows()).toHaveLength(1));
+
+    // Act
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-template"), { target: { value: "b" } });
+    await clickSave();
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-template"), { target: { value: "a" } });
+    await clickSave();
+
+    // Assert
+    expect(saveRestrictionMock).toHaveBeenCalledTimes(2);
+    expect(saveRestrictionMock.mock.calls[0][0].cohorts[0]).toHaveProperty("template_event", "b");
+    expect(saveRestrictionMock.mock.calls[1][0].cohorts[0]).toHaveProperty("template_event", "a");
+  });
+
+  it("C9 — an edit made while the POST runs is kept unsaved; the stored value is what was sent", async () => {
+    // Arrange
+    let finish: (value: { voucherId: string; restricted: boolean }) => void = () => undefined;
+
+    saveRestrictionMock.mockReturnValueOnce(
+      new Promise(resolve => {
+        finish = resolve;
+      }),
+    );
+    await renderCard();
+    await waitFor(() => expect(rows()).toHaveLength(1));
+    fireEvent.change(rowInput(rows()[0], "voucher-cohort-template"), {
+      target: { value: "sent_x" },
+    });
+
+    const input = { voucherCode: null, voucherStart: null, voucherEnd: null };
+    let pending: Promise<boolean> = Promise.resolve(false);
+
+    // Act — save, then edit before the POST answers
+    act(() => {
+      pending = current().save(input);
+    });
+    act(() => {
+      current().setRows([{ ...current().rows[0], templateEvent: "typed_later" }]);
+    });
+    await act(async () => {
+      finish({ voucherId: VOUCHER_ID, restricted: true });
+      await pending;
+    });
+
+    // Assert
+    expect(current().rows[0]).toMatchObject({
+      templateEvent: "typed_later",
+      storedTemplateEvent: "sent_x",
+    });
+    expect(current().dirty).toBe(true);
+
+    // Act — the later edit still goes out on the next save
+    await act(async () => {
+      await current().save(input);
+    });
+
+    // Assert
+    expect(saveRestrictionMock).toHaveBeenCalledTimes(2);
+    expect(saveRestrictionMock.mock.calls[1][0].cohorts[0]).toHaveProperty(
+      "template_event",
+      "typed_later",
+    );
   });
 });
