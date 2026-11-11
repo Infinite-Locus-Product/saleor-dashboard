@@ -159,6 +159,25 @@ const templateEventPatch = (
   return { template_event: typed || null };
 };
 
+/**
+ * PR #19 C9 — after a successful save the backend stores what was sent, so each
+ * sent row's `storedTemplateEvent` becomes its sent value (trimmed, or null when
+ * blank). `sent` is the list the POST carried; `current` may hold edits made
+ * while it ran, which are kept and stay unsaved. Rows not sent are untouched.
+ */
+export const markTemplatesSaved = (
+  current: CohortRestrictionRow[],
+  sent: CohortRestrictionRow[],
+): CohortRestrictionRow[] => {
+  const savedTemplates = new Map(sent.map(row => [row.cohortId, row.templateEvent.trim() || null]));
+
+  return current.map(row =>
+    savedTemplates.has(row.cohortId)
+      ? { ...row, storedTemplateEvent: savedTemplates.get(row.cohortId) ?? null }
+      : row,
+  );
+};
+
 /** The full list for POST /cohorts/voucher-restriction; a cohort left out is removed. */
 export const toRestrictionInputs = (
   rows: CohortRestrictionRow[],
