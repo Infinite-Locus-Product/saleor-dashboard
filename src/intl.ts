@@ -627,6 +627,11 @@ export const sectionNames = defineMessages({
     id: "WlgxDT",
     description: "cohorts section name",
   },
+  campaigns: {
+    defaultMessage: "Campaigns",
+    id: "nmBV6n",
+    description: "cohort coupon campaigns section name",
+  },
   promotions: {
     id: "bHG5/d",
     defaultMessage: "Promotions",
