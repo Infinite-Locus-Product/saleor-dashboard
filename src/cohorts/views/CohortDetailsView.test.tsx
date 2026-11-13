@@ -4,6 +4,7 @@
 // failures are shown as mapped copy.
 import Wrapper from "@test/wrapper";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useIntl } from "react-intl";
 
 import { ApiError } from "../api/apiError";
 import {
@@ -103,6 +104,12 @@ const cohortFixture = (over: Partial<Cohort> = {}): Cohort => ({
   ...over,
 });
 
+/** Every formatMessage call made through the mocked useIntl (react-intl is mocked in jest). */
+const formatMessageCalls = (): unknown[][] =>
+  (useIntl as jest.Mock).mock.results.flatMap(
+    r => (r.value?.formatMessage as jest.Mock | undefined)?.mock.calls ?? [],
+  );
+
 const syncResult: CohortSyncResult = {
   cohortId: 7,
   cohortName: "include821",
@@ -163,6 +170,11 @@ describe("CohortDetailsView", () => {
       const result = await screen.findByTestId("cohort-sync-result");
 
       expect(result).toHaveTextContent(cohortMessages.syncDoneWithRemoved.defaultMessage);
+      // PR #19 C13 — the counts reach the message, not only the template choice.
+      expect(formatMessageCalls()).toContainEqual([
+        cohortMessages.syncDoneWithRemoved,
+        { added: 0, removed: 2, skipped: 1, notFound: 0, errors: 0 },
+      ]);
     });
 
     it("D1 — a static sync (no removed count) keeps the original message", async () => {
