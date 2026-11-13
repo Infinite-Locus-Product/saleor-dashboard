@@ -1,6 +1,7 @@
 /**
  * Cohort detail (TTXY-4705) + static CSV upload (TTXY-4707) + delete confirmation
- * showing dependencies (TTXY-4713, TTXY-6199) + last sync / Sync now (TTXY-6196).
+ * showing dependencies (TTXY-4713, TTXY-6199) + last sync / Sync now (TTXY-6196)
+ * + editable rules for a dynamic cohort (TTXY-4841, L5).
  */
 import { TopNav } from "@dashboard/components/AppLayout";
 import { DashboardCard } from "@dashboard/components/Card";
@@ -11,6 +12,7 @@ import { Box, Button, Input, Text } from "@saleor/macaw-ui-next";
 import React from "react";
 import { useIntl } from "react-intl";
 
+import { isApiError } from "../api/apiError";
 import {
   deleteCohort,
   fetchCohort,
@@ -22,6 +24,16 @@ import {
 import { CohortDeleteDialog } from "../components/CohortDeleteDialog";
 import { CohortErrorText } from "../components/CohortErrorText";
 import { CohortLastSync } from "../components/CohortLastSync";
+import { RuleBuilderCard } from "../components/RuleBuilder/RuleBuilderCard";
+import {
+  type EditorGroup,
+  fromRuleGroup,
+  mapServerErrors,
+  type RuleServerErrors,
+  toRuleGroup,
+  validateRuleTree,
+} from "../components/RuleBuilder/ruleModel";
+import { useRuleFields } from "../components/RuleBuilder/useRuleFields";
 import { type CohortErrorView, describeCohortError } from "../errors";
 import { formatIstDateTime, toIstDateInput } from "../lastSynced";
 import { cohortMessages, cohortTypeMessages } from "../messages";
@@ -47,6 +59,12 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
   const [syncHours, setSyncHours] = React.useState("1");
   // C17 — YYYY-MM-DD (IST day) or "" for no end date.
   const [endDate, setEndDate] = React.useState("");
+
+  // TTXY-4841 — rules of a dynamic cohort; only sent when edited.
+  const [rules, setRules] = React.useState<EditorGroup>(() => fromRuleGroup(null));
+  const [rulesDirty, setRulesDirty] = React.useState(false);
+  const [rulesSubmitted, setRulesSubmitted] = React.useState(false);
+  const [ruleServerErrors, setRuleServerErrors] = React.useState<RuleServerErrors>({});
 
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -82,6 +100,10 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
     setStatus(next.status);
     setSyncHours(String(next.sync_frequency_hours ?? 1));
     setEndDate(toIstDateInput(next.end_date));
+    setRules(fromRuleGroup(next.rules));
+    setRulesDirty(false);
+    setRulesSubmitted(false);
+    setRuleServerErrors({});
   }, []);
 
   /**
@@ -126,11 +148,32 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
     };
   }, [id, hydrate]);
 
+  const isDynamicCohort = cohort?.type === "dynamic";
+  const ruleFields = useRuleFields(isDynamicCohort);
+  const ruleErrors = React.useMemo(
+    () => (rulesSubmitted ? validateRuleTree(rules, ruleFields.fields) : {}),
+    [rulesSubmitted, rules, ruleFields.fields],
+  );
+  const sendRules = isDynamicCohort && rulesDirty;
+
+  const handleRulesChange = (next: EditorGroup) => {
+    setRules(next);
+    setRulesDirty(true);
+    setRuleServerErrors({});
+  };
+
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
 
     // C8 — the Save button is type=submit; never send a second update mid-save.
     if (saving) return;
+
+    if (sendRules) {
+      setRulesSubmitted(true);
+
+      // L4 — invalid or empty rules block the save; nothing is sent.
+      if (Object.keys(validateRuleTree(rules, ruleFields.fields)).length > 0) return;
+    }
 
     saveStarts.current += 1;
     setSaving(true);
@@ -146,11 +189,16 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
         status,
         sync_frequency_hours: Number(syncHours) || 1,
         ...(endDateChanged ? { end_date: endDate || null } : {}),
+        ...(sendRules ? { rules: toRuleGroup(rules, ruleFields.fields) } : {}),
       });
 
       hydrate(updated);
     } catch (err) {
       setError(describeCohortError("update", err));
+
+      if (sendRules && isApiError(err) && err.details.length > 0) {
+        setRuleServerErrors(mapServerErrors(rules, err.details));
+      }
     } finally {
       setSaving(false);
     }
@@ -345,6 +393,13 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
                     )}
                   />
                   <Input
+                    label={intl.formatMessage(cohortMessages.typeLabel)}
+                    value={intl.formatMessage(cohortTypeMessages[cohort.type])}
+                    disabled
+                    helperText={intl.formatMessage(cohortMessages.typeReadonlyHelp)}
+                    data-test-id="cohort-type-readonly"
+                  />
+                  <Input
                     label={intl.formatMessage(cohortMessages.descriptionLabel)}
                     value={description}
                     onChange={e => setDescription(e.target.value)}
@@ -400,6 +455,18 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
                 </Box>
               </DashboardCard.Content>
             </DashboardCard>
+            {!isStatic && (
+              <Box paddingTop={4}>
+                <RuleBuilderCard
+                  ruleFields={ruleFields}
+                  value={rules}
+                  onChange={handleRulesChange}
+                  errors={ruleErrors}
+                  serverErrors={ruleServerErrors}
+                  disabled={saving}
+                />
+              </Box>
+            )}
           </form>
 
           <DashboardCard data-test-id="cohort-sync-card">
@@ -430,12 +497,21 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
                 <Box aria-live="polite" display="grid" gap={2} data-test-id="cohort-sync-status">
                   {syncResult && (
                     <Text size={2} data-test-id="cohort-sync-result">
-                      {intl.formatMessage(cohortMessages.syncDone, {
-                        added: syncResult.added,
-                        skipped: syncResult.skipped,
-                        notFound: syncResult.notFound,
-                        errors: syncResult.errors,
-                      })}
+                      {/* D1 — dynamic cohorts also report members removed for no longer matching */}
+                      {syncResult.removed === undefined
+                        ? intl.formatMessage(cohortMessages.syncDone, {
+                            added: syncResult.added,
+                            skipped: syncResult.skipped,
+                            notFound: syncResult.notFound,
+                            errors: syncResult.errors,
+                          })
+                        : intl.formatMessage(cohortMessages.syncDoneWithRemoved, {
+                            added: syncResult.added,
+                            removed: syncResult.removed,
+                            skipped: syncResult.skipped,
+                            notFound: syncResult.notFound,
+                            errors: syncResult.errors,
+                          })}
                     </Text>
                   )}
                   {syncError && <CohortErrorText error={syncError} testId="cohort-sync-error" />}

@@ -36,6 +36,7 @@ import { useBackLinkWithState } from "@dashboard/hooks/useBackLinkWithState";
 import { type UseListSettings } from "@dashboard/hooks/useListSettings";
 import { type LocalPagination } from "@dashboard/hooks/useLocalPaginator";
 import useNavigator from "@dashboard/hooks/useNavigator";
+import { useNotifier } from "@dashboard/hooks/useNotifier";
 import { TranslationsButton } from "@dashboard/translations/components/TranslationsButton/TranslationsButton";
 import { languageEntityUrl, TranslatableEntities } from "@dashboard/translations/urls";
 import { useCachedLocales } from "@dashboard/translations/useCachedLocales";
@@ -47,6 +48,7 @@ import { FormattedMessage, useIntl } from "react-intl";
 
 import { splitDateTime } from "../../../misc";
 import { type ChannelProps, type ListProps, type TabListActions } from "../../../types";
+import { isVoucherSaveDisabled } from "../../views/VoucherDetails/cohortRestrictionSubmit";
 import DiscountCategories from "../DiscountCategories";
 import DiscountCollections from "../DiscountCollections";
 import DiscountDates from "../DiscountDates";
@@ -55,6 +57,10 @@ import DiscountVariants from "../DiscountVariants";
 import { VoucherCodes } from "../VoucherCodes";
 import { type VoucherCode } from "../VoucherCodesDatagrid/types";
 import { type GenerateMultipleVoucherCodeFormData } from "../VoucherCodesGenerateDialog";
+import { voucherCohortMessages } from "../VoucherCohortRestrictionCard/messages";
+import { voucherWindowFromDates } from "../VoucherCohortRestrictionCard/model";
+import { type VoucherCohortRestrictionController } from "../VoucherCohortRestrictionCard/useVoucherCohortRestriction";
+import { VoucherCohortRestrictionCard } from "../VoucherCohortRestrictionCard/VoucherCohortRestrictionCard";
 import VoucherInfo from "../VoucherInfo";
 import VoucherLimits from "../VoucherLimits";
 import VoucherRequirements from "../VoucherRequirements";
@@ -132,6 +138,8 @@ interface VoucherDetailsPageProps
   onVoucherCodesSettingsChange: UseListSettings["updateListSettings"];
   voucherCodesPagination: LocalPagination;
   voucherCodesSettings: UseListSettings["settings"];
+  /** TTXY-4841 — "Restrict to cohort(s)"; the card is shown only when provided. */
+  cohortRestriction?: VoucherCohortRestrictionController;
 }
 
 const CategoriesTab = Tab(VoucherDetailsPageTab.categories);
@@ -183,8 +191,10 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
   voucherCodesPagination,
   onVoucherCodesSettingsChange,
   voucherCodesSettings,
+  cohortRestriction,
 }: VoucherDetailsPageProps) => {
   const intl = useIntl();
+  const notify = useNotifier();
   const { lastUsedLocaleOrFallback } = useCachedLocales();
   const navigate = useNavigator();
   const { user } = useUser();
@@ -457,6 +467,14 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
                 isNewVoucher={false}
               />
               <DiscountDates data={data} disabled={disabled} errors={errors} onChange={change} />
+              {cohortRestriction && (
+                <VoucherCohortRestrictionCard
+                  controller={cohortRestriction}
+                  voucherWindow={voucherWindowFromDates(data)}
+                  disabled={disabled}
+                  onChange={triggerChange}
+                />
+              )}
               <Metadata data={data} onChange={changeMetadata} />
             </DetailPageLayout.Content>
             <DetailPageLayout.RightSidebar>
@@ -488,8 +506,23 @@ const VoucherDetailsPage: React.FC<VoucherDetailsPageProps> = ({
               <Savebar.CancelButton onClick={() => navigate(voucherListBackLink)} />
               <Savebar.ConfirmButton
                 transitionState={saveButtonBarState}
-                onClick={() => handleSubmit(data)}
-                disabled={disabled}
+                onClick={() => {
+                  // L7 / PR #19 C3 — an invalid cohort row blocks the save, changed or not.
+                  if (
+                    cohortRestriction &&
+                    !cohortRestriction.validate(voucherWindowFromDates(data))
+                  ) {
+                    notify({
+                      status: "error",
+                      text: intl.formatMessage(voucherCohortMessages.fixBeforeSaving),
+                    });
+
+                    return;
+                  }
+
+                  handleSubmit(data);
+                }}
+                disabled={isVoucherSaveDisabled(disabled, cohortRestriction)}
               />
             </Savebar>
           </DetailPageLayout>
