@@ -497,12 +497,21 @@ export const CohortDetailsView: React.FC<CohortDetailsViewProps> = ({ id }) => {
                 <Box aria-live="polite" display="grid" gap={2} data-test-id="cohort-sync-status">
                   {syncResult && (
                     <Text size={2} data-test-id="cohort-sync-result">
-                      {intl.formatMessage(cohortMessages.syncDone, {
-                        added: syncResult.added,
-                        skipped: syncResult.skipped,
-                        notFound: syncResult.notFound,
-                        errors: syncResult.errors,
-                      })}
+                      {/* D1 — dynamic cohorts also report members removed for no longer matching */}
+                      {syncResult.removed === undefined
+                        ? intl.formatMessage(cohortMessages.syncDone, {
+                            added: syncResult.added,
+                            skipped: syncResult.skipped,
+                            notFound: syncResult.notFound,
+                            errors: syncResult.errors,
+                          })
+                        : intl.formatMessage(cohortMessages.syncDoneWithRemoved, {
+                            added: syncResult.added,
+                            removed: syncResult.removed,
+                            skipped: syncResult.skipped,
+                            notFound: syncResult.notFound,
+                            errors: syncResult.errors,
+                          })}
                     </Text>
                   )}
                   {syncError && <CohortErrorText error={syncError} testId="cohort-sync-error" />}

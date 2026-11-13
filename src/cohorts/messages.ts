@@ -270,6 +270,13 @@ export const cohortMessages = defineMessages({
     id: "7ifD7e",
     description: "result of a manual cohort sync",
   },
+  syncDoneWithRemoved: {
+    defaultMessage:
+      "Synced: {added} tagged, {removed} removed, {skipped} already tagged, {notFound} not found, {errors} failed",
+    id: "zqSD8t",
+    description:
+      "result of a manual dynamic-cohort sync, including members removed because they stopped matching",
+  },
   syncError: {
     defaultMessage: "Cohort sync failed",
     id: "ri8hvr",

@@ -35,6 +35,8 @@ export interface CohortSyncResult {
   skipped: number;
   notFound: number;
   errors: number;
+  /** Dynamic cohorts only: members untagged because they stopped matching the rules. */
+  removed?: number;
 }
 
 /** A coupon whose restriction references the cohort (GET /cohorts/:id/coupons). */
