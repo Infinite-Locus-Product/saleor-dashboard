@@ -12385,6 +12385,10 @@
     "context": "cta button label",
     "string": "Explore Updates"
   },
+  "zqSD8t": {
+    "context": "result of a manual dynamic-cohort sync, including members removed because they stopped matching",
+    "string": "Synced: {added} tagged, {removed} removed, {skipped} already tagged, {notFound} not found, {errors} failed"
+  },
   "zqarUF": {
     "context": "modal information under title",
     "string": "Select an address you want to use from the list below"

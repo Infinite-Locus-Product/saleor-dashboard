@@ -150,6 +150,36 @@ describe("CohortDetailsView", () => {
   });
 
   describe("Sync now", () => {
+    it("D1 — a dynamic sync shows how many members were removed", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(cohortFixture());
+      syncCohortMock.mockResolvedValue({ ...syncResult, added: 0, skipped: 1, removed: 2 });
+      await renderView();
+
+      // Act
+      fireEvent.click(syncButton());
+
+      // Assert
+      const result = await screen.findByTestId("cohort-sync-result");
+
+      expect(result).toHaveTextContent(cohortMessages.syncDoneWithRemoved.defaultMessage);
+    });
+
+    it("D1 — a static sync (no removed count) keeps the original message", async () => {
+      // Arrange
+      fetchCohortMock.mockResolvedValue(cohortFixture());
+      syncCohortMock.mockResolvedValue(syncResult);
+      await renderView();
+
+      // Act
+      fireEvent.click(syncButton());
+
+      // Assert
+      const result = await screen.findByTestId("cohort-sync-result");
+
+      expect(result).toHaveTextContent(cohortMessages.syncDone.defaultMessage);
+    });
+
     it("C1 — keeps an unsaved description edit and refreshes the last-sync display", async () => {
       // Arrange
       fetchCohortMock.mockResolvedValueOnce(cohortFixture()).mockResolvedValueOnce(
