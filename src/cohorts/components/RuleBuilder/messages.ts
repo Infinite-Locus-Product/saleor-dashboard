@@ -182,11 +182,6 @@ const fieldLabels = defineMessages({
     id: "S4BiX3",
     description: "cohort rule field: return count",
   },
-  transaction_count: {
-    defaultMessage: "Prepaid transactions",
-    id: "Jn6Bk/",
-    description: "cohort rule field: transaction count",
-  },
   product_purchased: {
     defaultMessage: "Product purchased",
     id: "E92Aqv",

@@ -26,7 +26,7 @@ export const campaignFunnelFixture = (over: Partial<CampaignFunnel> = {}): Campa
         tagged: 900,
         sent: 880,
         delivered: null,
-        clicked: 120,
+        clicked: null,
         added_to_cart: 60,
         code_entered: 45,
         applied: 40,
@@ -58,6 +58,7 @@ export const campaignFunnelFixture = (over: Partial<CampaignFunnel> = {}): Campa
     redemption_rate: 0.0455,
     incremental_gmv: 26100,
   },
-  tracked: { delivered: false, clicked: true },
+  // Product, 15 Nov 2026: Delivered and Clicked are tracked in KwikEngage only.
+  tracked: { delivered: false, clicked: false },
   ...over,
 });

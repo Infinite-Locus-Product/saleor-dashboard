@@ -88,6 +88,10 @@ describe("CampaignDetailsView", () => {
     expect(within(stageRow("clicked")).getByTestId("funnel-holdout-count")).toHaveTextContent(
       "Not tracked",
     );
+    // Product, 15 Nov: Clicked is tracked in KwikEngage only, so the messaged group says so too.
+    expect(within(stageRow("clicked")).getByTestId("funnel-messaged-count")).toHaveTextContent(
+      "Not tracked",
+    );
     // a real 0 stays 0
     expect(within(stageRow("repeat_order")).getByTestId("funnel-holdout-count")).toHaveTextContent(
       "0",
