@@ -26,8 +26,8 @@ describe("buildFunnelRows", () => {
 
     // Assert — sent 880 / tagged 900
     expect(byStage.sent.messaged.conversion).toBeCloseTo(880 / 900);
-    // clicked 120 / sent 880 (delivered is not tracked, so it is skipped)
-    expect(byStage.clicked.messaged.conversion).toBeCloseTo(120 / 880);
+    // added_to_cart 60 / sent 880 (delivered and clicked are tracked in KwikEngage, so skipped)
+    expect(byStage.added_to_cart.messaged.conversion).toBeCloseTo(60 / 880);
     // holdout added_to_cart 4 / tagged 100 (sent, delivered, clicked are null)
     expect(byStage.added_to_cart.holdout.conversion).toBeCloseTo(4 / 100);
     // the first stage has no previous stage

@@ -15,7 +15,7 @@ export default meta;
 
 type Story = StoryObj<typeof CampaignFunnelTable>;
 
-// LLD §4.5 example: delivered is not tracked (L10) and shows "Not tracked".
+// LLD §4.5 example: delivered and clicked are tracked in KwikEngage, so both show "Not tracked" (L10).
 export const MessagedVsHoldout: Story = {
   args: { rows: buildFunnelRows(funnel), groups: funnel.groups },
 };

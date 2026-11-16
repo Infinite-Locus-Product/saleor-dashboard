@@ -4225,10 +4225,6 @@
     "context": "product availability publish date",
     "string": "Publish on"
   },
-  "Jn6Bk/": {
-    "context": "cohort rule field: transaction count",
-    "string": "Prepaid transactions"
-  },
   "Jo01VZ": {
     "context": "bought by label",
     "string": "Bought by"
