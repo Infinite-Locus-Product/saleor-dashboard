@@ -1,0 +1,30 @@
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: var(--mu-spacing-2) var(--mu-spacing-3);
+  border-bottom: 1px solid var(--mu-colors-border-default1);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table .number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.select {
+  height: 36px;
+  padding: 0 var(--mu-spacing-2);
+  border: 1px solid var(--mu-colors-border-default1);
+  border-radius: var(--mu-border-radius-3);
+  background-color: var(--mu-colors-background-default1);
+  color: var(--mu-colors-text-default1);
+}

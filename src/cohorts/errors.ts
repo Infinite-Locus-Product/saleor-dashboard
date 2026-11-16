@@ -14,7 +14,13 @@ export type CohortAction =
   | "upload"
   | "sync"
   | "coupons"
-  | "delete";
+  | "delete"
+  | "ruleFields"
+  | "restrictionLoad"
+  | "restrictionSave"
+  | "campaigns"
+  | "funnel"
+  | "csv";
 
 export interface CohortErrorView {
   message: MessageDescriptor;
@@ -31,6 +37,21 @@ const fallbackMessages: Record<CohortAction, MessageDescriptor> = {
   sync: cohortMessages.syncError,
   coupons: cohortMessages.deleteCouponsError,
   delete: cohortMessages.deleteError,
+  ruleFields: cohortMessages.ruleFieldsError,
+  restrictionLoad: cohortMessages.restrictionLoadError,
+  restrictionSave: cohortMessages.restrictionSaveError,
+  campaigns: cohortMessages.campaignsError,
+  funnel: cohortMessages.funnelError,
+  csv: cohortMessages.csvExportError,
+};
+
+/** TTXY-4841 — machine-readable 400 codes from the cohort / restriction routes (LLD §4.1, §7). */
+const codeMessages: Partial<Record<string, MessageDescriptor>> = {
+  dynamic_disabled: cohortMessages.dynamicDisabled,
+  invalid_rule: cohortMessages.invalidRules,
+  rules_required: cohortMessages.rulesRequired,
+  rules_not_allowed: cohortMessages.rulesNotAllowed,
+  invalid_restriction: cohortMessages.invalidRestriction,
 };
 
 const mappedMessage = (action: CohortAction, status: number): MessageDescriptor | null => {
@@ -44,6 +65,16 @@ const mappedMessage = (action: CohortAction, status: number): MessageDescriptor 
 
   if (action === "load" && status === 404) return cohortMessages.notFound;
 
+  if (action === "funnel" && status === 404) return cohortMessages.campaignNotFound;
+
+  // The whole cohort API answers 404 while COHORT_COUPONS_ENABLED is off.
+  if (
+    (action === "campaigns" || action === "ruleFields" || action === "restrictionLoad") &&
+    status === 404
+  ) {
+    return cohortMessages.cohortsNotEnabled;
+  }
+
   if (action === "sync" && status === 409) return cohortMessages.syncNotAllowed;
 
   // The dialog already lists the coupons, so the server's list is not repeated.
@@ -56,6 +87,13 @@ const mappedMessage = (action: CohortAction, status: number): MessageDescriptor 
 
 export const describeCohortError = (action: CohortAction, error: unknown): CohortErrorView => {
   if (isApiError(error)) {
+    const byCode =
+      error.status !== NETWORK_ERROR_STATUS && error.code ? codeMessages[error.code] : undefined;
+
+    // PR #19 C7 — a code-mapped 400 keeps the server text (e.g. which cohort and
+    // field invalid_restriction is about) as detail under the translated message.
+    if (byCode) return { message: byCode, detail: error.serverMessage };
+
     const mapped = mappedMessage(action, error.status);
 
     if (mapped) return { message: mapped, detail: null };

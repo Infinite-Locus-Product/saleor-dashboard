@@ -11,6 +11,9 @@
  * A request that never got a response becomes ApiError status 0.
  */
 import {
+  type CampaignFunnel,
+  type CampaignListParams,
+  type CampaignListResponse,
   type Cohort,
   type CohortCreateInput,
   type CohortIngestSummary,
@@ -19,8 +22,12 @@ import {
   type CohortListResponse,
   type CohortSyncResult,
   type CohortUpdateInput,
+  type RuleFieldDefinition,
+  type VoucherCohortRestriction,
+  type VoucherCohortRestrictionInput,
+  type VoucherCohortRestrictionResult,
 } from "../types";
-import { ApiError, NETWORK_ERROR_STATUS } from "./apiError";
+import { ApiError, type ApiErrorDetail, NETWORK_ERROR_STATUS } from "./apiError";
 import { getTenexuBaseUrl } from "./env";
 
 const AUTH_TOKEN_KEY = "_saleor_auth_token";
@@ -97,13 +104,40 @@ async function unwrap<T>(res: Response, sentRefreshToken: string): Promise<T> {
   }
 
   if (!res.ok || json?.success === false) {
-    throw new ApiError({
-      status: res.status,
-      serverMessage: typeof json?.error === "string" && json.error ? json.error : null,
-    });
+    throw toApiError(res.status, json);
   }
 
   return json?.data as T;
+}
+
+const isDetail = (d: any): d is ApiErrorDetail =>
+  !!d && typeof d === "object" && typeof d.path === "string";
+
+const nonEmptyString = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
+
+/**
+ * TTXY-4841 — LLD §4.1 gives rule errors as `{code: "invalid_rule", details: [{path, message}]}`
+ * without fixing where they sit in the `{success, data, error}` envelope, so the
+ * code/details are read from `error` (object form), the top level, or `data`.
+ */
+function toApiError(status: number, json: any): ApiError {
+  const errorField = json?.error;
+  const errorObject = errorField && typeof errorField === "object" ? errorField : null;
+  const sources = [errorObject, json, json?.data].filter(
+    (source): source is Record<string, any> => !!source && typeof source === "object",
+  );
+  const code = sources.map(source => nonEmptyString(source.code)).find(Boolean) ?? null;
+  const rawDetails = sources.map(source => source.details).find(Array.isArray) ?? [];
+
+  return new ApiError({
+    status,
+    serverMessage: nonEmptyString(errorField) ?? nonEmptyString(errorObject?.message),
+    code,
+    details: (rawDetails as unknown[]).filter(isDetail).map(d => ({
+      path: d.path,
+      message: typeof d.message === "string" ? d.message : "",
+    })),
+  });
 }
 
 /** fetch, with "no response at all" (fetch's TypeError) reported as ApiError status 0. */
@@ -194,3 +228,78 @@ export const fetchCohortCoupons = async (id: string | number): Promise<CohortLin
 
   return data?.coupons ?? [];
 };
+
+// --- Phases 2–4 (TTXY-4841, LLD §4.2–§4.6) -----------------------------------
+
+/** Field catalog for the rule builder; the dashboard has no hard-coded fields. */
+export const fetchRuleFields = (): Promise<RuleFieldDefinition[]> =>
+  apiRequest<RuleFieldDefinition[]>("GET", "/cohorts/rule-fields");
+
+export const fetchVoucherRestriction = (voucherId: string): Promise<VoucherCohortRestriction> =>
+  apiRequest<VoucherCohortRestriction>(
+    "GET",
+    `/cohorts/voucher-restriction/${encodeURIComponent(voucherId)}`,
+  );
+
+/** Replaces the voucher's whole cohort list; a cohort left out is removed (L8). */
+export const saveVoucherRestriction = (
+  input: VoucherCohortRestrictionInput,
+): Promise<VoucherCohortRestrictionResult> =>
+  apiRequest<VoucherCohortRestrictionResult>("POST", "/cohorts/voucher-restriction", input);
+
+export function buildCampaignListQuery(params: CampaignListParams = {}): string {
+  const qs = new URLSearchParams();
+
+  if (params.page !== undefined) qs.set("page", String(params.page));
+
+  if (params.pageSize !== undefined) qs.set("pageSize", String(params.pageSize));
+
+  if (params.status) qs.set("status", params.status);
+
+  const query = qs.toString();
+
+  return query ? `?${query}` : "";
+}
+
+export const fetchCampaigns = (params: CampaignListParams = {}): Promise<CampaignListResponse> =>
+  apiRequest<CampaignListResponse>("GET", `/cohorts/campaigns${buildCampaignListQuery(params)}`);
+
+export const fetchCampaignFunnel = (id: string | number): Promise<CampaignFunnel> =>
+  apiRequest<CampaignFunnel>("GET", `/cohorts/campaigns/${id}/funnel`);
+
+export interface CsvDownload {
+  blob: Blob;
+  filename: string;
+}
+
+const filenameFromDisposition = (header: string | null): string | null => {
+  const match = header?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+
+  return match ? decodeURIComponent(match[1].trim()) : null;
+};
+
+/**
+ * GET /cohorts/campaigns/:id/funnel.csv with the same session headers as every
+ * other call (a plain <a href> could not send them). Errors use the JSON envelope.
+ */
+export async function downloadCampaignFunnelCsv(id: string | number): Promise<CsvDownload> {
+  const auth = getAuthHeaders();
+  const res = await send(`/cohorts/campaigns/${id}/funnel.csv`, {
+    method: "GET",
+    headers: { Accept: "text/csv", ...auth.headers },
+  });
+
+  if (!res.ok) {
+    // Throws the enveloped error (status + server text).
+    await unwrap<never>(res, auth.refreshToken);
+  }
+
+  absorbRefreshedToken(res, auth.refreshToken);
+
+  return {
+    blob: await res.blob(),
+    filename:
+      filenameFromDisposition(res.headers.get("Content-Disposition")) ??
+      `campaign-${id}-funnel.csv`,
+  };
+}

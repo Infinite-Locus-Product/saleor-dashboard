@@ -1,0 +1,18 @@
+.metrics {
+  display: grid;
+  gap: var(--mu-spacing-2);
+  margin: 0;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--mu-spacing-4);
+  padding-bottom: var(--mu-spacing-2);
+  border-bottom: 1px solid var(--mu-colors-border-default1);
+}
+
+.metric dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}

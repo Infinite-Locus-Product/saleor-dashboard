@@ -14,6 +14,8 @@ import ChannelsAvailabilityDialog from "@dashboard/components/ChannelsAvailabili
 import { WindowTitle } from "@dashboard/components/WindowTitle";
 import { DEFAULT_INITIAL_SEARCH_DATA, PAGINATE_BY } from "@dashboard/config";
 import DiscountCountrySelectDialog from "@dashboard/discounts/components/DiscountCountrySelectDialog";
+import { voucherCohortMessages } from "@dashboard/discounts/components/VoucherCohortRestrictionCard/messages";
+import { useVoucherCohortRestriction } from "@dashboard/discounts/components/VoucherCohortRestrictionCard/useVoucherCohortRestriction";
 import VoucherDetailsPage, {
   VoucherDetailsPageTab,
   type VoucherTabItemsCount,
@@ -65,6 +67,7 @@ import { useMemo, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 
 import { maybe } from "../../../misc";
+import { createCohortRestrictionSubmitHandler } from "./cohortRestrictionSubmit";
 import { createUpdateHandler } from "./handlers";
 import { useVoucherCodes } from "./hooks/useVoucherCodes";
 import { VOUCHER_UPDATE_FORM_ID } from "./types";
@@ -292,6 +295,17 @@ const VoucherDetails = ({ id, params }: VoucherDetailsProps) => {
     variables => updateMetadata({ variables }),
     variables => updatePrivateMetadata({ variables }),
   );
+  // TTXY-4841 — "Restrict to cohort(s)" is saved through TenexuBackend after the voucher.
+  const cohortRestriction = useVoucherCohortRestriction(id);
+  const handleSubmitWithCohorts = createCohortRestrictionSubmitHandler(
+    handleSubmit,
+    cohortRestriction,
+    () =>
+      notify({
+        status: "error",
+        text: intl.formatMessage(voucherCohortMessages.restrictionNotSaved),
+      }),
+  );
   const tabPageInfo =
     activeTab === VoucherDetailsPageTab.categories
       ? maybe(() => data.voucher.categories.pageInfo)
@@ -433,7 +447,8 @@ const VoucherDetails = ({ id, params }: VoucherDetailsProps) => {
         activeTab={activeTab}
         tabItemsCount={tabItemsCount}
         onTabClick={changeTab}
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmitWithCohorts}
+        cohortRestriction={cohortRestriction}
         onRemove={() => openModal("remove")}
         openChannelsModal={handleChannelsModalOpen}
         onChannelsChange={setCurrentChannels}
