@@ -37,7 +37,7 @@ const FUNNEL = {
         tagged: 900,
         sent: 880,
         delivered: null,
-        clicked: 120,
+        clicked: null,
         added_to_cart: 60,
         code_entered: 45,
         applied: 40,
@@ -69,7 +69,8 @@ const FUNNEL = {
     redemption_rate: 0.0455,
     incremental_gmv: 26100,
   },
-  tracked: { delivered: false, clicked: true },
+  // Product, 15 Nov 2026: Delivered and Clicked are tracked in KwikEngage only.
+  tracked: { delivered: false, clicked: false },
 };
 
 const CSV = "group,stage,count,conversion_from_previous\nmessaged,tagged,900,\n";
@@ -153,6 +154,7 @@ test.describe("with MANAGE_DISCOUNTS", () => {
     });
     await expect(stageCell(page, "delivered", "funnel-holdout-count")).toHaveText("Not tracked");
     await expect(stageCell(page, "sent", "funnel-holdout-count")).toHaveText("Not tracked");
+    await expect(stageCell(page, "clicked", "funnel-messaged-count")).toHaveText("Not tracked");
     await expect(stageCell(page, "repeat_order", "funnel-holdout-count")).toHaveText("0");
   });
 
