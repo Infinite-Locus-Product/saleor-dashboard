@@ -38,6 +38,9 @@ describe("buildFunnelRows", () => {
     // Arrange
     const funnel = campaignFunnelFixture({ tracked: { delivered: false, clicked: false } });
 
+    // PR #19 C15 — a stage flagged untracked stays hidden even if a count comes back (e.g. old rows).
+    funnel.groups.messaged.stages.clicked = 120;
+
     // Act
     const byStage = Object.fromEntries(buildFunnelRows(funnel).map(row => [row.stage, row]));
 
