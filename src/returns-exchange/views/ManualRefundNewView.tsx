@@ -125,6 +125,8 @@ export const ManualRefundNewView = () => {
   // Step 4 — confirm
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // The MRF that already holds this delivery note, when Confirm is refused for that.
+  const [existingMrfId, setExistingMrfId] = useState<string | null>(null);
   // Stops a second click landing before the disabled button re-renders.
   const confirmingRef = useRef(false);
 
@@ -173,6 +175,7 @@ export const ManualRefundNewView = () => {
     confirmingRef.current = true;
     setSubmitting(true);
     setSubmitError(null);
+    setExistingMrfId(null);
 
     try {
       const mrf = await createManualRefund({
@@ -183,6 +186,11 @@ export const ManualRefundNewView = () => {
 
       navigate(manualRefundDetailPath(mrf.mrf_id));
     } catch (err: unknown) {
+      // The backend refused because the delivery note is already refunded (e.g. from
+      // another tab): its message says who raised it, so show it instead of opening the MRF.
+      const alreadyRaised =
+        isManualReturnApiError(err) &&
+        (err.code === "NOT_ELIGIBLE" || err.code === "ALREADY_LOCKED");
       // The refund may exist even though the response failed (e.g. a proxy timeout):
       // if this delivery note is now locked by an MRF, open it instead of an error.
       const fresh = await lookupOrderForManualRefund(lookup.order_number).catch(() => null);
@@ -190,7 +198,7 @@ export const ManualRefundNewView = () => {
         note => note.fulfillmentId === selected.fulfillmentId,
       )?.lock?.mrfId;
 
-      if (lockedBy) {
+      if (lockedBy && !alreadyRaised) {
         navigate(manualRefundDetailPath(lockedBy));
 
         return;
@@ -198,6 +206,7 @@ export const ManualRefundNewView = () => {
 
       // The backend lock blocks a real repeat, so retrying after an error is safe.
       setSubmitError(getErrorMessage(err, "The refund could not be created"));
+      setExistingMrfId(lockedBy ?? null);
       confirmingRef.current = false;
       setSubmitting(false);
     }
@@ -356,6 +365,17 @@ export const ManualRefundNewView = () => {
             >
               {submitError}
             </Text>
+          )}
+          {existingMrfId && (
+            <Button
+              variant="secondary"
+              size="small"
+              marginTop={2}
+              onClick={() => navigate(manualRefundDetailPath(existingMrfId))}
+              data-test-id="mrf-open-existing"
+            >
+              {`Open ${existingMrfId}`}
+            </Button>
           )}
         </Box>
       )}

@@ -165,6 +165,46 @@ describe("ManualRefundNewView", () => {
     expect(screen.queryByTestId("mrf-submit-error")).not.toBeInTheDocument();
   });
 
+  it("shows who raised it when the refund was already raised from another tab", async () => {
+    // Arrange
+    const message =
+      "Manual refund MRF-12 was already raised by Agent One on 22 Oct 2026 for ₹1,000. Follow it up on MRF-12.";
+
+    lookupMock.mockResolvedValueOnce(lookup([note()])).mockResolvedValueOnce(
+      lookup([
+        note({
+          eligible: false,
+          lock: {
+            refundedBy: "Agent One",
+            at: "2026-10-22T10:00:00Z",
+            amount: 1000,
+            mrfId: "MRF-12",
+          },
+        }),
+      ]),
+    );
+    createMock.mockRejectedValue(
+      createManualReturnApiError({ message, status: 422, code: "NOT_ELIGIBLE" }),
+    );
+    render(<ManualRefundNewView />);
+    search();
+    fireEvent.click(await screen.findByTestId("mrf-dn-card"));
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    fireEvent.change(screen.getByTestId("mrf-reason"), {
+      target: { value: "Courier missed the pickup" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    // Act
+    fireEvent.click(screen.getByTestId("mrf-confirm-button"));
+
+    // Assert
+    expect(await screen.findByTestId("mrf-submit-error")).toHaveTextContent(message);
+    expect(mockNavigate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("mrf-open-existing"));
+    expect(mockNavigate).toHaveBeenCalledWith(manualRefundDetailPath("MRF-12"));
+  });
+
   it("shows the error when Confirm fails and nothing was created", async () => {
     // Arrange
     lookupMock.mockResolvedValue(lookup([note()]));
