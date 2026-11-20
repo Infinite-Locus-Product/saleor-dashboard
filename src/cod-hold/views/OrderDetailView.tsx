@@ -1,29 +1,45 @@
 import ActionDialog from "@dashboard/components/ActionDialog";
 import { useAddressValidation } from "@dashboard/components/AddressEdit/useAddressValidation";
 import useNavigator from "@dashboard/hooks/useNavigator";
-import { Box, Button, Combobox, Input, Skeleton, Text } from "@saleor/macaw-ui-next";
+import { Box, Button, Combobox, Input, Select, Skeleton, Text } from "@saleor/macaw-ui-next";
 import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 
 import {
   fetchHeldOrderDetail,
   submitCancel,
+  submitLogCall,
+  submitMarkUnreachable,
   submitRelease,
   submitSendPaymentLink,
   submitUpdateAddress,
 } from "../api/codHoldApi";
+import { CxStatusChip } from "../components/CxStatusChip";
 import { SLABadge } from "../components/SLABadge";
 import { StatusChip } from "../components/StatusChip";
-import { type CodHoldOrderDetail, type CodHoldShippingAddress } from "../types";
+import {
+  type CodHoldCallOutcome,
+  type CodHoldOrderDetail,
+  type CodHoldShippingAddress,
+} from "../types";
 import { codHoldQueuePath } from "../urls";
 
 interface OrderDetailViewProps {
   holdId: string;
 }
 
-type ActiveAction = "cancel" | "updateAddress" | "sendPaymentLink" | "release" | null;
+type ActiveAction =
+  | "cancel"
+  | "updateAddress"
+  | "sendPaymentLink"
+  | "release"
+  | "logCall"
+  | "markUnreachable"
+  | null;
 
 const EMPTY_ADDRESS: CodHoldShippingAddress = {
+  firstName: "",
+  lastName: "",
   streetAddress1: "",
   streetAddress2: "",
   city: "",
@@ -31,6 +47,21 @@ const EMPTY_ADDRESS: CodHoldShippingAddress = {
   countryArea: "",
   country: "IN",
   phone: "",
+};
+
+const OUTCOME_OPTIONS: { value: CodHoldCallOutcome | ""; label: string }[] = [
+  { value: "", label: "Select outcome…" },
+  { value: "ANSWERED", label: "Answered" },
+  { value: "NO_ANSWER", label: "No Answer" },
+  { value: "BUSY", label: "Busy" },
+  { value: "CALLBACK_REQUESTED", label: "Callback Requested" },
+];
+
+const OUTCOME_LABELS: Record<CodHoldCallOutcome, string> = {
+  ANSWERED: "Answered",
+  NO_ANSWER: "No Answer",
+  BUSY: "Busy",
+  CALLBACK_REQUESTED: "Callback Requested",
 };
 
 export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
@@ -47,6 +78,35 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
   const { areas: countryAreaChoices, getDisplayValue: getCountryAreaDisplayValue } =
     useAddressValidation(address.country);
 
+  // Log Call dialog state
+  const [callOutcome, setCallOutcome] = useState<CodHoldCallOutcome | "">("");
+  const [customerDecision, setCustomerDecision] = useState("");
+  const [callNotes, setCallNotes] = useState("");
+  const [callbackAt, setCallbackAt] = useState("");
+
+  // Shared by the initial load and by re-opening the Update Address dialog
+  // (M1) — always derived fresh from the live snapshot, never left as
+  // whatever the form happened to hold from a previous, unsaved edit.
+  const buildAddressFromSnapshot = (
+    snapshot: CodHoldOrderDetail["orderSnapshot"] | undefined,
+  ): CodHoldShippingAddress => {
+    const a = snapshot?.shippingAddress;
+
+    if (!a) return EMPTY_ADDRESS;
+
+    return {
+      firstName: a.firstName || "",
+      lastName: a.lastName || "",
+      streetAddress1: a.streetAddress1,
+      streetAddress2: a.streetAddress2,
+      city: a.city,
+      postalCode: a.postalCode,
+      countryArea: a.countryArea || "",
+      country: a.country?.code || "IN",
+      phone: a.phone,
+    };
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -55,20 +115,7 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
       const result = await fetchHeldOrderDetail(holdId);
 
       setDetail(result);
-
-      if (result.orderSnapshot?.shippingAddress) {
-        const a = result.orderSnapshot.shippingAddress;
-
-        setAddress({
-          streetAddress1: a.streetAddress1,
-          streetAddress2: a.streetAddress2,
-          city: a.city,
-          postalCode: a.postalCode,
-          countryArea: a.countryArea || "",
-          country: a.country?.code || "IN",
-          phone: a.phone,
-        });
-      }
+      setAddress(buildAddressFromSnapshot(result.orderSnapshot));
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -81,27 +128,97 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
   }, [load]);
 
   const closeDialog = () => {
+    // M2 — a request is still in flight; closing now would both race the
+    // in-progress submit and strand its eventual error with nothing open to
+    // show it. Block the close until the request settles.
+    if (submitting) return;
+
     setActiveAction(null);
     setNote("");
     setActionError(null);
     setPaymentLinkUrl(null);
+    setCallOutcome("");
+    setCustomerDecision("");
+    setCallNotes("");
+    setCallbackAt("");
+  };
+
+  // M2 — every dialog open clears any actionError left over from a previous
+  // dialog, so a stale error can't reappear on an unrelated action. Also
+  // handles M1's address refill for Update Address specifically.
+  const openDialog = (action: Exclude<ActiveAction, null>) => {
+    setActionError(null);
+
+    if (action === "updateAddress") {
+      setAddress(buildAddressFromSnapshot(detail?.orderSnapshot));
+    }
+
+    setActiveAction(action);
   };
 
   const isHeld = detail?.status === "HELD";
+  // Confirm/Cancel/Convert-to-Prepaid/Change-Address stay disabled until at
+  // least one call has been logged with outcome Answered (AC-36: all four
+  // enable together the moment the gate is satisfied). Trust the backend's
+  // callLogGateSatisfied field rather than recomputing it from callLogs.
+  const gateSatisfied = detail?.callLogGateSatisfied ?? false;
+  const resolutionActionsDisabled = !isHeld || !gateSatisfied;
+
+  const validateLogCall = (): string | null => {
+    if (!callOutcome) return "Please select an outcome.";
+
+    if (callOutcome === "ANSWERED" && !customerDecision.trim()) {
+      return "Customer decision is required when the outcome is Answered.";
+    }
+
+    if (callOutcome === "CALLBACK_REQUESTED" && !callbackAt) {
+      return "Callback date/time is required when the outcome is Callback Requested.";
+    }
+
+    if (!callNotes.trim()) return "Notes are required.";
+
+    return null;
+  };
 
   const handleConfirm = async () => {
     if (!detail) return;
 
-    if (activeAction !== "release" && !note.trim()) {
+    const requiresNote =
+      activeAction === "cancel" ||
+      activeAction === "updateAddress" ||
+      activeAction === "sendPaymentLink";
+
+    if (requiresNote && !note.trim()) {
       setActionError("A note is required for this action.");
 
       return;
     }
 
-    if (activeAction === "updateAddress" && !address.countryArea.trim()) {
-      setActionError("State (countryArea) is required for this address.");
+    if (activeAction === "updateAddress") {
+      // H3 — only firstName is required; real storefront orders save an
+      // empty lastName for single-word customer names, and requiring both
+      // blocked Update Address entirely for those orders.
+      if (!address.firstName.trim()) {
+        setActionError("First name is required.");
 
-      return;
+        return;
+      }
+
+      if (!address.countryArea.trim()) {
+        setActionError("State (countryArea) is required for this address.");
+
+        return;
+      }
+    }
+
+    if (activeAction === "logCall") {
+      const validationError = validateLogCall();
+
+      if (validationError) {
+        setActionError(validationError);
+
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -129,7 +246,7 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
             : "",
           customerPhone: snapshot?.shippingAddress?.phone || "",
           customerEmail: snapshot?.userEmail || "",
-          amount: snapshot?.total?.amount || 0,
+          amount: snapshot?.total?.gross?.amount || 0,
           orderNumber: detail.orderNumber,
         });
 
@@ -137,6 +254,20 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
         // on success, show the link instead of closing immediately so the
         // agent can confirm it was sent before dismissing.
         setPaymentLinkUrl(result.paymentLinkUrl);
+        await load();
+      } else if (activeAction === "logCall") {
+        await submitLogCall(detail.id, {
+          outcome: callOutcome as CodHoldCallOutcome,
+          customerDecision: callOutcome === "ANSWERED" ? customerDecision.trim() : undefined,
+          notes: callNotes.trim(),
+          callbackAt:
+            callOutcome === "CALLBACK_REQUESTED" ? new Date(callbackAt).toISOString() : undefined,
+        });
+        closeDialog();
+        await load();
+      } else if (activeAction === "markUnreachable") {
+        await submitMarkUnreachable(detail.id);
+        closeDialog();
         await load();
       }
     } catch (err: any) {
@@ -178,12 +309,21 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
           <Text size={8} fontWeight="bold">
             Order #{detail.orderNumber}
           </Text>
-          <Box display="flex" alignItems="center" gap={3} marginTop={2}>
+          <Box display="flex" alignItems="center" gap={3} marginTop={2} flexWrap="wrap">
             <StatusChip status={detail.status} />
             {detail.slaTier && <SLABadge tier={detail.slaTier} />}
+            <CxStatusChip status={detail.internalCxStatus} />
             <Text size={3} color="default2">
               Assigned to {detail.assignedAgentEmail || "—"}
             </Text>
+            <Text size={3} color="default2">
+              Held: {new Date(detail.heldAt).toLocaleString()}
+            </Text>
+            {detail.unreachableMarkedAt && (
+              <Text size={3} color="critical1" fontWeight="bold">
+                Unreachable
+              </Text>
+            )}
           </Box>
         </Box>
         <Button variant="secondary" size="small" onClick={() => navigate(codHoldQueuePath)}>
@@ -207,8 +347,10 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
           {snapshot ? (
             <>
               <Text size={3}>
-                {snapshot.shippingAddress
-                  ? `${snapshot.shippingAddress.firstName} ${snapshot.shippingAddress.lastName}`
+                {snapshot.shippingAddress &&
+                (snapshot.shippingAddress.firstName.trim() ||
+                  snapshot.shippingAddress.lastName.trim())
+                  ? `${snapshot.shippingAddress.firstName} ${snapshot.shippingAddress.lastName}`.trim()
                   : "—"}
               </Text>
               <Text size={3} color="default2" display="block">
@@ -227,7 +369,10 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
                 {detail.matchedPhone ? `phone ${detail.matchedPhone}` : ""}
               </Text>
               <Text size={4} fontWeight="bold" display="block" marginTop={3}>
-                Total: {snapshot.total?.amount} {snapshot.total?.currency}
+                Order Value:{" "}
+                {snapshot.total?.gross
+                  ? `${snapshot.total.gross.amount} ${snapshot.total.gross.currency}`
+                  : "—"}
               </Text>
             </>
           ) : (
@@ -247,7 +392,7 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
           padding={4}
         >
           <Text size={4} fontWeight="bold" display="block" marginBottom={3}>
-            Call Log History
+            Call Log History ({detail.callLogs.length})
           </Text>
           {detail.callLogs.length === 0 ? (
             <Text size={3} color="default2">
@@ -263,15 +408,41 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
                   borderStyle="solid"
                   paddingBottom={2}
                 >
-                  <Text size={3} fontWeight="bold">
-                    {log.action.replace(/_/g, " ")}
-                  </Text>
-                  <Text size={2} color="default2" display="block">
-                    {log.agentEmail} · {new Date(log.createdAt).toLocaleString()}
-                  </Text>
-                  <Text size={3} display="block" marginTop={1}>
-                    {log.note}
-                  </Text>
+                  {log.outcome ? (
+                    <>
+                      <Text size={3} fontWeight="bold">
+                        Call logged: {OUTCOME_LABELS[log.outcome] ?? log.outcome}
+                      </Text>
+                      <Text size={2} color="default2" display="block">
+                        {log.agentEmail} · {new Date(log.createdAt).toLocaleString()}
+                      </Text>
+                      {log.customerDecision && (
+                        <Text size={3} display="block" marginTop={1}>
+                          Customer decision: {log.customerDecision}
+                        </Text>
+                      )}
+                      <Text size={3} display="block" marginTop={1}>
+                        {log.note}
+                      </Text>
+                      {log.callbackAt && (
+                        <Text size={2} color="default2" display="block" marginTop={1}>
+                          Callback at {new Date(log.callbackAt).toLocaleString()}
+                        </Text>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Text size={3} fontWeight="bold">
+                        {(log.action ?? "").replace(/_/g, " ")}
+                      </Text>
+                      <Text size={2} color="default2" display="block">
+                        {log.agentEmail} · {new Date(log.createdAt).toLocaleString()}
+                      </Text>
+                      <Text size={3} display="block" marginTop={1}>
+                        {log.note}
+                      </Text>
+                    </>
+                  )}
                 </Box>
               ))}
             </Box>
@@ -280,29 +451,55 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
       </Box>
 
       {/* Actions */}
-      <Box display="flex" gap={3} flexWrap="wrap">
-        <Button variant="secondary" disabled={!isHeld} onClick={() => setActiveAction("cancel")}>
+      <Box display="flex" gap={3} flexWrap="wrap" alignItems="center">
+        <Button
+          variant="secondary"
+          disabled={resolutionActionsDisabled}
+          onClick={() => openDialog("cancel")}
+        >
           Cancel
         </Button>
         <Button
           variant="secondary"
-          disabled={!isHeld}
-          onClick={() => setActiveAction("updateAddress")}
+          disabled={resolutionActionsDisabled}
+          onClick={() => openDialog("updateAddress")}
         >
           Update Address
         </Button>
         {detail.sendPaymentLinkEnabled && (
           <Button
             variant="secondary"
-            disabled={!isHeld}
-            onClick={() => setActiveAction("sendPaymentLink")}
+            disabled={resolutionActionsDisabled}
+            onClick={() => openDialog("sendPaymentLink")}
           >
-            Send Payment Link
+            Convert to Prepaid
           </Button>
         )}
-        <Button variant="primary" disabled={!isHeld} onClick={() => setActiveAction("release")}>
-          Release as COD
+        <Button
+          variant="primary"
+          disabled={resolutionActionsDisabled}
+          onClick={() => openDialog("release")}
+        >
+          Confirm Order
         </Button>
+
+        <Button variant="secondary" disabled={!isHeld} onClick={() => openDialog("logCall")}>
+          Log Call
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={!isHeld || !!detail.unreachableMarkedAt}
+          onClick={() => openDialog("markUnreachable")}
+        >
+          {detail.unreachableMarkedAt ? "Marked Unreachable" : "Mark Unreachable"}
+        </Button>
+
+        {isHeld && !gateSatisfied && (
+          <Text size={2} color="critical1">
+            Log at least one call with outcome Answered before Cancel, Update Address, Convert to
+            Prepaid, or Confirm Order become available.
+          </Text>
+        )}
       </Box>
 
       {/* Cancel dialog */}
@@ -317,17 +514,18 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
         <NoteField note={note} onChange={setNote} error={actionError} />
       </ActionDialog>
 
-      {/* Release dialog */}
+      {/* Confirm Order (release) dialog — AC-37 explicit confirmation step:
+          this creates the order in ERP for the first time and can't be undone. */}
       <ActionDialog
         open={activeAction === "release"}
         onClose={closeDialog}
         onConfirm={handleConfirm}
         confirmButtonState={submitting ? "loading" : "default"}
-        title="Release as COD"
-        confirmButtonLabel="Release"
+        title="Confirm order"
+        confirmButtonLabel="Confirm order"
       >
         <Text size={3} display="block" marginBottom={3}>
-          This order will be processed as a normal COD order and synced to the ERP.
+          Confirm this order? This creates the order in ERP for the first time and cannot be undone.
         </Text>
         <NoteField note={note} onChange={setNote} error={actionError} />
       </ActionDialog>
@@ -343,6 +541,18 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
         size="md"
       >
         <Box display="flex" flexDirection="column" gap={3}>
+          <Box display="flex" gap={3}>
+            <Input
+              label="First name"
+              value={address.firstName}
+              onChange={e => setAddress({ ...address, firstName: e.target.value })}
+            />
+            <Input
+              label="Last name"
+              value={address.lastName}
+              onChange={e => setAddress({ ...address, lastName: e.target.value })}
+            />
+          </Box>
           <Input
             label="Street address 1"
             value={address.streetAddress1}
@@ -383,16 +593,17 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
         </Box>
       </ActionDialog>
 
-      {/* Send payment link dialog — feature retired behind its own flag,
-          independent of the now-standing automatic GoKwik flow; not rendered
-          at all when disabled, not just gated by the trigger button above. */}
+      {/* Convert to Prepaid (send payment link) dialog — feature retired behind
+          its own flag, independent of the now-standing automatic GoKwik flow;
+          not rendered at all when disabled, not just gated by the trigger
+          button above. AC-37 explicit confirmation step, same as Confirm Order. */}
       {detail.sendPaymentLinkEnabled && (
         <ActionDialog
           open={activeAction === "sendPaymentLink"}
           onClose={closeDialog}
           onConfirm={paymentLinkUrl ? closeDialog : handleConfirm}
           confirmButtonState={submitting ? "loading" : "default"}
-          title="Send payment link"
+          title="Convert to Prepaid"
           confirmButtonLabel={paymentLinkUrl ? "Done" : "Send link"}
         >
           {paymentLinkUrl ? (
@@ -400,10 +611,110 @@ export const OrderDetailView = ({ holdId }: OrderDetailViewProps) => {
               Payment link sent via WhatsApp: {paymentLinkUrl}
             </Text>
           ) : (
-            <NoteField note={note} onChange={setNote} error={actionError} />
+            <>
+              <Text size={3} display="block" marginBottom={3}>
+                Generate a payment link and send it to the customer&apos;s registered mobile number?
+                This cannot be undone.
+              </Text>
+              <NoteField note={note} onChange={setNote} error={actionError} />
+            </>
           )}
         </ActionDialog>
       )}
+
+      {/* Log Call dialog */}
+      <ActionDialog
+        open={activeAction === "logCall"}
+        onClose={closeDialog}
+        onConfirm={handleConfirm}
+        confirmButtonState={submitting ? "loading" : "default"}
+        title="Log call"
+        confirmButtonLabel="Save call log"
+        size="md"
+      >
+        <Box display="flex" flexDirection="column" gap={3}>
+          <Box>
+            <Text size={3} display="block" marginBottom={1} fontWeight="bold">
+              Outcome *
+            </Text>
+            <Select
+              value={callOutcome}
+              onChange={v => {
+                const next = v as CodHoldCallOutcome | "";
+
+                setCallOutcome(next);
+
+                if (next !== "ANSWERED") setCustomerDecision("");
+
+                if (next !== "CALLBACK_REQUESTED") setCallbackAt("");
+              }}
+              options={OUTCOME_OPTIONS}
+            />
+          </Box>
+
+          {callOutcome === "ANSWERED" && (
+            <Input
+              label="Customer decision"
+              value={customerDecision}
+              onChange={e => setCustomerDecision(e.target.value)}
+            />
+          )}
+
+          {callOutcome === "CALLBACK_REQUESTED" && (
+            <Input
+              type="datetime-local"
+              label="Callback date & time"
+              value={callbackAt}
+              onChange={e => setCallbackAt(e.target.value)}
+            />
+          )}
+
+          <Box>
+            <Text size={2} color="default2" display="block" marginBottom={1}>
+              Notes *
+            </Text>
+            <Box
+              as="textarea"
+              aria-label="Notes"
+              value={callNotes}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setCallNotes(e.target.value)}
+              __width="100%"
+              __minHeight="80px"
+              padding={2}
+              borderRadius={2}
+              borderWidth={1}
+              borderStyle="solid"
+              borderColor="default1"
+            />
+          </Box>
+
+          {actionError && (
+            <Text size={2} color="critical1" display="block">
+              {actionError}
+            </Text>
+          )}
+        </Box>
+      </ActionDialog>
+
+      {/* Mark Unreachable dialog */}
+      <ActionDialog
+        open={activeAction === "markUnreachable"}
+        onClose={closeDialog}
+        onConfirm={handleConfirm}
+        confirmButtonState={submitting ? "loading" : "default"}
+        title="Mark unreachable"
+        confirmButtonLabel="Mark unreachable"
+      >
+        <Text size={3} display="block" marginBottom={2}>
+          Marking a customer unreachable will auto cancel the order after the configured hold
+          duration if no further action is taken.
+        </Text>
+        {actionError && (
+          <Text size={2} color="critical1" display="block">
+            {actionError}
+          </Text>
+        )}
+      </ActionDialog>
     </Box>
   );
 };
@@ -421,6 +732,7 @@ const NoteField = ({ note, onChange, error }: NoteFieldProps) => (
     </Text>
     <Box
       as="textarea"
+      aria-label="Note"
       value={note}
       onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
       __width="100%"

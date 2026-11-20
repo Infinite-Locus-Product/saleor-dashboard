@@ -308,6 +308,9 @@ interface AlertEmailsSectionProps {
 
 const AlertEmailsSection = ({ settings, onChanged }: AlertEmailsSectionProps) => {
   const [newEmail, setNewEmail] = useState("");
+  // Defensive: a backend response missing alertRecipients entirely
+  // (TTXY-6557) shouldn't crash this page — the real fix is backend-side.
+  const alertRecipients = settings?.alertRecipients ?? [];
 
   const handleAdd = async () => {
     if (!newEmail.trim()) return;
@@ -346,13 +349,13 @@ const AlertEmailsSection = ({ settings, onChanged }: AlertEmailsSectionProps) =>
         </Button>
       </Box>
 
-      {!settings || settings.alertRecipients.length === 0 ? (
+      {alertRecipients.length === 0 ? (
         <Text size={3} color="default2">
           None configured yet.
         </Text>
       ) : (
         <Box display="flex" flexDirection="column" gap={1}>
-          {settings.alertRecipients.map(email => (
+          {alertRecipients.map(email => (
             <Box
               key={email}
               display="flex"

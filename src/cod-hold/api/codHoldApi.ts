@@ -1,9 +1,12 @@
 import {
+  type CodHoldCallOutcome,
   type CodHoldListItem,
   type CodHoldOrder,
   type CodHoldOrderDetail,
   type CodHoldSettings,
   type CodHoldShippingAddress,
+  type CodHoldSortDir,
+  type CodHoldSortField,
 } from "../types";
 
 const BASE_URL = import.meta.env.VITE_TENEXU_API_URL;
@@ -38,7 +41,14 @@ async function apiRequest<T>(method: string, path: string, body?: any): Promise<
   const json = await res.json();
 
   if (!res.ok) {
-    throw new Error(json?.detail || json?.error || `Request failed: ${res.status}`);
+    // Most endpoints send {error, detail} — a machine-readable code plus an
+    // optional detail string. The answered_call_required 400 (the call-log
+    // gate) is the one case that also sends a human-readable {message}, so
+    // that's tried first; detail/error are the fallbacks for every other
+    // endpoint.
+    throw new Error(
+      json?.message || json?.detail || json?.error || `Request failed: ${res.status}`,
+    );
   }
 
   return json;
@@ -59,7 +69,10 @@ async function uploadCsv<T>(path: string, file: File): Promise<T> {
   const json = await res.json();
 
   if (!res.ok) {
-    throw new Error(json?.detail || json?.error || `Request failed: ${res.status}`);
+    // Kept consistent with apiRequest's error-message precedence above.
+    throw new Error(
+      json?.message || json?.detail || json?.error || `Request failed: ${res.status}`,
+    );
   }
 
   return json;
@@ -73,6 +86,12 @@ export async function fetchHeldOrders(params: {
   pincode?: string;
   from?: string;
   to?: string;
+  orderNumber?: string;
+  phone?: string;
+  minValue?: number;
+  maxValue?: number;
+  sortBy?: CodHoldSortField;
+  sortDir?: CodHoldSortDir;
   cursor?: string;
   limit?: number;
 }): Promise<{ orders: CodHoldOrder[]; nextCursor: string | null }> {
@@ -87,6 +106,18 @@ export async function fetchHeldOrders(params: {
   if (params.from) qs.set("from", params.from);
 
   if (params.to) qs.set("to", params.to);
+
+  if (params.orderNumber) qs.set("orderNumber", params.orderNumber);
+
+  if (params.phone) qs.set("phone", params.phone);
+
+  if (params.minValue !== undefined) qs.set("minValue", String(params.minValue));
+
+  if (params.maxValue !== undefined) qs.set("maxValue", String(params.maxValue));
+
+  if (params.sortBy) qs.set("sortBy", params.sortBy);
+
+  if (params.sortDir) qs.set("sortDir", params.sortDir);
 
   if (params.cursor) qs.set("cursor", params.cursor);
 
@@ -127,6 +158,26 @@ export async function submitSendPaymentLink(
 
 export async function submitRelease(holdId: string, note: string): Promise<void> {
   await apiRequest("POST", `/cod-hold/orders/${holdId}/release`, { note });
+}
+
+// Both endpoints below actually respond with just {status: "..."} — nothing
+// in the caller reads the response (OrderDetailView always reloads the full
+// detail via fetchHeldOrderDetail afterwards), so these are typed Promise<void>
+// rather than inventing a response shape nothing uses.
+export async function submitLogCall(
+  holdId: string,
+  input: {
+    outcome: CodHoldCallOutcome;
+    customerDecision?: string;
+    notes: string;
+    callbackAt?: string;
+  },
+): Promise<void> {
+  await apiRequest("POST", `/cod-hold/orders/${holdId}/call-log`, input);
+}
+
+export async function submitMarkUnreachable(holdId: string): Promise<void> {
+  await apiRequest("POST", `/cod-hold/orders/${holdId}/mark-unreachable`, {});
 }
 
 // ─── List management (pincodes / phones / agents) ──────────────────────────

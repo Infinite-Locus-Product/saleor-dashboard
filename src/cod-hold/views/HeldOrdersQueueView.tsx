@@ -1,12 +1,18 @@
 import useNavigator from "@dashboard/hooks/useNavigator";
 import { Box, Button, Input, Skeleton, Text } from "@saleor/macaw-ui-next";
-import { AlertTriangle, RefreshCw, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, RefreshCw, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { fetchHeldOrders } from "../api/codHoldApi";
+import { CxStatusChip } from "../components/CxStatusChip";
 import { SLABadge } from "../components/SLABadge";
 import { StatusChip } from "../components/StatusChip";
-import { type CodHoldOrder, type CodHoldStatus } from "../types";
+import {
+  type CodHoldOrder,
+  type CodHoldSortDir,
+  type CodHoldSortField,
+  type CodHoldStatus,
+} from "../types";
 import { codHoldOrderDetailPath } from "../urls";
 
 const STATUSES: { value: CodHoldStatus; label: string }[] = [
@@ -24,6 +30,10 @@ interface Filters {
   pincode: string;
   from: string;
   to: string;
+  orderNumber: string;
+  phone: string;
+  minValue: string;
+  maxValue: string;
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -32,10 +42,33 @@ const EMPTY_FILTERS: Filters = {
   pincode: "",
   from: "",
   to: "",
+  orderNumber: "",
+  phone: "",
+  minValue: "",
+  maxValue: "",
 };
 
 function hasActiveFilters(f: Filters) {
   return Object.values(f).some(v => v !== "");
+}
+
+// Only columns with an unambiguous, single underlying field are made
+// sortable here. "Matched On" combines matchedPincode/matchedPhone into one
+// derived cell and isn't wired to a clickable header, even though the
+// backend's sortBy whitelist includes "matchedPhone" — there's no dedicated
+// Phone column today to attach that sort to (open question for product:
+// worth a dedicated Phone column before wiring that sort affordance).
+type SortableField = Extract<CodHoldSortField, "orderNumber" | "orderValue" | "heldAt" | "status">;
+
+interface SortState {
+  field: SortableField;
+  dir: CodHoldSortDir;
+}
+
+function formatOrderValue(value: number | null, currency: string | null): string {
+  if (value === null || value === undefined) return "—";
+
+  return currency ? `${currency} ${value.toLocaleString()}` : value.toLocaleString();
 }
 
 // Cursor pagination (LLD.md §9 — the queue never does a full-table-scan count),
@@ -50,6 +83,17 @@ export const HeldOrdersQueueView = () => {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState | null>(null);
+
+  const toggleSort = (field: SortableField) => {
+    setSort(prev => {
+      if (!prev || prev.field !== field) return { field, dir: "asc" };
+
+      if (prev.dir === "asc") return { field, dir: "desc" };
+
+      return null;
+    });
+  };
 
   const breachedCount = orders.filter(o => o.status === "HELD" && o.slaTier === "BREACHED").length;
 
@@ -59,7 +103,14 @@ export const HeldOrdersQueueView = () => {
 
   const clearFilters = () => setFilters(EMPTY_FILTERS);
 
+  // Guards against out-of-order responses: a fetch started by an older
+  // keystroke can resolve after a newer one and overwrite its results. Each
+  // call captures its own id; only the most recent one is allowed to commit.
+  const latestRequestId = useRef(0);
+
   const load = useCallback(async () => {
+    const requestId = ++latestRequestId.current;
+
     setLoading(true);
     setError(null);
 
@@ -70,20 +121,37 @@ export const HeldOrdersQueueView = () => {
         pincode: filters.pincode || undefined,
         from: filters.from || undefined,
         to: filters.to || undefined,
+        orderNumber: filters.orderNumber || undefined,
+        phone: filters.phone || undefined,
+        minValue: filters.minValue !== "" ? Number(filters.minValue) : undefined,
+        maxValue: filters.maxValue !== "" ? Number(filters.maxValue) : undefined,
+        sortBy: sort?.field,
+        sortDir: sort?.dir,
         limit: LIMIT,
       });
+
+      if (requestId !== latestRequestId.current) return;
 
       setOrders(result.orders);
       setNextCursor(result.nextCursor);
     } catch (err: any) {
+      if (requestId !== latestRequestId.current) return;
+
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequestId.current) setLoading(false);
     }
-  }, [filters]);
+  }, [filters, sort]);
 
+  // Debounced so the 4 free-text/number filters (Order Number, Phone, Min/Max
+  // Value) don't fire a request on every keystroke — same debounce also
+  // covers the pre-existing filters and sort changes, which is harmless.
   useEffect(() => {
-    load();
+    const timeoutId = setTimeout(() => {
+      load();
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
   }, [load]);
 
   const loadMore = async () => {
@@ -98,6 +166,12 @@ export const HeldOrdersQueueView = () => {
         pincode: filters.pincode || undefined,
         from: filters.from || undefined,
         to: filters.to || undefined,
+        orderNumber: filters.orderNumber || undefined,
+        phone: filters.phone || undefined,
+        minValue: filters.minValue !== "" ? Number(filters.minValue) : undefined,
+        maxValue: filters.maxValue !== "" ? Number(filters.maxValue) : undefined,
+        sortBy: sort?.field,
+        sortDir: sort?.dir,
         cursor: nextCursor,
         limit: LIMIT,
       });
@@ -227,6 +301,55 @@ export const HeldOrdersQueueView = () => {
             />
           </Box>
 
+          <Box __minWidth="140px">
+            <Text size={2} color="default2" display="block" marginBottom={1}>
+              Order Number
+            </Text>
+            <Input
+              label="12345"
+              value={filters.orderNumber}
+              onChange={e => setFilter("orderNumber", e.target.value)}
+              size="small"
+            />
+          </Box>
+
+          <Box __minWidth="140px">
+            <Text size={2} color="default2" display="block" marginBottom={1}>
+              Phone
+            </Text>
+            <Input
+              label="9876543210"
+              value={filters.phone}
+              onChange={e => setFilter("phone", e.target.value)}
+              size="small"
+            />
+          </Box>
+
+          <Box __minWidth="110px">
+            <Text size={2} color="default2" display="block" marginBottom={1}>
+              Min Value
+            </Text>
+            <Input
+              type="number"
+              label="0"
+              value={filters.minValue}
+              onChange={e => setFilter("minValue", e.target.value)}
+              size="small"
+            />
+          </Box>
+          <Box __minWidth="110px">
+            <Text size={2} color="default2" display="block" marginBottom={1}>
+              Max Value
+            </Text>
+            <Input
+              type="number"
+              label="10000"
+              value={filters.maxValue}
+              onChange={e => setFilter("maxValue", e.target.value)}
+              size="small"
+            />
+          </Box>
+
           {hasActiveFilters(filters) && (
             <Box style={{ paddingTop: "20px" }}>
               <Button variant="secondary" size="small" onClick={clearFilters}>
@@ -258,27 +381,47 @@ export const HeldOrdersQueueView = () => {
           <Box as="table" width="100%" style={{ borderCollapse: "collapse", tableLayout: "fixed" }}>
             <Box as="thead">
               <Box as="tr" borderBottomWidth={1} borderColor="default1" borderStyle="solid">
-                {[
-                  { label: "Order #", width: "12%" },
-                  { label: "Matched On", width: "18%" },
-                  { label: "Assigned Agent", width: "20%" },
-                  { label: "Held At", width: "15%" },
-                  { label: "SLA", width: "15%" },
-                  { label: "Status", width: "20%" },
-                ].map(col => (
-                  <Box
-                    key={col.label}
-                    as="th"
-                    paddingX={3}
-                    paddingY={3}
-                    textAlign="left"
-                    style={{ width: col.width }}
-                  >
-                    <Text size={2} color="default2" fontWeight="bold">
-                      {col.label}
-                    </Text>
-                  </Box>
-                ))}
+                {(
+                  [
+                    { label: "Order #", width: "10%", sortField: "orderNumber" },
+                    { label: "Matched On", width: "14%" },
+                    { label: "Assigned Agent", width: "14%" },
+                    { label: "Held At", width: "12%", sortField: "heldAt" },
+                    { label: "SLA", width: "10%" },
+                    { label: "Order Value", width: "12%", sortField: "orderValue" },
+                    { label: "CX Status", width: "14%" },
+                    { label: "Status", width: "14%", sortField: "status" },
+                  ] as { label: string; width: string; sortField?: SortableField }[]
+                ).map(col => {
+                  const isSorted = col.sortField && sort?.field === col.sortField;
+                  const SortIcon = !isSorted
+                    ? ArrowUpDown
+                    : sort?.dir === "asc"
+                      ? ArrowUp
+                      : ArrowDown;
+
+                  return (
+                    <Box
+                      key={col.label}
+                      as="th"
+                      paddingX={3}
+                      paddingY={3}
+                      textAlign="left"
+                      style={{
+                        width: col.width,
+                        cursor: col.sortField ? "pointer" : "default",
+                      }}
+                      onClick={col.sortField ? () => toggleSort(col.sortField!) : undefined}
+                    >
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Text size={2} color="default2" fontWeight="bold">
+                          {col.label}
+                        </Text>
+                        {col.sortField && <SortIcon size={12} />}
+                      </Box>
+                    </Box>
+                  );
+                })}
               </Box>
             </Box>
             <Box as="tbody">
@@ -325,6 +468,16 @@ export const HeldOrdersQueueView = () => {
                         —
                       </Text>
                     )}
+                  </Box>
+
+                  <Box as="td" paddingX={3} paddingY={3}>
+                    <Text size={3}>
+                      {formatOrderValue(order.orderValue, order.orderValueCurrency)}
+                    </Text>
+                  </Box>
+
+                  <Box as="td" paddingX={3} paddingY={3}>
+                    <CxStatusChip status={order.internalCxStatus} />
                   </Box>
 
                   <Box as="td" paddingX={3} paddingY={3}>

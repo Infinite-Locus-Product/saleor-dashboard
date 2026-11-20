@@ -1,6 +1,31 @@
 export type CodHoldStatus = "HELD" | "RELEASED" | "CONVERTED_PREPAID" | "CUSTOMER_CANCELLED";
 export type CodHoldSlaTier = "ON_TRACK" | "DELAYED" | "BREACHED";
-export type CodHoldCallLogAction = "CANCEL" | "UPDATE_ADDRESS" | "SEND_PAYMENT_LINK" | "RELEASE";
+export type CodHoldCallLogAction =
+  | "CANCEL"
+  | "UPDATE_ADDRESS"
+  | "SEND_PAYMENT_LINK"
+  | "RELEASE"
+  | "LOG_CALL";
+
+// Internal CX Status — the PRD's call-logging / mark-unreachable / resolution-gate
+// workflow state. Distinct from CodHoldStatus (the order's ERP-facing state) and
+// from CodHoldSlaTier (a purely time-based SLA badge) — do not conflate the three.
+export type CodHoldInternalCxStatus =
+  | "PENDING"
+  | "CX_REVIEW"
+  | "CX_ACTION"
+  | "CONVERTED"
+  | "ADDRESS_CHANGED"
+  | "RELEASED"
+  | "CANCELLED"
+  | "AUTO_RELEASED"
+  | "AUTO_CANCELLED";
+
+export type CodHoldCallOutcome = "ANSWERED" | "NO_ANSWER" | "BUSY" | "CALLBACK_REQUESTED";
+
+// Backend's sort whitelist for GET /cod-hold/orders (TTXY-6559).
+export type CodHoldSortField = "orderNumber" | "matchedPhone" | "orderValue" | "heldAt" | "status";
+export type CodHoldSortDir = "asc" | "desc";
 
 export interface CodHoldOrder {
   id: string;
@@ -15,13 +40,27 @@ export interface CodHoldOrder {
   resolvedBy: string | null;
   releaseReason: "MANUAL" | "AUTO_TIMEOUT" | null;
   slaTier: CodHoldSlaTier | null;
+  // Persisted at hold-entry time — NOT the same value as the detail view's live
+  // Saleor snapshot total (CodHoldOrderSnapshot.total). The queue list uses this
+  // persisted value since it doesn't fetch a full live snapshot per row.
+  orderValue: number | null;
+  orderValueCurrency: string | null;
+  internalCxStatus: CodHoldInternalCxStatus;
 }
 
+// A legacy "action" log (created by Cancel / Update Address / Send Payment Link /
+// Release — action + note) and a new PRD "logged call" (created by the Log Call
+// dialog — outcome + note) share this same callLogs array on the detail
+// response, told apart by which optional fields are present. Both kinds use the
+// same "note" field name on the wire (listCallLogs never returns "notes").
 export interface CodHoldCallLog {
   id: string;
   agentEmail: string;
-  action: CodHoldCallLogAction;
+  action?: CodHoldCallLogAction;
   note: string;
+  outcome?: CodHoldCallOutcome;
+  customerDecision?: string | null;
+  callbackAt?: string | null;
   createdAt: string;
 }
 
@@ -31,7 +70,9 @@ export interface CodHoldOrderSnapshot {
   status: string;
   created: string;
   userEmail: string | null;
-  total: { amount: number; currency: string } | null;
+  // Live Saleor snapshot total — the detail view's "Order Value" field reads
+  // this, NOT the queue list's persisted CodHoldOrder.orderValue.
+  total: { gross: { amount: number; currency: string } } | null;
   shippingAddress: {
     firstName: string;
     lastName: string;
@@ -55,6 +96,13 @@ export interface CodHoldOrderDetail extends CodHoldOrder {
   // now-standing automatic GoKwik flow — false hides the feature entirely,
   // not just disables the button.
   sendPaymentLinkEnabled: boolean;
+  firstViewedAt: string | null;
+  // Non-null = the Unreachable flag is set on this order.
+  unreachableMarkedAt: string | null;
+  // True once at least one call log has outcome ANSWERED. Drives disabling
+  // Confirm/Cancel/Convert/ChangeAddress client-side — trust this field,
+  // don't recompute it from callLogs.
+  callLogGateSatisfied: boolean;
 }
 
 export interface CodHoldListItem {
@@ -76,6 +124,11 @@ export interface CodHoldSettings {
 }
 
 export interface CodHoldShippingAddress {
+  firstName: string;
+  // Optional — real storefront orders save an empty lastName for single-word
+  // customer names; only firstName is actually required (H3). The backend's
+  // UpdateAddressInput treats this the same way.
+  lastName?: string;
   streetAddress1: string;
   streetAddress2?: string;
   city: string;
